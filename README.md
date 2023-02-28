@@ -1,5 +1,11 @@
 # Project Consumer Backend
 
-## Wiki
+## [Backend Wiki](https://github.com/MrNtlu/Project-Consumer/wiki/TS-Backend-Database)
 
-[Backend Wiki](https://github.com/MrNtlu/Project-Consumer/wiki/TS-Backend-Database)
+### Frameworks & Database
+
+- Django/Python & PostgreSQL
+
+### Libraries
+
+- djangorestframework
