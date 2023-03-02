@@ -1,3 +1,5 @@
 Docker Compose Build: docker-compose build
 
+Run Docker Compose Command: docker-compose run --rm app sh -c
+
 Run Linting: docker-compose run --rm app sh -c "flake8"

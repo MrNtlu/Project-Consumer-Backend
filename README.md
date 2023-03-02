@@ -9,3 +9,6 @@
 ### Libraries
 
 - djangorestframework
+- asgiref
+- psycopg2
+- python-decouple

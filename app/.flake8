@@ -1,5 +1,9 @@
 
 [flake8]
+extend-ignore = 
+    W293,
+    E302,
+
 exclude = 
     migrations,
     __pycache__,
