@@ -1,9 +1,6 @@
 """
 Tests for models.
 """
-from unittest.mock import patch
-from decimal import Decimal
-
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 
@@ -39,7 +36,9 @@ class ModelTests(TestCase):
             ['test4@example.COM', 'test4@example.com'],
         ]
         for email, expected in sample_emails:
-            user = get_user_model().objects.create_user(email, ('sample'+email) , 'sample123')
+            user = get_user_model().objects.create_user(
+                email, ('sample' + email), 'sample123'
+            )
             self.assertEqual(user.email, expected)
 
     def test_new_user_with_extra_data(self):
@@ -47,7 +46,10 @@ class ModelTests(TestCase):
         email = 'test@example.com'
         username = 'test'
         password = 'testpass123'
-        fcm_token = 'erI81pGdTqC4nUZnHef9wC:APA91bEPIR_EZtwj9_q7kPlXo7xIM19ry4Kd0c_sfrEVdi6nZ-w8Q2THxKcuQsv1OCirvnSNVpv_gMNhhBV85R7L19oCuXxQSRLtjidQG9D4qSErjhI8ORZoso1HbfDdau8pyqUls5z3'
+        fcm_token = """
+            erI81pGdTqC4nUZnHef9wC:APA91bEPIR_EZtwj9_q7kPlXo7xIM19ry4Kd0c_sfrEVdi6nZ-
+            w8Q2THxKcuQsv1OCirvnSNVpv_gMNhhBV85R7L19oCuXxQSRLtjidQG9D4qSErjhI8ORZoso1HbfDdau8pyqUls5z3
+        """
 
         user = get_user_model().objects.create_user(
             email=email,

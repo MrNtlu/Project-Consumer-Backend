@@ -12,3 +12,4 @@
 - asgiref
 - psycopg2
 - python-decouple
+- Pillow

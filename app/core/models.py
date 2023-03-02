@@ -1,13 +1,14 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
-from django.conf import settings
+from django.contrib.auth.models import (
+    AbstractBaseUser, PermissionsMixin, BaseUserManager
+)
 
 def upload_location(instance, filename):
-	file_path = 'profile/{user_id}-{filename}.jpg'.format(
-			user_id = str(instance.id),
-            filename = str(filename)
-		)
-	return file_path
+    file_path = 'profile/{user_id}-{filename}.jpg'.format(
+        user_id=str(instance.id),
+        filename=str(filename)
+    )
+    return file_path
 
 class UserManager(BaseUserManager):
     def create_user(self, email, username, password=None, **extra_fields):

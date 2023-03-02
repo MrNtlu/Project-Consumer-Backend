@@ -7,4 +7,4 @@ Run Linting: docker-compose run --rm app sh -c "flake8"
 Docker Compose Migrations:
 
 1- docker-compose run --rm app sh -c "python manage.py makemigrations"
-2-docker-compose run --rm app sh -c "python manage.py migrate"
+2- docker-compose run --rm app sh -c "python manage.py migrate"

@@ -11,7 +11,7 @@ class UserAdmin(BaseUserAdmin):
         'image', 'created_at', 'updated_at',
     ]
     fieldsets = (
-        (None, {'fields': ('image','email', 'username', 'password')}),
+        (None, {'fields': ('image', 'email', 'username', 'password')}),
         (
             _('Premium Plans'),
             {
@@ -60,7 +60,10 @@ class UserAdmin(BaseUserAdmin):
         ),
         (_('Date Info'), {'fields': ('created_at', 'updated_at')}),
     )
-    readonly_fields = ['fcm_token', 'refresh_token', 'is_oauth_user', 'oauth_type', 'created_at', 'updated_at']
+    readonly_fields = [
+        'fcm_token', 'refresh_token', 'is_oauth_user',
+        'oauth_type', 'created_at', 'updated_at',
+    ]
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
