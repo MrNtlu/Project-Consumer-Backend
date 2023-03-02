@@ -15,7 +15,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from decouple import config
+
+if config('DEBUG', default=False, cast=bool):
+    admin_path = "admin/"
+else:
+    admin_path = config('ADMIN_PATH')
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path(admin_path, admin.site.urls),
 ]

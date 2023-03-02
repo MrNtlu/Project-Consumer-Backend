@@ -22,9 +22,11 @@ services:
       - DB_PASS=dockerlocaldb
       - DEBUG=true
       - SECRET_KEY=${SECRET_KEY}
+      - ADMIN_PATH=${ADMIN_PATH}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
     depends_on:
       - db
-  
+
   db:
     image: postgres:15.2-alpine
     volumes:
