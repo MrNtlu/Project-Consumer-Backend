@@ -4,3 +4,4 @@ asgiref>=3.6.0,<3.7
 psycopg2>=2.9.3,<2.10
 python-decouple==3.7
 Pillow==9.4.0
+drf-spectacular>=0.25.1,<0.26

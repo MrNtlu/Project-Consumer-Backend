@@ -13,3 +13,4 @@
 - psycopg2
 - python-decouple
 - Pillow
+- drf-spectacular
