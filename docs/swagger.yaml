@@ -1,0 +1,22 @@
+basePath: /api/v1
+host: '#soon'
+info:
+  contact:
+    email: mrntlu@gmail.com
+    name: Burak Fidan
+  description: REST Api of Project Consumer.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: '#soon'
+  title: Project Consumer API
+  version: "1.0"
+paths: {}
+schemes:
+- https
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
