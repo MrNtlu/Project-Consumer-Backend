@@ -1,40 +1,16 @@
 version: "3.9"
 
 services:
-  app:
-    build:
-      context: .
-      args:
-        - DEV=true
+  backend:
+    build: .
     ports:
-      - "8000:8000"
+      - 8080:8080
     volumes:
-      - ./app:/app
-    command: >
-      sh -c "python manage.py wait_for_db &&
-             python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
-    environment:
-      - DB_HOST=db
-      - DB_PORT=${DB_PORT}
-      - DB_NAME=devdb
-      - DB_USER=devuser
-      - DB_PASS=dockerlocaldb
-      - DEBUG=true
-      - SECRET_KEY=${SECRET_KEY}
-      - ADMIN_PATH=${ADMIN_PATH}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - .:/app
     depends_on:
-      - db
+      - redis
 
-  db:
-    image: postgres:15.2-alpine
-    volumes:
-      - dev-db-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=devdb
-      - POSTGRES_USER=devuser
-      - POSTGRES_PASSWORD=dockerlocaldb
-
-volumes:
-  dev-db-data:
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379

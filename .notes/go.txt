@@ -1,0 +1,12 @@
+// Update Packages
+go get -u
+go mod tidy
+
+// Lint
+golangci-lint run
+
+https://golangci-lint.run/usage/linters
+
+// Swag
+export PATH=$(go env GOPATH)/bin:$PATH
+swag init
