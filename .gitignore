@@ -122,3 +122,4 @@ dmypy.json
 .venv/
 
 static/
+tmp/

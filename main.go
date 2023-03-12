@@ -2,6 +2,7 @@ package main
 
 import (
 	"app/db"
+	"app/docs"
 	"app/helpers"
 	"app/routes"
 	"app/utils"
@@ -15,7 +16,6 @@ import (
 	"github.com/sirupsen/logrus"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"github.com/swaggo/swag/example/basic/docs"
 	limit "github.com/yangxikun/gin-limit-by-key"
 	"golang.org/x/time/rate"
 )
@@ -31,7 +31,7 @@ import (
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host #soon
+// @host http://localhost:8080
 // @BasePath /api/v1
 // @schemes https
 
@@ -46,7 +46,7 @@ func main() {
 		}
 	}
 
-	mongoDB, ctx, cancel := db.Connect(os.Getenv("MONGO_ATLAS_URI"))
+	mongoDB, ctx, cancel := db.Connect(os.Getenv("MONGO_LOCAL_URI"))
 	defer db.Close(ctx, mongoDB.Client, cancel)
 
 	utils.InitCipher()

@@ -10,7 +10,7 @@ type Register struct {
 	Username     string  `json:"username" binding:"required"`
 	Password     string  `json:"password" binding:"required,min=6"`
 	Image        *string `json:"image"`
-	FCMToken     string  `bson:"fcm_token" json:"fcm_token"`
+	FCMToken     string  `json:"fcm_token"`
 }
 
 type ChangePassword struct {

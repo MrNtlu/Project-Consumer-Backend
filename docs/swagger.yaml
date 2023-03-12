@@ -1,5 +1,82 @@
 basePath: /api/v1
-host: '#soon'
+definitions:
+  requests.ChangeFCMToken:
+    properties:
+      fcm_token:
+        type: string
+    required:
+    - fcm_token
+    type: object
+  requests.ChangeMembership:
+    properties:
+      is_premium:
+        type: boolean
+    type: object
+  requests.ChangeNotification:
+    properties:
+      app_notification:
+        type: boolean
+      mail_notification:
+        type: boolean
+    required:
+    - app_notification
+    - mail_notification
+    type: object
+  requests.ChangePassword:
+    properties:
+      new_password:
+        minLength: 6
+        type: string
+      old_password:
+        minLength: 6
+        type: string
+    required:
+    - new_password
+    - old_password
+    type: object
+  requests.ForgotPassword:
+    properties:
+      email_address:
+        type: string
+    required:
+    - email_address
+    type: object
+  requests.Register:
+    properties:
+      email_address:
+        type: string
+      fcm_token:
+        type: string
+      image:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      username:
+        type: string
+    required:
+    - email_address
+    - password
+    - username
+    type: object
+  responses.UserInfo:
+    properties:
+      app_notification:
+        type: boolean
+      email_address:
+        type: string
+      fcm_token:
+        type: string
+      is_oauth:
+        type: boolean
+      is_premium:
+        type: boolean
+      mail_notification:
+        type: boolean
+      username:
+        type: string
+    type: object
+host: http://localhost:8080
 info:
   contact:
     email: mrntlu@gmail.com
@@ -11,7 +88,250 @@ info:
   termsOfService: '#soon'
   title: Project Consumer API
   version: "1.0"
-paths: {}
+paths:
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Allows users to register
+      parameters:
+      - description: User registration info
+        in: body
+        name: register
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Register'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: User Registration
+      tags:
+      - auth
+  /user:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes everything related to user
+      parameters:
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Deletes user information
+      tags:
+      - user
+  /user/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Users can change their password when they forgot
+      parameters:
+      - description: User's email
+        in: body
+        name: ForgotPassword
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ForgotPassword'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Couldn't find any user
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Will be used when user forgot password
+      tags:
+      - user
+  /user/info:
+    get:
+      consumes:
+      - application/json
+      description: Returns users membership & investing/subscription limits
+      parameters:
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User Info
+          schema:
+            $ref: '#/definitions/responses.UserInfo'
+      security:
+      - ApiKeyAuth: []
+      summary: User membership info
+      tags:
+      - user
+  /user/membership:
+    patch:
+      consumes:
+      - application/json
+      description: User membership status will be updated depending on subscription
+        status
+      parameters:
+      - description: Set Membership
+        in: body
+        name: changemembership
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ChangeMembership'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Change User Membership
+      tags:
+      - user
+  /user/notification:
+    patch:
+      consumes:
+      - application/json
+      description: Users can change their notification preference
+      parameters:
+      - description: Set notification
+        in: body
+        name: changenotification
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ChangeNotification'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Change User Notification Preference
+      tags:
+      - user
+  /user/password:
+    patch:
+      consumes:
+      - application/json
+      description: Users can change their password
+      parameters:
+      - description: Set new password
+        in: body
+        name: ChangePassword
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ChangePassword'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Change User Password
+      tags:
+      - user
+  /user/token:
+    patch:
+      consumes:
+      - application/json
+      description: Depending on logged in device fcm token will be updated
+      parameters:
+      - description: Set token
+        in: body
+        name: changefcmtoken
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ChangeFCMToken'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Updates FCM User Token
+      tags:
+      - user
 schemes:
 - https
 securityDefinitions:

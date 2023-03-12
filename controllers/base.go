@@ -34,6 +34,13 @@ func validatorErrorHandler(err error) string {
 				return "Invalid email."
 			case "oneof":
 				return fmt.Sprintf("Constraint validation failed on %s field.", fieldError.Field())
+			case "min":
+				return fmt.Sprintf(
+					"Field validation for %s failed. %s should be minimum %s characters.",
+					fieldError.Field(),
+					fieldError.Field(),
+					fieldError.Param(),
+				)
 			}
 		}
 	}

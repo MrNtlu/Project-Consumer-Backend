@@ -31,7 +31,7 @@ type User struct {
 	EmailAddress       string             `bson:"email_address" json:"email_address"`
 	Image              *string            `bson:"image" json:"image"`
 	Password           string             `bson:"password" json:"-"`
-	PasswordResetToken *string            `bson:"reset_token" json:"-"`
+	PasswordResetToken string             `bson:"reset_token" json:"-"`
 	CreatedAt          time.Time          `bson:"created_at" json:"-"`
 	UpdatedAt          time.Time          `bson:"updated_at" json:"-"`
 	IsPremium          bool               `bson:"is_premium" json:"is_premium"`
@@ -60,7 +60,7 @@ func createUserObject(emailAddress, username, password, fcmToken string, image *
 	}
 }
 
-func createOAuthUserObject(username, emailAddress, fcmToken string, refreshToken *string, oAuthType int) *User {
+func createOAuthUserObject(emailAddress, username, fcmToken string, refreshToken *string, oAuthType int) *User {
 	return &User{
 		EmailAddress:     emailAddress,
 		Username:         username,
@@ -77,7 +77,7 @@ func createOAuthUserObject(username, emailAddress, fcmToken string, refreshToken
 }
 
 func (userModel *UserModel) CreateUser(data requests.Register) error {
-	user := createUserObject(data.Username, data.EmailAddress, data.Password, data.FCMToken, data.Image)
+	user := createUserObject(data.EmailAddress, data.Username, data.Password, data.FCMToken, data.Image)
 
 	if _, err := userModel.Collection.InsertOne(context.TODO(), user); err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -91,7 +91,7 @@ func (userModel *UserModel) CreateUser(data requests.Register) error {
 }
 
 func (userModel *UserModel) CreateOAuthUser(emailAddress, username, fcmToken string, refreshToken *string, oAuthType int) (*User, error) {
-	user := createOAuthUserObject(username, emailAddress, fcmToken, refreshToken, oAuthType)
+	user := createOAuthUserObject(emailAddress, username, fcmToken, refreshToken, oAuthType)
 
 	result, err := userModel.Collection.InsertOne(context.TODO(), user)
 	if err != nil {

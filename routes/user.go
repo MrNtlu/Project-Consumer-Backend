@@ -18,22 +18,25 @@ func userRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongoDB
 		auth.POST("/login", jwtToken.LoginHandler)
 		auth.POST("/register", userController.Register)
 		auth.POST("/logout", jwtToken.LogoutHandler)
+		auth.GET("/refresh", jwtToken.RefreshHandler)
+
+		//TODO: Implement confirm password
+		//https://github.com/MrNtlu/Asset-Manager/blob/master/controllers/user.go
 		// 	auth.GET("/confirm-password-reset", userController.ConfirmPasswordReset)
 	}
 
-	// user := router.Group("/user")
-	// {
-	// 	user.POST("/forgot-password", userController.ForgotPassword)
+	user := router.Group("/user")
+	{
+		user.POST("/forgot-password", userController.ForgotPassword)
 
-	// 	user.Use(jwtToken.MiddlewareFunc())
-	// 	{
-	// 		user.GET("/info", userController.GetUserInfo)
-	// 		user.DELETE("", userController.DeleteUser)
-	// 		user.PUT("/change-password", userController.ChangePassword)
-	// 		user.PUT("/change-currency", userController.ChangeCurrency)
-	// 		user.PUT("/change-notification", userController.ChangeNotificationPreference)
-	// 		user.PUT("/update-token", userController.UpdateFCMToken)
-	// 		user.PUT("/membership", userController.ChangeUserMembership)
-	// 	}
-	// }
+		user.Use(jwtToken.MiddlewareFunc())
+		{
+			user.GET("/info", userController.GetUserInfo)
+			user.DELETE("/delete", userController.DeleteUser)
+			user.PATCH("/password", userController.ChangePassword)
+			user.PATCH("/notification", userController.ChangeNotificationPreference)
+			user.PATCH("/token", userController.UpdateFCMToken)
+			user.PATCH("/membership", userController.ChangeUserMembership)
+		}
+	}
 }

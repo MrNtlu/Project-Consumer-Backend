@@ -1,0 +1,54 @@
+linters-settings:
+  lll:
+    line-length: 175
+  tagliatelle:
+    case:
+      rules:
+        json: snake
+        bson: snake
+  revive:
+    rules:
+      - name: error-strings
+        disabled: true
+  cyclop:
+    max-complexity: 17
+  nestif:
+    min-complexity: 8
+  nlreturn:
+    block-size: 2
+  gocritic:
+    disabled-checks:
+      - ifElseChain
+  stylecheck:
+    checks: ["all", "-ST1005"]
+
+run:
+  skip-files:
+    - helpers/mail.go
+    - helpers/authTokenHandler.go
+    - utils/pagination.go
+    - utils/hashPassword.go
+    - controllers/oauth2.go
+
+linters:
+  disable:
+    - errcheck
+    - dupl
+    - funlen
+    - gochecknoglobals
+    - goconst
+    - godot
+    - godox
+    - interfacer
+    - golint
+    - maligned
+    - exhaustivestruct
+    - exhaustruct
+    - forcetypeassert
+    - maintidx
+    - noctx
+    - varnamelen
+    - wrapcheck
+    - gci
+    - tagliatelle
+    - goerr113
