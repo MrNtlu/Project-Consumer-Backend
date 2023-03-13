@@ -10,7 +10,7 @@ type UserInfo struct {
 	IsOAuth          bool   `bson:"is_oauth" json:"is_oauth"`
 	AppNotification  bool   `bson:"app_notification" json:"app_notification"`
 	MailNotification bool   `bson:"mail_notification" json:"mail_notification"`
-	EmailAddress     string `bson:"email_address" json:"email_address"`
+	EmailAddress     string `bson:"email" json:"email"`
 	Username         string `bson:"username" json:"username"`
 	FCMToken         string `bson:"fcm_token" json:"fcm_token"`
 }

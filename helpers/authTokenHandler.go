@@ -53,8 +53,8 @@ func SetupJWTHandler(mongoDB *db.MongoDB) *jwt.GinJWTMiddleware {
 
 			if err := utils.CheckPassword([]byte(user.Password), []byte(data.Password)); err != nil {
 				logrus.WithFields(logrus.Fields{
-					"email_address": data.EmailAddress,
-					"uid":           user.ID,
+					"email": data.EmailAddress,
+					"uid":   user.ID,
 				}).Error("failed to check password: ", err)
 
 				return "", errIncorrectAuth

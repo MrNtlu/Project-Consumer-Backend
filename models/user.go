@@ -28,7 +28,7 @@ func NewUserModel(mongoDB *db.MongoDB) *UserModel {
 type User struct {
 	ID                 primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	Username           string             `bson:"username" json:"username"`
-	EmailAddress       string             `bson:"email_address" json:"email_address"`
+	EmailAddress       string             `bson:"email" json:"email"`
 	Image              *string            `bson:"image" json:"image"`
 	Password           string             `bson:"password" json:"-"`
 	PasswordResetToken string             `bson:"reset_token" json:"-"`
@@ -179,7 +179,7 @@ func (userModel *UserModel) DeleteUserByID(uid string) error {
 // Find
 func (userModel *UserModel) FindUserByEmail(emailAddress string) (User, error) {
 	result := userModel.Collection.FindOne(context.TODO(), bson.M{
-		"email_address": emailAddress,
+		"email": emailAddress,
 	})
 
 	var user User
@@ -232,8 +232,8 @@ func (userModel *UserModel) FindUserByRefreshToken(refreshToken string) (User, e
 
 func (userModel *UserModel) FindUserByResetTokenAndEmail(token, email string) (User, error) {
 	result := userModel.Collection.FindOne(context.TODO(), bson.M{
-		"reset_token":   token,
-		"email_address": email,
+		"reset_token": token,
+		"email":       email,
 	})
 
 	var user User
