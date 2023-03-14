@@ -83,6 +83,10 @@ func (u *UserController) Register(c *gin.Context) {
 // @Success 200 {object} responses.UserInfo "User Info"
 // @Router /user/info [get]
 func (u *UserController) GetUserInfo(c *gin.Context) {
+
+	//TODO: Change it to user profile
+	// Show legend content, user list if public etc.
+
 	uid := jwt.ExtractClaims(c)["id"].(string)
 
 	userModel := models.NewUserModel(u.Database)
