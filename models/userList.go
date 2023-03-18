@@ -167,10 +167,10 @@ func handleTimesFinished(status int) int {
 }
 
 /* TODO
-* Create user list when they register
-* Add xx list
-* Get user list and others
-* Update xx list by ID
-* Delete xx list by ID
-* Delete all by user list
+* [] Create user list when they register
+* [] Add xx list
+* [] Get user list and others
+* [] Update xx list by ID
+* [] Delete xx list by ID
+* [] Delete all by user list
  */
