@@ -18,7 +18,7 @@ func NewAnimeModel(mongoDB *db.MongoDB) *AnimeModel {
 
 /* TODO Endpoints
 * [] Get upcoming by popularity etc.
-* [] Get by season
+* [] Get by season/year
 * [] Get currently airing animes by day
 * [] Get anime by popularity, genre etc.
 * [] Get anime details
