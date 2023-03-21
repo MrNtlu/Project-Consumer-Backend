@@ -32,6 +32,7 @@ run:
 
 linters:
   disable:
+    - composites
     - errcheck
     - dupl
     - funlen

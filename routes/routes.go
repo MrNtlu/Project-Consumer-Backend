@@ -12,6 +12,7 @@ func SetupRoutes(router *gin.Engine, jwtToken *jwt.GinJWTMiddleware, mongoDB *db
 	apiRouter := router.Group("/api/v1")
 
 	userRouter(apiRouter, jwtToken, mongoDB)
+	animeRouter(apiRouter, mongoDB)
 
 	router.NoRoute(func(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "All routes lead to rome"})

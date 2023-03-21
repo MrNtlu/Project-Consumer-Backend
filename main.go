@@ -46,7 +46,7 @@ func main() {
 		}
 	}
 
-	mongoDB, ctx, cancel := db.Connect(os.Getenv("MONGO_LOCAL_URI"))
+	mongoDB, ctx, cancel := db.Connect(os.Getenv("MONGO_ATLAS_URI"))
 	defer db.Close(ctx, mongoDB.Client, cancel)
 
 	utils.InitCipher()

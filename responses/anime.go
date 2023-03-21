@@ -1,5 +1,9 @@
 package responses
 
+type AnimeResponse struct {
+	Data []Anime `bson:"data" json:"data"`
+}
+
 type Anime struct {
 	TitleOriginal string          `bson:"title_original" json:"title_original"`
 	TitleEn       string          `bson:"title_en" json:"title_en"`
@@ -17,7 +21,7 @@ type Anime struct {
 	Season        *string         `bson:"season" json:"season"`
 	Year          *int            `bson:"year" json:"year"`
 	Status        string          `bson:"status" json:"status"`
-	IsAiring      string          `bson:"is_airing" json:"is_airing"`
+	IsAiring      bool            `bson:"is_airing" json:"is_airing"`
 	Streaming     []AnimeNameURL  `bson:"streaming" json:"streaming"`
 	Aired         AnimeAirDate    `bson:"aired" json:"aired"`
 	AgeRating     *string         `bson:"age_rating" json:"age_rating"`
@@ -52,6 +56,11 @@ type AnimeGenre struct {
 }
 
 type AnimeRelation struct {
+	Relation string                 `bson:"relation" json:"relation"`
+	Source   []AnimeRelationDetails `bson:"source" json:"source"`
+}
+
+type AnimeRelationDetails struct {
 	Name        string `bson:"name" json:"name"`
 	Type        string `bson:"type" json:"type"`
 	MalID       int64  `bson:"mal_id" json:"mal_id"`
