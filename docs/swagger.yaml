@@ -59,11 +59,186 @@ definitions:
     - password
     - username
     type: object
+  requests.SortAnime:
+    properties:
+      page:
+        minimum: 1
+        type: integer
+      sort:
+        enum:
+        - popularity
+        - date
+        type: string
+      type:
+        enum:
+        - 1
+        - -1
+        type: integer
+    required:
+    - page
+    - sort
+    - type
+    type: object
+  requests.SortByYearSeasonAnime:
+    properties:
+      page:
+        minimum: 1
+        type: integer
+      season:
+        enum:
+        - winter
+        - summer
+        - fall
+        - spring
+        type: string
+      sort:
+        enum:
+        - popularity
+        - date
+        type: string
+      type:
+        enum:
+        - 1
+        - -1
+        type: integer
+      year:
+        type: integer
+    required:
+    - page
+    - season
+    - sort
+    - type
+    - year
+    type: object
+  responses.Anime:
+    properties:
+      age_rating:
+        type: string
+      aired:
+        $ref: '#/definitions/responses.AnimeAirDate'
+      demographics:
+        items:
+          $ref: '#/definitions/responses.AnimeGenre'
+        type: array
+      description:
+        type: string
+      episodes:
+        type: integer
+      genres:
+        items:
+          $ref: '#/definitions/responses.AnimeGenre'
+        type: array
+      image_url:
+        type: string
+      is_airing:
+        type: boolean
+      mal_id:
+        type: integer
+      mal_score:
+        type: number
+      mal_scored_by:
+        type: integer
+      producers:
+        items:
+          $ref: '#/definitions/responses.AnimeNameURL'
+        type: array
+      relations:
+        items:
+          $ref: '#/definitions/responses.AnimeRelation'
+        type: array
+      season:
+        type: string
+      small_image_url:
+        type: string
+      source:
+        type: string
+      status:
+        type: string
+      streaming:
+        items:
+          $ref: '#/definitions/responses.AnimeNameURL'
+        type: array
+      studios:
+        items:
+          $ref: '#/definitions/responses.AnimeNameURL'
+        type: array
+      themes:
+        items:
+          $ref: '#/definitions/responses.AnimeGenre'
+        type: array
+      title_en:
+        type: string
+      title_jp:
+        type: string
+      title_original:
+        type: string
+      trailer:
+        type: string
+      type:
+        type: string
+      year:
+        type: integer
+    type: object
+  responses.AnimeAirDate:
+    properties:
+      from:
+        type: string
+      from_day:
+        type: integer
+      from_month:
+        type: integer
+      from_year:
+        type: integer
+      to:
+        type: string
+      to_day:
+        type: integer
+      to_month:
+        type: integer
+      to_year:
+        type: integer
+    type: object
+  responses.AnimeGenre:
+    properties:
+      mal_id:
+        type: integer
+      name:
+        type: string
+      url:
+        type: string
+    type: object
+  responses.AnimeNameURL:
+    properties:
+      name:
+        type: string
+      url:
+        type: string
+    type: object
+  responses.AnimeRelation:
+    properties:
+      relation:
+        type: string
+      source:
+        items:
+          $ref: '#/definitions/responses.AnimeRelationDetails'
+        type: array
+    type: object
+  responses.AnimeRelationDetails:
+    properties:
+      mal_id:
+        type: integer
+      name:
+        type: string
+      redirect_url:
+        type: string
+      type:
+        type: string
+    type: object
   responses.UserInfo:
     properties:
       app_notification:
         type: boolean
-      email_address:
+      email:
         type: string
       fcm_token:
         type: string
@@ -89,6 +264,62 @@ info:
   title: Project Consumer API
   version: "1.0"
 paths:
+  /anime/season:
+    get:
+      consumes:
+      - application/json
+      description: Returns animes by year and season
+      parameters:
+      - description: Sort Anime By Year and Season
+        in: body
+        name: sortbyyearseasonanime
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortByYearSeasonAnime'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Anime'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Animes by Year and Season
+      tags:
+      - anime
+  /anime/upcoming:
+    get:
+      consumes:
+      - application/json
+      description: Returns upcoming animes by sort
+      parameters:
+      - description: Sort Anime
+        in: body
+        name: sortanime
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortAnime'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Anime'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Upcoming Animes by Sort
+      tags:
+      - anime
   /auth/register:
     post:
       consumes:

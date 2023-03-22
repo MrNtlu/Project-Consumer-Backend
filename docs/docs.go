@@ -23,6 +23,92 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/anime/season": {
+            "get": {
+                "description": "Returns animes by year and season",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "anime"
+                ],
+                "summary": "Get Animes by Year and Season",
+                "parameters": [
+                    {
+                        "description": "Sort Anime By Year and Season",
+                        "name": "sortbyyearseasonanime",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortByYearSeasonAnime"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Anime"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/anime/upcoming": {
+            "get": {
+                "description": "Returns upcoming animes by sort",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "anime"
+                ],
+                "summary": "Get Upcoming Animes by Sort",
+                "parameters": [
+                    {
+                        "description": "Sort Anime",
+                        "name": "sortanime",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortAnime"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Anime"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/register": {
             "post": {
                 "description": "Allows users to register",
@@ -493,13 +579,272 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.SortAnime": {
+            "type": "object",
+            "required": [
+                "page",
+                "sort",
+                "type"
+            ],
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "date"
+                    ]
+                },
+                "type": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        -1
+                    ]
+                }
+            }
+        },
+        "requests.SortByYearSeasonAnime": {
+            "type": "object",
+            "required": [
+                "page",
+                "season",
+                "sort",
+                "type",
+                "year"
+            ],
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "season": {
+                    "type": "string",
+                    "enum": [
+                        "winter",
+                        "summer",
+                        "fall",
+                        "spring"
+                    ]
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "date"
+                    ]
+                },
+                "type": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        -1
+                    ]
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "responses.Anime": {
+            "type": "object",
+            "properties": {
+                "age_rating": {
+                    "type": "string"
+                },
+                "aired": {
+                    "$ref": "#/definitions/responses.AnimeAirDate"
+                },
+                "demographics": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeGenre"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "episodes": {
+                    "type": "integer"
+                },
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeGenre"
+                    }
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "is_airing": {
+                    "type": "boolean"
+                },
+                "mal_id": {
+                    "type": "integer"
+                },
+                "mal_score": {
+                    "type": "number"
+                },
+                "mal_scored_by": {
+                    "type": "integer"
+                },
+                "producers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeNameURL"
+                    }
+                },
+                "relations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeRelation"
+                    }
+                },
+                "season": {
+                    "type": "string"
+                },
+                "small_image_url": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "streaming": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeNameURL"
+                    }
+                },
+                "studios": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeNameURL"
+                    }
+                },
+                "themes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeGenre"
+                    }
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_jp": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "trailer": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "responses.AnimeAirDate": {
+            "type": "object",
+            "properties": {
+                "from": {
+                    "type": "string"
+                },
+                "from_day": {
+                    "type": "integer"
+                },
+                "from_month": {
+                    "type": "integer"
+                },
+                "from_year": {
+                    "type": "integer"
+                },
+                "to": {
+                    "type": "string"
+                },
+                "to_day": {
+                    "type": "integer"
+                },
+                "to_month": {
+                    "type": "integer"
+                },
+                "to_year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "responses.AnimeGenre": {
+            "type": "object",
+            "properties": {
+                "mal_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.AnimeNameURL": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.AnimeRelation": {
+            "type": "object",
+            "properties": {
+                "relation": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeRelationDetails"
+                    }
+                }
+            }
+        },
+        "responses.AnimeRelationDetails": {
+            "type": "object",
+            "properties": {
+                "mal_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "redirect_url": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
         "responses.UserInfo": {
             "type": "object",
             "properties": {
                 "app_notification": {
                     "type": "boolean"
                 },
-                "email_address": {
+                "email": {
                     "type": "string"
                 },
                 "fcm_token": {

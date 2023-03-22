@@ -1,6 +1,7 @@
 package responses
 
-type AnimeResponse struct {
+type CurrentlyAiringAnimeResponse struct {
+	ID   int     `bson:"_id" json:"_id"`
 	Data []Anime `bson:"data" json:"data"`
 }
 

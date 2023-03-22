@@ -29,14 +29,14 @@ const (
 )
 
 /* TODO Endpoints
-* [] Get upcoming by popularity etc.
-* [] Get by season/year
+* [x] Get upcoming by popularity etc.
+* [x] Get by season/year
 * [] Get currently airing animes by day
 * [] Get anime by popularity, genre etc.
 * [] Get anime details
  */
 
-func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.SortUpcomingAnime) ([]responses.Anime, p.PaginationData, error) {
+func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.SortAnime) ([]responses.Anime, p.PaginationData, error) {
 	currentSeason := getSeasonFromMonth()
 
 	var (
@@ -108,16 +108,111 @@ func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.SortUpcoming
 		return nil, p.PaginationData{}, fmt.Errorf("Failed to get upcoming animes.")
 	}
 
-	var lists []responses.Anime
+	var upcomingAnimes []responses.Anime
 	for _, raw := range paginatedData.Data {
-		var product *responses.Anime
-		if marshallErr := bson.Unmarshal(raw, &product); marshallErr == nil {
-			lists = append(lists, *product)
+		var anime *responses.Anime
+		if marshallErr := bson.Unmarshal(raw, &anime); marshallErr == nil {
+			upcomingAnimes = append(upcomingAnimes, *anime)
 		}
 
 	}
 
-	return lists, paginatedData.Pagination, nil
+	return upcomingAnimes, paginatedData.Pagination, nil
+}
+
+func (animeModel *AnimeModel) GetAnimesByYearAndSeason(data requests.SortByYearSeasonAnime) ([]responses.Anime, p.PaginationData, error) {
+	year := time.Now().Year()
+
+	var (
+		sortType  string
+		sortOrder int8
+	)
+
+	switch data.Sort {
+	case "popularity":
+		if year == int(data.Year) && getSeasonIndex(getSeasonFromMonth()) < getSeasonIndex(data.Season) {
+			sortType = "popularity"
+		} else {
+			sortType = "mal_score"
+		}
+		sortOrder = data.SortOrder
+	case "date":
+		sortType = "aired.from"
+		sortOrder = data.SortOrder
+	}
+
+	match := bson.M{
+		"year":   data.Year,
+		"season": data.Season,
+	}
+
+	var animes []responses.Anime
+	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animeUpcomingPaginationLimit).
+		Page(data.Page).Sort(sortType, sortOrder).Filter(match).Decode(&animes).Find()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate animes by season and year: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get animes by season and year.")
+	}
+
+	return animes, paginatedData.Pagination, nil
+}
+
+func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek() ([]responses.CurrentlyAiringAnimeResponse, error) {
+	match := bson.M{"$match": bson.M{
+		"$or": bson.A{
+			bson.M{"status": "Currently Airing"},
+			bson.M{"is_airing": true},
+		},
+		"aired.from": bson.M{
+			"$ne": nil,
+		},
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"dayOfWeek": bson.M{
+			"$dayOfWeek": bson.M{
+				"$dateFromString": bson.M{
+					"dateString": "$aired.from",
+				},
+			},
+		},
+	}}
+
+	sortByScore := bson.M{"$sort": bson.M{
+		"mal_score": -1,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$dayOfWeek",
+		"data": bson.M{
+			"$push": "$$ROOT",
+		},
+	}}
+
+	sortByWeekDay := bson.M{"$sort": bson.M{
+		"_id": 1,
+	}}
+
+	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, addFields, sortByScore, group, sortByWeekDay,
+	})
+	if err != nil {
+		logrus.Error("failed to aggregate currently airing animes: ", err)
+
+		return nil, err
+	}
+
+	var currentlyAiringAnimeResponse []responses.CurrentlyAiringAnimeResponse
+	if err = cursor.All(context.TODO(), &currentlyAiringAnimeResponse); err != nil {
+		logrus.Error("failed to decode currently airing animes: ", err)
+
+		return nil, err
+	}
+
+	return currentlyAiringAnimeResponse, nil
 }
 
 func getSeasonFromMonth() string {
