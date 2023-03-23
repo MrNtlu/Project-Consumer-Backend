@@ -31,8 +31,10 @@ const (
 /* TODO Endpoints
 * [x] Get upcoming by popularity etc.
 * [x] Get by season/year
-* [] Get currently airing animes by day
-* [] Get anime by popularity, genre etc.
+* [x] Get currently airing animes by day
+* [x] Get anime by popularity, genre etc.
+* [x] Get top airing
+* [x] Get top upcoming
 * [] Get anime details
  */
 
@@ -187,7 +189,7 @@ func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek() ([]responses
 
 	group := bson.M{"$group": bson.M{
 		"_id": "$dayOfWeek",
-		"data": bson.M{
+		"animes": bson.M{
 			"$push": "$$ROOT",
 		},
 	}}
@@ -213,6 +215,88 @@ func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek() ([]responses
 	}
 
 	return currentlyAiringAnimeResponse, nil
+}
+
+func (animeModel *AnimeModel) GetAnimeListBySortAndFilter(data requests.SortFilterAnime) ([]responses.Anime, p.PaginationData, error) {
+	var (
+		sortType  string
+		sortOrder int8
+	)
+
+	switch data.Sort {
+	case "popularity":
+		if data.Status != nil && *data.Status == "upcoming" {
+			sortType = "popularity"
+		} else {
+			sortType = "mal_score"
+		}
+		sortOrder = data.SortOrder
+	case "date":
+		sortType = "aired.from"
+		sortOrder = data.SortOrder
+	}
+
+	match := bson.M{}
+	if data.Status != nil || data.Genres != nil || data.Demographics != nil ||
+		data.Studios != nil || data.Themes != nil {
+
+		if data.Status != nil {
+
+			var status string
+			switch *data.Status {
+			case "airing":
+				status = "Currently Airing"
+			case "upcoming":
+				status = "Not yet aired"
+			case "finished":
+				status = "Finished Airing"
+			}
+
+			match["status"] = status
+		}
+
+		if data.Genres != nil {
+			match["genres.name"] = bson.M{
+				"$in": bson.A{data.Genres},
+			}
+		}
+
+		if data.Demographics != nil {
+			match["demographics.name"] = bson.M{
+				"$in": bson.A{data.Demographics},
+			}
+		}
+
+		if data.Studios != nil {
+			match["studios.name"] = bson.M{
+				"$in": bson.A{data.Studios},
+			}
+		}
+
+		if data.Themes != nil {
+			match["themes.name"] = bson.M{
+				"$in": bson.A{data.Themes},
+			}
+		}
+	}
+
+	var animes []responses.Anime
+	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animeUpcomingPaginationLimit).
+		Page(data.Page).Sort(sortType, sortOrder).Filter(match).Decode(&animes).Find()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate animes by season and year: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get animes by season and year.")
+	}
+
+	return animes, paginatedData.Pagination, nil
+}
+
+// Get user's is listed etc. values
+func (animeModel *AnimeModel) GetAnimeDetails() {
+
 }
 
 func getSeasonFromMonth() string {

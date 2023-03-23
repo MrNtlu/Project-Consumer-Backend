@@ -87,6 +87,15 @@ func (a *AnimeController) GetAnimesByYearAndSeason(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": upcomingAnimes})
 }
 
+// Get Upcoming Animes
+// @Summary Get Upcoming Animes by Day of Week
+// @Description Returns upcoming animes by day of week
+// @Tags anime
+// @Accept application/json
+// @Produce application/json
+// @Success 200 {array} responses.Anime
+// @Failure 500 {string} string
+// @Router /anime/upcoming [get]
 func (a *AnimeController) GetCurrentlyAiringAnimesByDayOfWeek(c *gin.Context) {
 	animeModel := models.NewAnimeModel(a.Database)
 
@@ -100,4 +109,38 @@ func (a *AnimeController) GetCurrentlyAiringAnimesByDayOfWeek(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": currentlyAiringAnimeResponse})
+}
+
+// Get Anime List
+// @Summary Get Anime List by Sort and Filter
+// @Description Returns anime list by sort and filter
+// @Tags anime
+// @Accept application/json
+// @Produce application/json
+// @Param sortfilteranime body requests.SortFilterAnime true "Sort and Filter Anime"
+// @Success 200 {array} responses.Anime
+// @Failure 500 {string} string
+// @Router /anime [get]
+func (a *AnimeController) GetAnimeListBySortAndFilter(c *gin.Context) {
+	var data requests.SortFilterAnime
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	animeModel := models.NewAnimeModel(a.Database)
+
+	animeList, pagination, err := animeModel.GetAnimeListBySortAndFilter(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": animeList})
 }

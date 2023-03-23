@@ -110,6 +110,40 @@ definitions:
     - type
     - year
     type: object
+  requests.SortFilterAnime:
+    properties:
+      demographics:
+        type: string
+      genres:
+        type: string
+      page:
+        minimum: 1
+        type: integer
+      sort:
+        enum:
+        - popularity
+        - date
+        type: string
+      status:
+        enum:
+        - airing
+        - upcoming
+        - finished
+        type: string
+      studios:
+        type: string
+      themes:
+        type: string
+      type:
+        enum:
+        - 1
+        - -1
+        type: integer
+    required:
+    - page
+    - sort
+    - type
+    type: object
   responses.Anime:
     properties:
       age_rating:
@@ -264,6 +298,34 @@ info:
   title: Project Consumer API
   version: "1.0"
 paths:
+  /anime:
+    get:
+      consumes:
+      - application/json
+      description: Returns anime list by sort and filter
+      parameters:
+      - description: Sort and Filter Anime
+        in: body
+        name: sortfilteranime
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortFilterAnime'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Anime'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Anime List by Sort and Filter
+      tags:
+      - anime
   /anime/season:
     get:
       consumes:
@@ -296,14 +358,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns upcoming animes by sort
-      parameters:
-      - description: Sort Anime
-        in: body
-        name: sortanime
-        required: true
-        schema:
-          $ref: '#/definitions/requests.SortAnime'
+      description: Returns upcoming animes by day of week
       produces:
       - application/json
       responses:
@@ -317,7 +372,7 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Get Upcoming Animes by Sort
+      summary: Get Upcoming Animes by Day of Week
       tags:
       - anime
   /auth/register:

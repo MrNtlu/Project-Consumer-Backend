@@ -23,6 +23,49 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/anime": {
+            "get": {
+                "description": "Returns anime list by sort and filter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "anime"
+                ],
+                "summary": "Get Anime List by Sort and Filter",
+                "parameters": [
+                    {
+                        "description": "Sort and Filter Anime",
+                        "name": "sortfilteranime",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortFilterAnime"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Anime"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/anime/season": {
             "get": {
                 "description": "Returns animes by year and season",
@@ -68,7 +111,7 @@ const docTemplate = `{
         },
         "/anime/upcoming": {
             "get": {
-                "description": "Returns upcoming animes by sort",
+                "description": "Returns upcoming animes by day of week",
                 "consumes": [
                     "application/json"
                 ],
@@ -78,18 +121,7 @@ const docTemplate = `{
                 "tags": [
                     "anime"
                 ],
-                "summary": "Get Upcoming Animes by Sort",
-                "parameters": [
-                    {
-                        "description": "Sort Anime",
-                        "name": "sortanime",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.SortAnime"
-                        }
-                    }
-                ],
+                "summary": "Get Upcoming Animes by Day of Week",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -646,6 +678,54 @@ const docTemplate = `{
                 },
                 "year": {
                     "type": "integer"
+                }
+            }
+        },
+        "requests.SortFilterAnime": {
+            "type": "object",
+            "required": [
+                "page",
+                "sort",
+                "type"
+            ],
+            "properties": {
+                "demographics": {
+                    "type": "string"
+                },
+                "genres": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "date"
+                    ]
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "airing",
+                        "upcoming",
+                        "finished"
+                    ]
+                },
+                "studios": {
+                    "type": "string"
+                },
+                "themes": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        -1
+                    ]
                 }
             }
         },
