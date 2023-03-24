@@ -2,7 +2,9 @@ package models
 
 import (
 	"app/db"
+	"app/requests"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -189,9 +191,73 @@ func (userListModel *UserListModel) CreateUserList(uid, slug string) {
 	}
 }
 
-// TODO Create request
-func (userListModel *UserListModel) CreateAnimeList() {
+func (userListModel *UserListModel) CreateAnimeList(uid string, data requests.CreateAnimeList) error {
+	animeList := createAnimeListObject(
+		uid, data.AnimeID, data.Status,
+		data.WatchedEpisodes, data.Score,
+	)
 
+	if _, err := userListModel.AnimeListCollection.InsertOne(context.TODO(), animeList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to create new anime list: ", err)
+
+		return fmt.Errorf("Failed to create new anime list.")
+	}
+
+	return nil
+}
+
+func (userListModel *UserListModel) CreateGameList(uid string, data requests.CreateGameList) error {
+	gameList := createGameListObject(
+		uid, data.GameID, data.Status,
+		data.Score, data.AchievementStatus,
+	)
+
+	if _, err := userListModel.GameListCollection.InsertOne(context.TODO(), gameList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to create new game list: ", err)
+
+		return fmt.Errorf("Failed to create new game list.")
+	}
+
+	return nil
+}
+
+func (userListModel *UserListModel) CreateMovieWatchList(uid string, data requests.CreateMovieWatchList) error {
+	movieWatchList := createMovieWatchListObject(uid, data.MovieID, data.Status, data.Score)
+
+	if _, err := userListModel.MovieWatchListCollection.InsertOne(context.TODO(), movieWatchList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to create new movie watch list: ", err)
+
+		return fmt.Errorf("Failed to create new movie watch list.")
+	}
+
+	return nil
+}
+
+func (userListModel *UserListModel) CreateTVSeriesWatchList(uid string, data requests.CreateTVSeriesWatchList) error {
+	tvSeriesWatchList := createTVSeriesWatchListObject(
+		uid, data.TvID, data.Status, data.WatchedEpisodes,
+		data.WatchedSeasons, data.Score,
+	)
+
+	if _, err := userListModel.TVSeriesWatchListCollection.InsertOne(context.TODO(), tvSeriesWatchList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to create new tv series watch list: ", err)
+
+		return fmt.Errorf("Failed to create new tv series watch list.")
+	}
+
+	return nil
 }
 
 func (userListModel *UserListModel) DeleteUserListByUserID(uid string) {
