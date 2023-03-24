@@ -76,18 +76,21 @@ func createOAuthUserObject(emailAddress, username, fcmToken string, refreshToken
 	}
 }
 
-func (userModel *UserModel) CreateUser(data requests.Register) error {
+func (userModel *UserModel) CreateUser(data requests.Register) (*User, error) {
 	user := createUserObject(data.EmailAddress, data.Username, data.Password, data.FCMToken, data.Image)
 
-	if _, err := userModel.Collection.InsertOne(context.TODO(), user); err != nil {
+	result, err := userModel.Collection.InsertOne(context.TODO(), user)
+	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"email": data.EmailAddress,
 		}).Error("failed to create new user: ", err)
 
-		return fmt.Errorf("Failed to create new user.")
+		return nil, fmt.Errorf("Failed to create new user.")
 	}
 
-	return nil
+	user.ID = result.InsertedID.(primitive.ObjectID)
+
+	return user, nil
 }
 
 func (userModel *UserModel) CreateOAuthUser(emailAddress, username, fcmToken string, refreshToken *string, oAuthType int) (*User, error) {

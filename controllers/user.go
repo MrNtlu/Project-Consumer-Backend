@@ -61,13 +61,17 @@ func (u *UserController) Register(c *gin.Context) {
 		return
 	}
 
-	if err := userModel.CreateUser(data); err != nil {
+	createdUser, err := userModel.CreateUser(data)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
 
 		return
 	}
+
+	userListModel := models.NewUserListModel(u.Database)
+	go userListModel.CreateUserList(createdUser.ID.Hex(), createdUser.Username)
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Registered successfully."})
 }
@@ -379,24 +383,9 @@ func (u *UserController) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	// assetModel := models.NewAssetModel(u.Database)
-	// dasModel := models.NewDailyAssetStatsModel(u.Database)
-	// cardModel := models.NewCardModel(u.Database)
-	// subscriptionModel := models.NewSubscriptionModel(u.Database)
-	// logModel := models.NewLogModel(u.Database)
-	// transactionModel := models.NewTransactionModel(u.Database)
-	// bankAccModel := models.NewBankAccountModel(u.Database)
-	// favInvestingModel := models.NewFavouriteInvestingModel(u.Database)
+	userListModel := models.NewUserListModel(u.Database)
 
-	// go assetModel.DeleteAllAssetsByUserID(uid)
-	// go cardModel.DeleteAllCardsByUserID(uid)
-	// go subscriptionModel.DeleteAllSubscriptionsByUserID(uid)
-	// go subscriptionModel.DeleteAllSubscriptionInvitesByUserID(uid)
-	// go dasModel.DeleteAllAssetStatsByUserID(uid)
-	// go logModel.DeleteAllLogsByUserID(uid)
-	// go transactionModel.DeleteAllTransactionsByUserID(uid)
-	// go bankAccModel.DeleteAllBankAccountsByUserID(uid)
-	// go favInvestingModel.DeleteAllFavouriteInvestingsByUserID(uid)
+	go userListModel.DeleteUserListByUserID(uid)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully deleted user."})
 }

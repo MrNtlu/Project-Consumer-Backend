@@ -2,8 +2,11 @@ package models
 
 import (
 	"app/db"
+	"context"
 	"time"
 
+	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -167,10 +170,36 @@ func handleTimesFinished(status int) int {
 }
 
 /* TODO
-* [] Create user list when they register
+* [x] Create user list when they register
 * [] Add xx list
 * [] Get user list and others
 * [] Update xx list by ID
 * [] Delete xx list by ID
 * [] Delete all by user list
  */
+
+func (userListModel *UserListModel) CreateUserList(uid, slug string) {
+	userListObject := createUserListObject(uid, slug)
+
+	if _, err := userListModel.UserListCollection.InsertOne(context.TODO(), userListObject); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"slug": slug,
+		}).Error("failed to create new user list: ", err)
+	}
+}
+
+// TODO Create request
+func (userListModel *UserListModel) CreateAnimeList() {
+
+}
+
+func (userListModel *UserListModel) DeleteUserListByUserID(uid string) {
+	if _, err := userListModel.UserListCollection.DeleteOne(context.TODO(), bson.M{
+		"user_id": uid,
+	}); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to delete user list by user id: ", err)
+	}
+}

@@ -11,6 +11,7 @@ import (
 	p "github.com/gobeam/mongo-go-pagination"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -295,8 +296,25 @@ func (animeModel *AnimeModel) GetAnimeListBySortAndFilter(data requests.SortFilt
 }
 
 // Get user's is listed etc. values
-func (animeModel *AnimeModel) GetAnimeDetails() {
+func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime, error) {
+	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 
+	match := bson.M{"$match": bson.M{
+		"_id": objectID,
+	}}
+
+	result := animeModel.Collection.FindOne(context.TODO(), match)
+
+	var anime responses.Anime
+	if err := result.Decode(&anime); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"anime_id": data.ID,
+		}).Error("failed to find anime details by id: ", err)
+
+		return responses.Anime{}, fmt.Errorf("Failed to find anime details by id.")
+	}
+
+	return anime, nil
 }
 
 func getSeasonFromMonth() string {
