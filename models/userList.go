@@ -3,6 +3,7 @@ package models
 import (
 	"app/db"
 	"app/requests"
+	"app/responses"
 	"context"
 	"fmt"
 	"time"
@@ -173,11 +174,11 @@ func handleTimesFinished(status int) int {
 
 /* TODO
 * [x] Create user list when they register
-* [] Add xx list
+* [x] Add xx list
 * [] Get user list and others
 * [] Update xx list by ID
-* [] Delete xx list by ID
-* [] Delete all by user list
+* [x] Delete xx list by ID
+* [x] Delete all by user list
  */
 
 func (userListModel *UserListModel) CreateUserList(uid, slug string) {
@@ -191,11 +192,19 @@ func (userListModel *UserListModel) CreateUserList(uid, slug string) {
 	}
 }
 
-func (userListModel *UserListModel) CreateAnimeList(uid string, data requests.CreateAnimeList) error {
+func (userListModel *UserListModel) CreateAnimeList(uid string, data requests.CreateAnimeList, anime responses.Anime) error {
 	animeList := createAnimeListObject(
 		uid, data.AnimeID, data.Status,
 		data.WatchedEpisodes, data.Score,
 	)
+
+	if anime.Episodes != nil {
+		if data.WatchedEpisodes > int(*anime.Episodes) {
+			animeList.WatchedEpisodes = int(*anime.Episodes)
+		} else if data.Status == 1 && data.WatchedEpisodes < int(*anime.Episodes) { // Finished Case
+			animeList.WatchedEpisodes = int(*anime.Episodes)
+		}
+	}
 
 	if _, err := userListModel.AnimeListCollection.InsertOne(context.TODO(), animeList); err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -260,6 +269,37 @@ func (userListModel *UserListModel) CreateTVSeriesWatchList(uid string, data req
 	return nil
 }
 
+func (userListModel *UserListModel) DeleteListByUserIDAndType(uid string, data requests.DeleteList) (bool, error) {
+	objectListID, _ := primitive.ObjectIDFromHex(data.ID)
+
+	var collection mongo.Collection
+	switch data.Type {
+	case "anime":
+		collection = *userListModel.AnimeListCollection
+	case "game":
+		collection = *userListModel.GameListCollection
+	case "movie":
+		collection = *userListModel.MovieWatchListCollection
+	case "tv":
+		collection = *userListModel.TVSeriesWatchListCollection
+	}
+
+	count, err := collection.DeleteOne(context.TODO(), bson.M{
+		"_id":     objectListID,
+		"user_id": uid,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to delete list by user id: ", err)
+
+		return false, fmt.Errorf("Failed to delete list.")
+	}
+
+	return count.DeletedCount > 0, nil
+}
+
 func (userListModel *UserListModel) DeleteUserListByUserID(uid string) {
 	if _, err := userListModel.UserListCollection.DeleteOne(context.TODO(), bson.M{
 		"user_id": uid,
@@ -267,5 +307,18 @@ func (userListModel *UserListModel) DeleteUserListByUserID(uid string) {
 		logrus.WithFields(logrus.Fields{
 			"uid": uid,
 		}).Error("failed to delete user list by user id: ", err)
+	}
+
+	collections := [4]mongo.Collection{
+		*userListModel.AnimeListCollection,
+		*userListModel.GameListCollection,
+		*userListModel.MovieWatchListCollection,
+		*userListModel.TVSeriesWatchListCollection,
+	}
+
+	for i := 0; i < len(collections); i++ {
+		go collections[i].DeleteMany(context.TODO(), bson.M{
+			"user_id": uid,
+		})
 	}
 }

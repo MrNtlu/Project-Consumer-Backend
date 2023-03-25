@@ -34,6 +34,100 @@ definitions:
     - new_password
     - old_password
     type: object
+  requests.CreateAnimeList:
+    properties:
+      anime_id:
+        type: string
+      score:
+        type: number
+      status:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        type: integer
+      watched_episodes:
+        type: integer
+    required:
+    - anime_id
+    - status
+    - watched_episodes
+    type: object
+  requests.CreateGameList:
+    properties:
+      achievement_status:
+        type: number
+      game_id:
+        type: string
+      score:
+        type: number
+      status:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        type: integer
+    required:
+    - game_id
+    - status
+    type: object
+  requests.CreateMovieWatchList:
+    properties:
+      movie_id:
+        type: string
+      score:
+        type: number
+      status:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        type: integer
+    required:
+    - movie_id
+    - status
+    type: object
+  requests.CreateTVSeriesWatchList:
+    properties:
+      score:
+        type: number
+      status:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        type: integer
+      tv_id:
+        type: string
+      watched_episodes:
+        type: integer
+      watched_seasons:
+        type: integer
+    required:
+    - status
+    - tv_id
+    - watched_episodes
+    - watched_seasons
+    type: object
+  requests.DeleteList:
+    properties:
+      id:
+        type: string
+      type:
+        enum:
+        - anime
+        - game
+        - movie
+        - tv
+        type: string
+    required:
+    - id
+    - type
+    type: object
   requests.ForgotPassword:
     properties:
       email_address:
@@ -405,6 +499,183 @@ paths:
       summary: User Registration
       tags:
       - auth
+  /list:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes list by type and user id
+      parameters:
+      - description: Delete List
+        in: body
+        name: deletelist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.DeleteList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete List by Type
+      tags:
+      - lists
+  /list/anime:
+    post:
+      consumes:
+      - application/json
+      description: Creates Anime List
+      parameters:
+      - description: Create Anime List
+        in: body
+        name: createanimelist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CreateAnimeList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create Anime List
+      tags:
+      - lists
+  /list/game:
+    post:
+      consumes:
+      - application/json
+      description: Creates Game List
+      parameters:
+      - description: Create Game List
+        in: body
+        name: creategamelist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CreateGameList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create Game List
+      tags:
+      - lists
+  /list/movie:
+    post:
+      consumes:
+      - application/json
+      description: Creates Movie Watch List
+      parameters:
+      - description: Create Movie Watch List
+        in: body
+        name: createmoviewatchlist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CreateMovieWatchList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create Movie Watch List
+      tags:
+      - lists
+  /list/tv:
+    post:
+      consumes:
+      - application/json
+      description: Creates TVSeries Watch List
+      parameters:
+      - description: Create TVSeries Watch List
+        in: body
+        name: createtvserieswatchlist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CreateTVSeriesWatchList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create TVSeries Watch List
+      tags:
+      - lists
   /user:
     delete:
       consumes:

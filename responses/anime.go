@@ -18,7 +18,7 @@ type Anime struct {
 	Trailer       *string         `bson:"trailer" json:"trailer"`
 	Type          string          `bson:"type" json:"type"`
 	Source        string          `bson:"source" json:"source"`
-	Episodes      int64           `bson:"episodes" json:"episodes"`
+	Episodes      *int64          `bson:"episodes" json:"episodes"`
 	Season        *string         `bson:"season" json:"season"`
 	Year          *int            `bson:"year" json:"year"`
 	Status        string          `bson:"status" json:"status"`

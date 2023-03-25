@@ -27,3 +27,8 @@ type CreateTVSeriesWatchList struct {
 	WatchedSeasons  int      `json:"watched_seasons" binding:"required,number"`
 	Score           *float32 `json:"score"`
 }
+
+type DeleteList struct {
+	ID   string `json:"id" binding:"required"`
+	Type string `json:"type" binding:"required,oneof=anime game movie tv"`
+}

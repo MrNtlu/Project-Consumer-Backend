@@ -299,11 +299,9 @@ func (animeModel *AnimeModel) GetAnimeListBySortAndFilter(data requests.SortFilt
 func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime, error) {
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 
-	match := bson.M{"$match": bson.M{
+	result := animeModel.Collection.FindOne(context.TODO(), bson.M{
 		"_id": objectID,
-	}}
-
-	result := animeModel.Collection.FindOne(context.TODO(), match)
+	})
 
 	var anime responses.Anime
 	if err := result.Decode(&anime); err != nil {
@@ -311,7 +309,7 @@ func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime
 			"anime_id": data.ID,
 		}).Error("failed to find anime details by id: ", err)
 
-		return responses.Anime{}, fmt.Errorf("Failed to find anime details by id.")
+		return responses.Anime{}, fmt.Errorf("Failed to find anime by id.")
 	}
 
 	return anime, nil
