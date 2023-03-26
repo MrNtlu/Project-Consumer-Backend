@@ -25,7 +25,7 @@ const docTemplate = `{
     "paths": {
         "/anime": {
             "get": {
-                "description": "Returns anime list by sort and filter",
+                "description": "Returns animes by sort and filter",
                 "consumes": [
                     "application/json"
                 ],
@@ -35,7 +35,7 @@ const docTemplate = `{
                 "tags": [
                     "anime"
                 ],
-                "summary": "Get Anime List by Sort and Filter",
+                "summary": "Get Animes by Sort and Filter",
                 "parameters": [
                     {
                         "description": "Sort and Filter Anime",
@@ -246,6 +246,62 @@ const docTemplate = `{
             }
         },
         "/list/anime": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns anime list by user id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lists"
+                ],
+                "summary": "Get Anime List by User ID",
+                "parameters": [
+                    {
+                        "enum": [
+                            "popularity",
+                            "new",
+                            "old",
+                            "score"
+                        ],
+                        "type": "string",
+                        "name": "sort",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.AnimeList"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -801,6 +857,35 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.AnimeList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "anime_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "watched_episodes": {
+                    "type": "integer"
+                }
+            }
+        },
         "requests.ChangeFCMToken": {
             "type": "object",
             "required": [
@@ -867,16 +952,17 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "status": {
-                    "type": "integer",
+                    "type": "string",
                     "enum": [
-                        0,
-                        1,
-                        2,
-                        3
+                        "active",
+                        "finished",
+                        "dropped",
+                        "planto"
                     ]
                 },
                 "watched_episodes": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
@@ -897,12 +983,12 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "status": {
-                    "type": "integer",
+                    "type": "string",
                     "enum": [
-                        0,
-                        1,
-                        2,
-                        3
+                        "active",
+                        "finished",
+                        "dropped",
+                        "planto"
                     ]
                 }
             }
@@ -921,12 +1007,12 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "status": {
-                    "type": "integer",
+                    "type": "string",
                     "enum": [
-                        0,
-                        1,
-                        2,
-                        3
+                        "active",
+                        "finished",
+                        "dropped",
+                        "planto"
                     ]
                 }
             }
@@ -944,12 +1030,12 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "status": {
-                    "type": "integer",
+                    "type": "string",
                     "enum": [
-                        0,
-                        1,
-                        2,
-                        3
+                        "active",
+                        "finished",
+                        "dropped",
+                        "planto"
                     ]
                 },
                 "tv_id": {
@@ -1142,6 +1228,9 @@ const docTemplate = `{
         "responses.Anime": {
             "type": "object",
             "properties": {
+                "_id": {
+                    "type": "string"
+                },
                 "age_rating": {
                     "type": "string"
                 },

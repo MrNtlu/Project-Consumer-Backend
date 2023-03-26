@@ -182,6 +182,44 @@ func (u *UserListController) CreateTVSeriesWatchList(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created."})
 }
 
+// Get Anime List
+// @Summary Get Anime List by User ID
+// @Description Returns anime list by user id
+// @Tags lists
+// @Accept application/json
+// @Produce application/json
+// @Param sortlist query requests.SortList true "Sort List"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} models.AnimeList
+// @Failure 500 {string} string
+// @Router /list/anime [get]
+func (u *UserListController) GetAnimeListByUserID(c *gin.Context) {
+	var data requests.SortList
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	userListModel := models.NewUserListModel(u.Database)
+
+	animeList, err := userListModel.GetAnimeListByUserID(uid, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": animeList})
+}
+
 // Delete List by Type
 // @Summary Delete List by Type
 // @Description Deletes list by type and user id

@@ -1,37 +1,40 @@
 package responses
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type CurrentlyAiringAnimeResponse struct {
 	ID   int     `bson:"_id" json:"_id"`
 	Data []Anime `bson:"data" json:"data"`
 }
 
 type Anime struct {
-	TitleOriginal string          `bson:"title_original" json:"title_original"`
-	TitleEn       string          `bson:"title_en" json:"title_en"`
-	TitleJP       string          `bson:"title_jp" json:"title_jp"`
-	Description   string          `bson:"description" json:"description"`
-	ImageURL      string          `bson:"image_url" json:"image_url"`
-	SmallImageURL string          `bson:"small_image_url" json:"small_image_url"`
-	MalID         int64           `bson:"mal_id" json:"mal_id"`
-	MalScore      float64         `bson:"mal_score" json:"mal_score"`
-	MalScoredBy   int64           `bson:"mal_scored_by" json:"mal_scored_by"`
-	Trailer       *string         `bson:"trailer" json:"trailer"`
-	Type          string          `bson:"type" json:"type"`
-	Source        string          `bson:"source" json:"source"`
-	Episodes      *int64          `bson:"episodes" json:"episodes"`
-	Season        *string         `bson:"season" json:"season"`
-	Year          *int            `bson:"year" json:"year"`
-	Status        string          `bson:"status" json:"status"`
-	IsAiring      bool            `bson:"is_airing" json:"is_airing"`
-	Streaming     []AnimeNameURL  `bson:"streaming" json:"streaming"`
-	Aired         AnimeAirDate    `bson:"aired" json:"aired"`
-	AgeRating     *string         `bson:"age_rating" json:"age_rating"`
-	Producers     []AnimeNameURL  `bson:"producers" json:"producers"`
-	Studios       []AnimeNameURL  `bson:"studios" json:"studios"`
-	Genres        []AnimeGenre    `bson:"genres" json:"genres"`
-	Themes        []AnimeGenre    `bson:"themes" json:"themes"`
-	Demographics  []AnimeGenre    `bson:"demographics" json:"demographics"`
-	Relations     []AnimeRelation `bson:"relations" json:"relations"`
+	ID            primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	TitleOriginal string             `bson:"title_original" json:"title_original"`
+	TitleEn       string             `bson:"title_en" json:"title_en"`
+	TitleJP       string             `bson:"title_jp" json:"title_jp"`
+	Description   string             `bson:"description" json:"description"`
+	ImageURL      string             `bson:"image_url" json:"image_url"`
+	SmallImageURL string             `bson:"small_image_url" json:"small_image_url"`
+	MalID         int64              `bson:"mal_id" json:"mal_id"`
+	MalScore      float64            `bson:"mal_score" json:"mal_score"`
+	MalScoredBy   int64              `bson:"mal_scored_by" json:"mal_scored_by"`
+	Trailer       *string            `bson:"trailer" json:"trailer"`
+	Type          string             `bson:"type" json:"type"`
+	Source        string             `bson:"source" json:"source"`
+	Episodes      *int64             `bson:"episodes" json:"episodes"`
+	Season        *string            `bson:"season" json:"season"`
+	Year          *int               `bson:"year" json:"year"`
+	Status        string             `bson:"status" json:"status"`
+	IsAiring      bool               `bson:"is_airing" json:"is_airing"`
+	Streaming     []AnimeNameURL     `bson:"streaming" json:"streaming"`
+	Aired         AnimeAirDate       `bson:"aired" json:"aired"`
+	AgeRating     *string            `bson:"age_rating" json:"age_rating"`
+	Producers     []AnimeNameURL     `bson:"producers" json:"producers"`
+	Studios       []AnimeNameURL     `bson:"studios" json:"studios"`
+	Genres        []AnimeGenre       `bson:"genres" json:"genres"`
+	Themes        []AnimeGenre       `bson:"themes" json:"themes"`
+	Demographics  []AnimeGenre       `bson:"demographics" json:"demographics"`
+	Relations     []AnimeRelation    `bson:"relations" json:"relations"`
 }
 
 type AnimeNameURL struct {

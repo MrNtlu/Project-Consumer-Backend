@@ -218,7 +218,7 @@ func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek() ([]responses
 	return currentlyAiringAnimeResponse, nil
 }
 
-func (animeModel *AnimeModel) GetAnimeListBySortAndFilter(data requests.SortFilterAnime) ([]responses.Anime, p.PaginationData, error) {
+func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterAnime) ([]responses.Anime, p.PaginationData, error) {
 	var (
 		sortType  string
 		sortOrder int8

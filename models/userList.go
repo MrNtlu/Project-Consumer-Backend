@@ -33,11 +33,6 @@ func NewUserListModel(mongoDB *db.MongoDB) *UserListModel {
 }
 
 /**
-* Active 0 (Watching/Playing)
-* Finished 1
-* Dropped 2
-* Plan to 3
-*
 * !Features
 * Combination of all lists.
 * Calculate total amount of episodes/games/movies watched etc.
@@ -58,7 +53,7 @@ type AnimeList struct {
 	ID              primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	UserID          string             `bson:"user_id" json:"user_id"`
 	AnimeID         string             `bson:"anime_id" json:"anime_id"`
-	Status          int                `bson:"status" json:"status"`
+	Status          string             `bson:"status" json:"status"`
 	WatchedEpisodes int                `bson:"watched_episodes" json:"watched_episodes"`
 	Score           *float32           `bson:"score" json:"score"`
 	TimesFinished   int                `bson:"times_finished" json:"times_finished"`
@@ -70,7 +65,7 @@ type GameList struct {
 	ID                primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	UserID            string             `bson:"user_id" json:"user_id"`
 	GameID            string             `bson:"game_id" json:"game_id"`
-	Status            int                `bson:"status" json:"status"`
+	Status            string             `bson:"status" json:"status"`
 	Score             *float32           `bson:"score" json:"score"`
 	AchievementStatus *float32           `bson:"achievement_status" json:"achievement_status"`
 	TimesFinished     int                `bson:"times_finished" json:"times_finished"`
@@ -82,7 +77,7 @@ type MovieWatchList struct {
 	ID            primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	UserID        string             `bson:"user_id" json:"user_id"`
 	MovieID       string             `bson:"movie_id" json:"movie_id"`
-	Status        int                `bson:"status" json:"status"`
+	Status        string             `bson:"status" json:"status"`
 	Score         *float32           `bson:"score" json:"score"`
 	TimesFinished int                `bson:"times_finished" json:"times_finished"`
 	CreatedAt     time.Time          `bson:"created_at" json:"created_at"`
@@ -96,7 +91,7 @@ type TVSeriesWatchList struct {
 	ID              primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	UserID          string             `bson:"user_id" json:"user_id"`
 	TvID            string             `bson:"tv_id" json:"tv_id"`
-	Status          int                `bson:"status" json:"status"`
+	Status          string             `bson:"status" json:"status"`
 	Score           *float32           `bson:"score" json:"score"`
 	WatchedEpisodes int                `bson:"watched_episodes" json:"watched_episodes"`
 	WatchedSeasons  int                `bson:"watched_seasons" json:"watched_seasons"`
@@ -113,7 +108,7 @@ func createUserListObject(userID, slug string) *UserList {
 	}
 }
 
-func createAnimeListObject(userID, animeID string, status, watchedEpisodes int, score *float32) *AnimeList {
+func createAnimeListObject(userID, animeID, status string, watchedEpisodes int, score *float32) *AnimeList {
 	return &AnimeList{
 		UserID:          userID,
 		AnimeID:         animeID,
@@ -126,7 +121,7 @@ func createAnimeListObject(userID, animeID string, status, watchedEpisodes int, 
 	}
 }
 
-func createGameListObject(userID, gameID string, status int, score, achievementStatus *float32) *GameList {
+func createGameListObject(userID, gameID, status string, score, achievementStatus *float32) *GameList {
 	return &GameList{
 		UserID:            userID,
 		GameID:            gameID,
@@ -139,7 +134,7 @@ func createGameListObject(userID, gameID string, status int, score, achievementS
 	}
 }
 
-func createMovieWatchListObject(userID, movieID string, status int, score *float32) *MovieWatchList {
+func createMovieWatchListObject(userID, movieID, status string, score *float32) *MovieWatchList {
 	return &MovieWatchList{
 		UserID:        userID,
 		MovieID:       movieID,
@@ -151,7 +146,7 @@ func createMovieWatchListObject(userID, movieID string, status int, score *float
 	}
 }
 
-func createTVSeriesWatchListObject(userID, tvID string, status, watchedEpisodes, watchedSeasons int, score *float32) *TVSeriesWatchList {
+func createTVSeriesWatchListObject(userID, tvID, status string, watchedEpisodes, watchedSeasons int, score *float32) *TVSeriesWatchList {
 	return &TVSeriesWatchList{
 		UserID:          userID,
 		TvID:            tvID,
@@ -165,8 +160,8 @@ func createTVSeriesWatchListObject(userID, tvID string, status, watchedEpisodes,
 	}
 }
 
-func handleTimesFinished(status int) int {
-	if status == 1 {
+func handleTimesFinished(status string) int {
+	if status == "finished" {
 		return 1
 	}
 	return 0
@@ -181,6 +176,7 @@ func handleTimesFinished(status int) int {
 * [x] Delete all by user list
  */
 
+//! Create
 func (userListModel *UserListModel) CreateUserList(uid, slug string) {
 	userListObject := createUserListObject(uid, slug)
 
@@ -195,13 +191,13 @@ func (userListModel *UserListModel) CreateUserList(uid, slug string) {
 func (userListModel *UserListModel) CreateAnimeList(uid string, data requests.CreateAnimeList, anime responses.Anime) error {
 	animeList := createAnimeListObject(
 		uid, data.AnimeID, data.Status,
-		data.WatchedEpisodes, data.Score,
+		*data.WatchedEpisodes, data.Score,
 	)
 
 	if anime.Episodes != nil {
-		if data.WatchedEpisodes > int(*anime.Episodes) {
+		if *data.WatchedEpisodes > int(*anime.Episodes) {
 			animeList.WatchedEpisodes = int(*anime.Episodes)
-		} else if data.Status == 1 && data.WatchedEpisodes < int(*anime.Episodes) { // Finished Case
+		} else if data.Status == "finished" && *data.WatchedEpisodes < int(*anime.Episodes) {
 			animeList.WatchedEpisodes = int(*anime.Episodes)
 		}
 	}
@@ -253,8 +249,8 @@ func (userListModel *UserListModel) CreateMovieWatchList(uid string, data reques
 
 func (userListModel *UserListModel) CreateTVSeriesWatchList(uid string, data requests.CreateTVSeriesWatchList) error {
 	tvSeriesWatchList := createTVSeriesWatchListObject(
-		uid, data.TvID, data.Status, data.WatchedEpisodes,
-		data.WatchedSeasons, data.Score,
+		uid, data.TvID, data.Status, *data.WatchedEpisodes,
+		*data.WatchedSeasons, data.Score,
 	)
 
 	if _, err := userListModel.TVSeriesWatchListCollection.InsertOne(context.TODO(), tvSeriesWatchList); err != nil {
@@ -269,6 +265,115 @@ func (userListModel *UserListModel) CreateTVSeriesWatchList(uid string, data req
 	return nil
 }
 
+//! Update
+
+//! Get
+func (userListModel *UserListModel) GetAnimeListByUserID(uid string, data requests.SortList) ([]responses.AnimeList, error) {
+	var (
+		sortType  string
+		sortOrder int8
+	)
+
+	switch data.Sort {
+	case "popularity":
+		sortType = "popularity"
+		sortOrder = -1
+	case "new":
+		sortType = "created_at"
+		sortOrder = -1
+	case "old":
+		sortType = "created_at"
+		sortOrder = 1
+	case "score":
+		sortType = "score"
+		sortOrder = -1
+	}
+
+	match := bson.M{"$match": bson.M{
+		"user_id": uid,
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"anime_obj_id": bson.M{
+			"$toObjectId": "$anime_id",
+		},
+		"status_priority": bson.M{
+			"$switch": bson.M{
+				"branches": bson.A{
+					bson.M{
+						"case": bson.M{
+							"$eq": bson.A{"$status", "active"},
+						},
+						"then": 0,
+					},
+					bson.M{
+						"case": bson.M{
+							"$eq": bson.A{"$status", "finished"},
+						},
+						"then": 1,
+					},
+					bson.M{
+						"case": bson.M{
+							"$eq": bson.A{"$status", "dropped"},
+						},
+						"then": 2,
+					},
+					bson.M{
+						"case": bson.M{
+							"$eq": bson.A{"$status", "planto"},
+						},
+						"then": 3,
+					},
+				},
+				"default": 4,
+			},
+		},
+	}}
+
+	lookup := bson.M{"$lookup": bson.M{
+		"from":         "animes",
+		"localField":   "anime_obj_id",
+		"foreignField": "_id",
+		"as":           "anime",
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$anime",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"status_priority": 1,
+		sortType:          sortOrder,
+	}}
+
+	cursor, err := userListModel.AnimeListCollection.Aggregate(context.TODO(), bson.A{
+		match, addFields, lookup, unwind, sort,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to aggregate anime list: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate anime list.")
+	}
+
+	var animeList []responses.AnimeList
+	if err = cursor.All(context.TODO(), &animeList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to decode anime list: ", err)
+
+		return nil, fmt.Errorf("Failed to decode anime list.")
+	}
+
+	return animeList, nil
+}
+
+//! Delete
 func (userListModel *UserListModel) DeleteListByUserIDAndType(uid string, data requests.DeleteList) (bool, error) {
 	objectListID, _ := primitive.ObjectIDFromHex(data.ID)
 

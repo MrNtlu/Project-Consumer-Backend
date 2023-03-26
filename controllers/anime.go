@@ -111,9 +111,9 @@ func (a *AnimeController) GetCurrentlyAiringAnimesByDayOfWeek(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": currentlyAiringAnimeResponse})
 }
 
-// Get Anime List
-// @Summary Get Anime List by Sort and Filter
-// @Description Returns anime list by sort and filter
+// Get Animes
+// @Summary Get Animes by Sort and Filter
+// @Description Returns animes by sort and filter
 // @Tags anime
 // @Accept application/json
 // @Produce application/json
@@ -121,7 +121,7 @@ func (a *AnimeController) GetCurrentlyAiringAnimesByDayOfWeek(c *gin.Context) {
 // @Success 200 {array} responses.Anime
 // @Failure 500 {string} string
 // @Router /anime [get]
-func (a *AnimeController) GetAnimeListBySortAndFilter(c *gin.Context) {
+func (a *AnimeController) GetAnimesBySortAndFilter(c *gin.Context) {
 	var data requests.SortFilterAnime
 	if err := c.ShouldBindQuery(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -133,7 +133,7 @@ func (a *AnimeController) GetAnimeListBySortAndFilter(c *gin.Context) {
 
 	animeModel := models.NewAnimeModel(a.Database)
 
-	animeList, pagination, err := animeModel.GetAnimeListBySortAndFilter(data)
+	animeList, pagination, err := animeModel.GetAnimesBySortAndFilter(data)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
