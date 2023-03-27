@@ -1,14 +1,17 @@
 package responses
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type Game struct {
+	ID                        primitive.ObjectID            `bson:"_id,omitempty" json:"_id"`
 	Title                     string                        `bson:"title" json:"title"`
 	TitleOriginal             string                        `bson:"title_original" json:"title_original"`
 	Description               string                        `bson:"description" json:"description"`
 	TBA                       bool                          `bson:"tba" json:"tba"`
 	RawgID                    int64                         `bson:"rawg_id" json:"rawg_id"`
-	RawgRating                int64                         `bson:"rawg_rating" json:"rawg_rating"`
+	RawgRating                float64                       `bson:"rawg_rating" json:"rawg_rating"`
 	RawgRatingCount           int64                         `bson:"rawg_rating_count" json:"rawg_rating_count"`
-	MetacriticScore           float64                       `bson:"metacritic_score" json:"metacritic_score"`
+	MetacriticScore           int64                         `bson:"metacritic_score" json:"metacritic_score"`
 	MetacriticScoreByPlatform []GameMetacriticScorePlatform `bson:"metacritic_score_by_platform" json:"metacritic_score_by_platform"`
 	ReleaseDate               string                        `bson:"release_date" json:"release_date"`
 	BackgroundImage           string                        `bson:"background_image" json:"background_image"`
@@ -36,7 +39,7 @@ type GameRelation struct {
 
 type GameGenre struct {
 	Name   string `bson:"name" json:"name"`
-	RawgID int64  `bson:"rawg_id" json:"rawg_id"`
+	RawgID string `bson:"rawg_id" json:"rawg_id"`
 }
 
 type GameStore struct {

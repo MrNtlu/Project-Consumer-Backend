@@ -182,6 +182,34 @@ func (u *UserListController) CreateTVSeriesWatchList(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created."})
 }
 
+// Get User List
+// @Summary Get User List by User ID
+// @Description Returns user list by user id
+// @Tags lists
+// @Accept application/json
+// @Produce application/json
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {object} responses.UserList
+// @Failure 500 {string} string
+// @Router /list [get]
+func (u *UserListController) GetUserListByUserID(c *gin.Context) {
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	userListModel := models.NewUserListModel(u.Database)
+
+	userList, err := userListModel.GetUserListByUserID(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": userList})
+}
+
 // Get Anime List
 // @Summary Get Anime List by User ID
 // @Description Returns anime list by user id
@@ -191,7 +219,7 @@ func (u *UserListController) CreateTVSeriesWatchList(c *gin.Context) {
 // @Param sortlist query requests.SortList true "Sort List"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 200 {array} models.AnimeList
+// @Success 200 {array} responses.AnimeList
 // @Failure 500 {string} string
 // @Router /list/anime [get]
 func (u *UserListController) GetAnimeListByUserID(c *gin.Context) {
@@ -218,6 +246,44 @@ func (u *UserListController) GetAnimeListByUserID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": animeList})
+}
+
+// Get Game List
+// @Summary Get Game List by User ID
+// @Description Returns game list by user id
+// @Tags lists
+// @Accept application/json
+// @Produce application/json
+// @Param sortlist query requests.SortList true "Sort List"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} responses.GameList
+// @Failure 500 {string} string
+// @Router /list/game [get]
+func (u *UserListController) GetGameListByUserID(c *gin.Context) {
+	var data requests.SortList
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	userListModel := models.NewUserListModel(u.Database)
+
+	gameList, err := userListModel.GetGameListByUserID(uid, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": gameList})
 }
 
 // Delete List by Type

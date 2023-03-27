@@ -1,24 +1,5 @@
 basePath: /api/v1
 definitions:
-  models.AnimeList:
-    properties:
-      _id:
-        type: string
-      anime_id:
-        type: string
-      created_at:
-        type: string
-      score:
-        type: number
-      status:
-        type: string
-      times_finished:
-        type: integer
-      user_id:
-        type: string
-      watched_episodes:
-        type: integer
-    type: object
   requests.ChangeFCMToken:
     properties:
       fcm_token:
@@ -58,6 +39,8 @@ definitions:
       anime_id:
         type: string
       score:
+        maximum: 10
+        minimum: 0
         type: number
       status:
         enum:
@@ -81,6 +64,8 @@ definitions:
       game_id:
         type: string
       score:
+        maximum: 10
+        minimum: 0
         type: number
       status:
         enum:
@@ -98,6 +83,8 @@ definitions:
       movie_id:
         type: string
       score:
+        maximum: 10
+        minimum: 0
         type: number
       status:
         enum:
@@ -113,6 +100,8 @@ definitions:
   requests.CreateTVSeriesWatchList:
     properties:
       score:
+        maximum: 10
+        minimum: 0
         type: number
       status:
         enum:
@@ -357,6 +346,25 @@ definitions:
       url:
         type: string
     type: object
+  responses.AnimeList:
+    properties:
+      _id:
+        type: string
+      anime:
+        $ref: '#/definitions/responses.Anime'
+      anime_id:
+        type: string
+      score:
+        type: number
+      status:
+        type: string
+      times_finished:
+        type: integer
+      user_id:
+        type: string
+      watched_episodes:
+        type: integer
+    type: object
   responses.AnimeNameURL:
     properties:
       name:
@@ -384,6 +392,116 @@ definitions:
       type:
         type: string
     type: object
+  responses.Game:
+    properties:
+      _id:
+        type: string
+      age_rating:
+        type: string
+      background_image:
+        type: string
+      description:
+        type: string
+      developers:
+        items:
+          type: string
+        type: array
+      genres:
+        items:
+          $ref: '#/definitions/responses.GameGenre'
+        type: array
+      metacritic_score:
+        type: integer
+      metacritic_score_by_platform:
+        items:
+          $ref: '#/definitions/responses.GameMetacriticScorePlatform'
+        type: array
+      platforms:
+        items:
+          type: string
+        type: array
+      publishers:
+        items:
+          type: string
+        type: array
+      rawg_id:
+        type: integer
+      rawg_rating:
+        type: number
+      rawg_rating_count:
+        type: integer
+      related_games:
+        items:
+          $ref: '#/definitions/responses.GameRelation'
+        type: array
+      release_date:
+        type: string
+      stores:
+        items:
+          $ref: '#/definitions/responses.GameStore'
+        type: array
+      subreddit:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      tba:
+        type: boolean
+      title:
+        type: string
+      title_original:
+        type: string
+    type: object
+  responses.GameGenre:
+    properties:
+      name:
+        type: string
+      rawg_id:
+        type: string
+    type: object
+  responses.GameList:
+    properties:
+      _id:
+        type: string
+      achievement_status:
+        type: number
+      game:
+        $ref: '#/definitions/responses.Game'
+      game_id:
+        type: string
+      score:
+        type: number
+      status:
+        type: string
+      times_finished:
+        type: integer
+      user_id:
+        type: string
+    type: object
+  responses.GameMetacriticScorePlatform:
+    properties:
+      platform:
+        type: string
+      score:
+        type: number
+    type: object
+  responses.GameRelation:
+    properties:
+      name:
+        type: string
+      rawg_id:
+        type: integer
+      release_date:
+        type: string
+    type: object
+  responses.GameStore:
+    properties:
+      stores:
+        type: integer
+      url:
+        type: string
+    type: object
   responses.UserInfo:
     properties:
       app_notification:
@@ -399,6 +517,29 @@ definitions:
       mail_notification:
         type: boolean
       username:
+        type: string
+    type: object
+  responses.UserList:
+    properties:
+      _id:
+        type: string
+      anime_avg_score:
+        type: number
+      anime_count:
+        type: integer
+      anime_total_watched_episodes:
+        type: integer
+      game_avg_score:
+        type: number
+      game_count:
+        type: integer
+      game_total_finished:
+        type: integer
+      is_public:
+        type: boolean
+      slug:
+        type: string
+      user_id:
         type: string
     type: object
 host: http://localhost:8080
@@ -558,6 +699,32 @@ paths:
       summary: Delete List by Type
       tags:
       - lists
+    get:
+      consumes:
+      - application/json
+      description: Returns user list by user id
+      parameters:
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.UserList'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get User List by User ID
+      tags:
+      - lists
   /list/anime:
     get:
       consumes:
@@ -585,7 +752,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.AnimeList'
+              $ref: '#/definitions/responses.AnimeList'
             type: array
         "500":
           description: Internal Server Error
@@ -633,6 +800,43 @@ paths:
       tags:
       - lists
   /list/game:
+    get:
+      consumes:
+      - application/json
+      description: Returns game list by user id
+      parameters:
+      - enum:
+        - popularity
+        - new
+        - old
+        - score
+        in: query
+        name: sort
+        required: true
+        type: string
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.GameList'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Game List by User ID
+      tags:
+      - lists
     post:
       consumes:
       - application/json

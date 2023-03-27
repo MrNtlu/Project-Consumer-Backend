@@ -16,6 +16,7 @@ func userListRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mon
 		userList := baseRoute.Use(jwtToken.MiddlewareFunc())
 		{
 			userList.DELETE("", userListController.DeleteListByUserIDAndType)
+			userList.GET("", userListController.GetUserListByUserID)
 		}
 
 		anime := baseRoute.Group("/anime").Use(jwtToken.MiddlewareFunc())
@@ -27,6 +28,7 @@ func userListRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mon
 		game := baseRoute.Group("/game").Use(jwtToken.MiddlewareFunc())
 		{
 			game.POST("", userListController.CreateGameList)
+			game.GET("", userListController.GetGameListByUserID)
 		}
 
 		movie := baseRoute.Group("/movie").Use(jwtToken.MiddlewareFunc())

@@ -268,26 +268,94 @@ func (userListModel *UserListModel) CreateTVSeriesWatchList(uid string, data req
 //! Update
 
 //! Get
+func (userListModel *UserListModel) GetUserListByUserID(uid string) (responses.UserList, error) {
+	match := bson.M{"$match": bson.M{
+		"user_id": uid,
+	}}
+
+	animeListLookup := bson.M{"$lookup": bson.M{
+		"from":         "anime-lists",
+		"localField":   "user_id",
+		"foreignField": "user_id",
+		"as":           "anime_list",
+	}}
+
+	gameListLookup := bson.M{"$lookup": bson.M{
+		"from":         "game-lists",
+		"localField":   "user_id",
+		"foreignField": "user_id",
+		"as":           "game_list",
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"anime_count": bson.M{
+			"$size": "$anime_list",
+		},
+		"game_count": bson.M{
+			"$size": "$game_list",
+		},
+		"anime_total_watched_episodes": bson.M{
+			"$sum": "$anime_list.watched_episodes",
+		},
+		"game_total_finished": bson.M{
+			"$sum": "$game_list.times_finished",
+		},
+		"anime_avg_score": bson.M{
+			"$divide": bson.A{
+				bson.M{
+					"$sum": "$anime_list.score",
+				},
+				bson.M{
+					"$size": "$anime_list",
+				},
+			},
+		},
+		"game_avg_score": bson.M{
+			"$divide": bson.A{
+				bson.M{
+					"$sum": "$game_list.score",
+				},
+				bson.M{
+					"$size": "$game_list",
+				},
+			},
+		},
+	}}
+
+	cursor, err := userListModel.UserListCollection.Aggregate(context.TODO(), bson.A{
+		match, animeListLookup, gameListLookup, addFields,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to aggregate user list: ", err)
+
+		return responses.UserList{}, fmt.Errorf("Failed to aggregate user list.")
+	}
+
+	var userList []responses.UserList
+	if err = cursor.All(context.TODO(), &userList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to decode user list: ", err)
+
+		return responses.UserList{}, fmt.Errorf("Failed to decode user list.")
+	}
+
+	if len(userList) > 0 {
+		return userList[0], nil
+	}
+
+	return responses.UserList{}, nil
+}
+
 func (userListModel *UserListModel) GetAnimeListByUserID(uid string, data requests.SortList) ([]responses.AnimeList, error) {
 	var (
 		sortType  string
 		sortOrder int8
 	)
 
-	switch data.Sort {
-	case "popularity":
-		sortType = "popularity"
-		sortOrder = -1
-	case "new":
-		sortType = "created_at"
-		sortOrder = -1
-	case "old":
-		sortType = "created_at"
-		sortOrder = 1
-	case "score":
-		sortType = "score"
-		sortOrder = -1
-	}
+	sortType, sortOrder = getListSortHandler(data.Sort)
 
 	match := bson.M{"$match": bson.M{
 		"user_id": uid,
@@ -297,37 +365,7 @@ func (userListModel *UserListModel) GetAnimeListByUserID(uid string, data reques
 		"anime_obj_id": bson.M{
 			"$toObjectId": "$anime_id",
 		},
-		"status_priority": bson.M{
-			"$switch": bson.M{
-				"branches": bson.A{
-					bson.M{
-						"case": bson.M{
-							"$eq": bson.A{"$status", "active"},
-						},
-						"then": 0,
-					},
-					bson.M{
-						"case": bson.M{
-							"$eq": bson.A{"$status", "finished"},
-						},
-						"then": 1,
-					},
-					bson.M{
-						"case": bson.M{
-							"$eq": bson.A{"$status", "dropped"},
-						},
-						"then": 2,
-					},
-					bson.M{
-						"case": bson.M{
-							"$eq": bson.A{"$status", "planto"},
-						},
-						"then": 3,
-					},
-				},
-				"default": 4,
-			},
-		},
+		"status_priority": statusPriorityAggregation(),
 	}}
 
 	lookup := bson.M{"$lookup": bson.M{
@@ -355,6 +393,7 @@ func (userListModel *UserListModel) GetAnimeListByUserID(uid string, data reques
 		logrus.WithFields(logrus.Fields{
 			"uid":  uid,
 			"data": data,
+			"sort": sortType,
 		}).Error("failed to aggregate anime list: ", err)
 
 		return nil, fmt.Errorf("Failed to aggregate anime list.")
@@ -371,6 +410,68 @@ func (userListModel *UserListModel) GetAnimeListByUserID(uid string, data reques
 	}
 
 	return animeList, nil
+}
+
+func (userListModel *UserListModel) GetGameListByUserID(uid string, data requests.SortList) ([]responses.GameList, error) {
+	var (
+		sortType  string
+		sortOrder int8
+	)
+
+	sortType, sortOrder = getListSortHandler(data.Sort)
+
+	match := bson.M{"$match": bson.M{
+		"user_id": uid,
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"game_obj_id": bson.M{
+			"$toObjectId": "$game_id",
+		},
+		"status_priority": statusPriorityAggregation(),
+	}}
+
+	lookup := bson.M{"$lookup": bson.M{
+		"from":         "games",
+		"localField":   "game_obj_id",
+		"foreignField": "_id",
+		"as":           "game",
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$game",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"status_priority": 1,
+		sortType:          sortOrder,
+	}}
+
+	cursor, err := userListModel.GameListCollection.Aggregate(context.TODO(), bson.A{
+		match, addFields, lookup, unwind, sort,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to aggregate game list: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate game list.")
+	}
+
+	var gameList []responses.GameList
+	if err = cursor.All(context.TODO(), &gameList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to decode game list: ", err)
+
+		return nil, fmt.Errorf("Failed to decode game list.")
+	}
+
+	return gameList, nil
 }
 
 //! Delete
@@ -425,5 +526,55 @@ func (userListModel *UserListModel) DeleteUserListByUserID(uid string) {
 		go collections[i].DeleteMany(context.TODO(), bson.M{
 			"user_id": uid,
 		})
+	}
+}
+
+//! Others
+func getListSortHandler(sort string) (string, int8) {
+	switch sort {
+	case "popularity":
+		return "popularity", -1
+	case "new":
+		return "created_at", -1
+	case "old":
+		return "created_at", 1
+	case "score":
+		return "score", -1
+	default:
+		return "", -1
+	}
+}
+
+func statusPriorityAggregation() bson.M {
+	return bson.M{
+		"$switch": bson.M{
+			"branches": bson.A{
+				bson.M{
+					"case": bson.M{
+						"$eq": bson.A{"$status", "active"},
+					},
+					"then": 0,
+				},
+				bson.M{
+					"case": bson.M{
+						"$eq": bson.A{"$status", "finished"},
+					},
+					"then": 1,
+				},
+				bson.M{
+					"case": bson.M{
+						"$eq": bson.A{"$status", "dropped"},
+					},
+					"then": 2,
+				},
+				bson.M{
+					"case": bson.M{
+						"$eq": bson.A{"$status", "planto"},
+					},
+					"then": 3,
+				},
+			},
+			"default": 4,
+		},
 	}
 }

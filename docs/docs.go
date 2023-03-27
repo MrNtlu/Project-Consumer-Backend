@@ -188,6 +188,47 @@ const docTemplate = `{
             }
         },
         "/list": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns user list by user id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lists"
+                ],
+                "summary": "Get User List by User ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.UserList"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "security": [
                     {
@@ -290,7 +331,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.AnimeList"
+                                "$ref": "#/definitions/responses.AnimeList"
                             }
                         }
                     },
@@ -360,6 +401,62 @@ const docTemplate = `{
             }
         },
         "/list/game": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns game list by user id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lists"
+                ],
+                "summary": "Get Game List by User ID",
+                "parameters": [
+                    {
+                        "enum": [
+                            "popularity",
+                            "new",
+                            "old",
+                            "score"
+                        ],
+                        "type": "string",
+                        "name": "sort",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.GameList"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -857,35 +954,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "models.AnimeList": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "type": "string"
-                },
-                "anime_id": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "score": {
-                    "type": "number"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "times_finished": {
-                    "type": "integer"
-                },
-                "user_id": {
-                    "type": "string"
-                },
-                "watched_episodes": {
-                    "type": "integer"
-                }
-            }
-        },
         "requests.ChangeFCMToken": {
             "type": "object",
             "required": [
@@ -949,7 +1017,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "score": {
-                    "type": "number"
+                    "type": "number",
+                    "maximum": 10,
+                    "minimum": 0
                 },
                 "status": {
                     "type": "string",
@@ -980,7 +1050,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "score": {
-                    "type": "number"
+                    "type": "number",
+                    "maximum": 10,
+                    "minimum": 0
                 },
                 "status": {
                     "type": "string",
@@ -1004,7 +1076,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "score": {
-                    "type": "number"
+                    "type": "number",
+                    "maximum": 10,
+                    "minimum": 0
                 },
                 "status": {
                     "type": "string",
@@ -1027,7 +1101,9 @@ const docTemplate = `{
             ],
             "properties": {
                 "score": {
-                    "type": "number"
+                    "type": "number",
+                    "maximum": 10,
+                    "minimum": 0
                 },
                 "status": {
                     "type": "string",
@@ -1375,6 +1451,35 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.AnimeList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "anime": {
+                    "$ref": "#/definitions/responses.Anime"
+                },
+                "anime_id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "watched_episodes": {
+                    "type": "integer"
+                }
+            }
+        },
         "responses.AnimeNameURL": {
             "type": "object",
             "properties": {
@@ -1417,6 +1522,174 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.Game": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "age_rating": {
+                    "type": "string"
+                },
+                "background_image": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "developers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.GameGenre"
+                    }
+                },
+                "metacritic_score": {
+                    "type": "integer"
+                },
+                "metacritic_score_by_platform": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.GameMetacriticScorePlatform"
+                    }
+                },
+                "platforms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "publishers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rawg_id": {
+                    "type": "integer"
+                },
+                "rawg_rating": {
+                    "type": "number"
+                },
+                "rawg_rating_count": {
+                    "type": "integer"
+                },
+                "related_games": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.GameRelation"
+                    }
+                },
+                "release_date": {
+                    "type": "string"
+                },
+                "stores": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.GameStore"
+                    }
+                },
+                "subreddit": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "tba": {
+                    "type": "boolean"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.GameGenre": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "rawg_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.GameList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "achievement_status": {
+                    "type": "number"
+                },
+                "game": {
+                    "$ref": "#/definitions/responses.Game"
+                },
+                "game_id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.GameMetacriticScorePlatform": {
+            "type": "object",
+            "properties": {
+                "platform": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                }
+            }
+        },
+        "responses.GameRelation": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "rawg_id": {
+                    "type": "integer"
+                },
+                "release_date": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.GameStore": {
+            "type": "object",
+            "properties": {
+                "stores": {
+                    "type": "integer"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
         "responses.UserInfo": {
             "type": "object",
             "properties": {
@@ -1439,6 +1712,41 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.UserList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "anime_avg_score": {
+                    "type": "number"
+                },
+                "anime_count": {
+                    "type": "integer"
+                },
+                "anime_total_watched_episodes": {
+                    "type": "integer"
+                },
+                "game_avg_score": {
+                    "type": "number"
+                },
+                "game_count": {
+                    "type": "integer"
+                },
+                "game_total_finished": {
+                    "type": "integer"
+                },
+                "is_public": {
+                    "type": "boolean"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }

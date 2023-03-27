@@ -4,20 +4,20 @@ type CreateAnimeList struct {
 	AnimeID         string   `json:"anime_id" binding:"required"`
 	Status          string   `json:"status" binding:"required,oneof=active finished dropped planto"`
 	WatchedEpisodes *int     `json:"watched_episodes" binding:"required,number,min=0"`
-	Score           *float32 `json:"score"`
+	Score           *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
 }
 
 type CreateGameList struct {
 	GameID            string   `json:"game_id" binding:"required"`
 	Status            string   `json:"status" binding:"required,oneof=active finished dropped planto"`
-	Score             *float32 `json:"score"`
+	Score             *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
 	AchievementStatus *float32 `json:"achievement_status"`
 }
 
 type CreateMovieWatchList struct {
 	MovieID string   `json:"movie_id" binding:"required"`
 	Status  string   `json:"status" binding:"required,oneof=active finished dropped planto"`
-	Score   *float32 `json:"score"`
+	Score   *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
 }
 
 type CreateTVSeriesWatchList struct {
@@ -25,7 +25,7 @@ type CreateTVSeriesWatchList struct {
 	Status          string   `json:"status" binding:"required,oneof=active finished dropped planto"`
 	WatchedEpisodes *int     `json:"watched_episodes" binding:"required,number"`
 	WatchedSeasons  *int     `json:"watched_seasons" binding:"required,number"`
-	Score           *float32 `json:"score"`
+	Score           *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
 }
 
 type SortList struct {
