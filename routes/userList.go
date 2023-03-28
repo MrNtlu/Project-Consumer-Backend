@@ -17,12 +17,14 @@ func userListRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mon
 		{
 			userList.DELETE("", userListController.DeleteListByUserIDAndType)
 			userList.GET("", userListController.GetUserListByUserID)
+			userList.PATCH("", userListController.UpdateUserListPublicVisibility)
 		}
 
 		anime := baseRoute.Group("/anime").Use(jwtToken.MiddlewareFunc())
 		{
 			anime.POST("", userListController.CreateAnimeList)
 			anime.GET("", userListController.GetAnimeListByUserID)
+			anime.PATCH("", userListController.UpdateAnimeListByID)
 		}
 
 		game := baseRoute.Group("/game").Use(jwtToken.MiddlewareFunc())

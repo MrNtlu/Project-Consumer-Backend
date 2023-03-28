@@ -182,6 +182,112 @@ func (u *UserListController) CreateTVSeriesWatchList(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created."})
 }
 
+// Update User List Visibility
+// @Summary Update User List Visibility
+// @Description Updates user list is_public value
+// @Tags lists
+// @Accept application/json
+// @Produce application/json
+// @Param updateuserlist body requests.UpdateUserList true "Update User List"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {string} string
+// @Failure 404 {string} string "Could not found"
+// @Failure 500 {string} string
+// @Router /list [patch]
+func (u *UserListController) UpdateUserListPublicVisibility(c *gin.Context) {
+	var data requests.UpdateUserList
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	userListModel := models.NewUserListModel(u.Database)
+
+	userList, err := userListModel.GetBaseUserListByUserID(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if userList.UserID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
+
+	if err := userListModel.UpdateUserListPublicVisibility(userList, data); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User list visibility updated."})
+}
+
+// Update Anime List
+// @Summary Update Anime List
+// @Description Updates anime list
+// @Tags lists
+// @Accept application/json
+// @Produce application/json
+// @Param updateanimelist body requests.UpdateAnimeList true "Update Anime List"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {string} string
+// @Failure 403 {string} string "Unauthorized update"
+// @Failure 404 {string} string "Could not found"
+// @Failure 500 {string} string
+// @Router /list/anime [patch]
+func (u *UserListController) UpdateAnimeListByID(c *gin.Context) {
+	var data requests.UpdateAnimeList
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	userListModel := models.NewUserListModel(u.Database)
+
+	animeList, err := userListModel.GetBaseAnimeListByID(data.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if animeList.UserID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	if uid != animeList.UserID {
+		c.JSON(http.StatusForbidden, gin.H{"error": ErrUnauthorized})
+		return
+	}
+
+	if data.WatchedEpisodes != nil {
+		animeModel := models.NewAnimeModel(u.Database)
+		anime, _ := animeModel.GetAnimeDetails(requests.ID{
+			ID: animeList.AnimeID,
+		})
+
+		if anime.Episodes != nil && *data.WatchedEpisodes > *anime.Episodes {
+			data.WatchedEpisodes = anime.Episodes
+		}
+	}
+
+	if err := userListModel.UpdateAnimeListByID(animeList, data); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Anime list updated."})
+}
+
 // Get User List
 // @Summary Get User List by User ID
 // @Description Returns user list by user id

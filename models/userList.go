@@ -54,7 +54,7 @@ type AnimeList struct {
 	UserID          string             `bson:"user_id" json:"user_id"`
 	AnimeID         string             `bson:"anime_id" json:"anime_id"`
 	Status          string             `bson:"status" json:"status"`
-	WatchedEpisodes int                `bson:"watched_episodes" json:"watched_episodes"`
+	WatchedEpisodes int64              `bson:"watched_episodes" json:"watched_episodes"`
 	Score           *float32           `bson:"score" json:"score"`
 	TimesFinished   int                `bson:"times_finished" json:"times_finished"`
 	CreatedAt       time.Time          `bson:"created_at" json:"created_at"`
@@ -108,7 +108,7 @@ func createUserListObject(userID, slug string) *UserList {
 	}
 }
 
-func createAnimeListObject(userID, animeID, status string, watchedEpisodes int, score *float32) *AnimeList {
+func createAnimeListObject(userID, animeID, status string, watchedEpisodes int64, score *float32) *AnimeList {
 	return &AnimeList{
 		UserID:          userID,
 		AnimeID:         animeID,
@@ -195,10 +195,10 @@ func (userListModel *UserListModel) CreateAnimeList(uid string, data requests.Cr
 	)
 
 	if anime.Episodes != nil {
-		if *data.WatchedEpisodes > int(*anime.Episodes) {
-			animeList.WatchedEpisodes = int(*anime.Episodes)
-		} else if data.Status == "finished" && *data.WatchedEpisodes < int(*anime.Episodes) {
-			animeList.WatchedEpisodes = int(*anime.Episodes)
+		if *data.WatchedEpisodes > *anime.Episodes {
+			animeList.WatchedEpisodes = *anime.Episodes
+		} else if data.Status == "finished" && *data.WatchedEpisodes < *anime.Episodes {
+			animeList.WatchedEpisodes = *anime.Episodes
 		}
 	}
 
@@ -266,8 +266,93 @@ func (userListModel *UserListModel) CreateTVSeriesWatchList(uid string, data req
 }
 
 //! Update
+func (userListModel *UserListModel) UpdateUserListPublicVisibility(userList UserList, data requests.UpdateUserList) error {
+	if data.IsPublic != userList.IsPublic {
+		if _, err := userListModel.UserListCollection.UpdateOne(context.TODO(), bson.M{
+			"_id": userList.ID,
+		}, bson.M{"$set": bson.M{
+			"is_public": data.IsPublic,
+		}}); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"user_list_id": userList.ID,
+				"data":         data,
+			}).Error("failed to update user list visibility: ", err)
+
+			return fmt.Errorf("Failed to update user list visibility.")
+		}
+	}
+
+	return nil
+}
+
+func (userListModel *UserListModel) UpdateAnimeListByID(animeList AnimeList, data requests.UpdateAnimeList) error {
+	if data.IsUpdatingScore || data.TimesFinished != nil ||
+		data.Status != nil || data.WatchedEpisodes != nil {
+		set := bson.M{}
+
+		if data.IsUpdatingScore && animeList.Score != data.Score {
+			set["score"] = data.Score
+		}
+
+		if data.TimesFinished != nil && animeList.TimesFinished != *data.TimesFinished {
+			set["times_finished"] = data.TimesFinished
+		}
+
+		if data.Status != nil && animeList.Status != *data.Status {
+			set["status"] = data.Status
+		}
+
+		if data.WatchedEpisodes != nil && animeList.WatchedEpisodes != *data.WatchedEpisodes {
+			set["watched_episodes"] = data.WatchedEpisodes
+		}
+
+		if _, err := userListModel.AnimeListCollection.UpdateOne(context.TODO(), bson.M{
+			"_id": animeList.ID,
+		}, bson.M{"$set": set}); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"anime_list_id": animeList.ID,
+				"data":          data,
+			}).Error("failed to update anime list: ", err)
+
+			return fmt.Errorf("Failed to update anime list.")
+		}
+	}
+
+	return nil
+}
 
 //! Get
+func (userListModel *UserListModel) GetBaseUserListByUserID(uid string) (UserList, error) {
+	result := userListModel.UserListCollection.FindOne(context.TODO(), bson.M{"user_id": uid})
+
+	var userList UserList
+	if err := result.Decode(&userList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"user_id": uid,
+		}).Error("failed to find user list by user id: ", err)
+
+		return UserList{}, fmt.Errorf("Failed to find user list by user id.")
+	}
+
+	return userList, nil
+}
+
+func (userListModel *UserListModel) GetBaseAnimeListByID(animeListID string) (AnimeList, error) {
+	objectID, _ := primitive.ObjectIDFromHex(animeListID)
+
+	result := userListModel.AnimeListCollection.FindOne(context.TODO(), bson.M{"_id": objectID})
+
+	var animeList AnimeList
+	if err := result.Decode(&animeList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": animeListID,
+		}).Error("failed to find anime list by id: ", err)
+
+		return AnimeList{}, fmt.Errorf("Failed to find anime list by id.")
+	}
+
+	return animeList, nil
+}
 func (userListModel *UserListModel) GetUserListByUserID(uid string) (responses.UserList, error) {
 	match := bson.M{"$match": bson.M{
 		"user_id": uid,

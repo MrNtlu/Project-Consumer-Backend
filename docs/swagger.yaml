@@ -247,6 +247,37 @@ definitions:
     - sort
     - type
     type: object
+  requests.UpdateAnimeList:
+    properties:
+      id:
+        type: string
+      is_updating_score:
+        type: boolean
+      score:
+        maximum: 10
+        minimum: 0
+        type: number
+      status:
+        enum:
+        - active
+        - finished
+        - dropped
+        - planto
+        type: string
+      times_finished:
+        minimum: 0
+        type: integer
+      watched_episodes:
+        minimum: 0
+        type: integer
+    required:
+    - id
+    type: object
+  requests.UpdateUserList:
+    properties:
+      is_public:
+        type: boolean
+    type: object
   responses.Anime:
     properties:
       _id:
@@ -725,6 +756,42 @@ paths:
       summary: Get User List by User ID
       tags:
       - lists
+    patch:
+      consumes:
+      - application/json
+      description: Updates user list is_public value
+      parameters:
+      - description: Update User List
+        in: body
+        name: updateuserlist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.UpdateUserList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Could not found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Update User List Visibility
+      tags:
+      - lists
   /list/anime:
     get:
       consumes:
@@ -761,6 +828,46 @@ paths:
       security:
       - BearerAuth: []
       summary: Get Anime List by User ID
+      tags:
+      - lists
+    patch:
+      consumes:
+      - application/json
+      description: Updates anime list
+      parameters:
+      - description: Update Anime List
+        in: body
+        name: updateanimelist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.UpdateAnimeList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "403":
+          description: Unauthorized update
+          schema:
+            type: string
+        "404":
+          description: Could not found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Update Anime List
       tags:
       - lists
     post:

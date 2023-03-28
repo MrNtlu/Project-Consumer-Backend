@@ -284,6 +284,62 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates user list is_public value",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lists"
+                ],
+                "summary": "Update User List Visibility",
+                "parameters": [
+                    {
+                        "description": "Update User List",
+                        "name": "updateuserlist",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.UpdateUserList"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Could not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
             }
         },
         "/list/anime": {
@@ -387,6 +443,68 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates anime list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lists"
+                ],
+                "summary": "Update Anime List",
+                "parameters": [
+                    {
+                        "description": "Update Anime List",
+                        "name": "updateanimelist",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.UpdateAnimeList"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized update",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Could not found",
                         "schema": {
                             "type": "string"
                         }
@@ -1298,6 +1416,50 @@ const docTemplate = `{
                         1,
                         -1
                     ]
+                }
+            }
+        },
+        "requests.UpdateAnimeList": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "is_updating_score": {
+                    "type": "boolean"
+                },
+                "score": {
+                    "type": "number",
+                    "maximum": 10,
+                    "minimum": 0
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "finished",
+                        "dropped",
+                        "planto"
+                    ]
+                },
+                "times_finished": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "watched_episodes": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "requests.UpdateUserList": {
+            "type": "object",
+            "properties": {
+                "is_public": {
+                    "type": "boolean"
                 }
             }
         },
