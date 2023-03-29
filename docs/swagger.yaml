@@ -170,17 +170,12 @@ definitions:
       sort:
         enum:
         - popularity
-        - date
+        - new
+        - old
         type: string
-      type:
-        enum:
-        - 1
-        - -1
-        type: integer
     required:
     - page
     - sort
-    - type
     type: object
   requests.SortByYearSeasonAnime:
     properties:
@@ -197,20 +192,15 @@ definitions:
       sort:
         enum:
         - popularity
-        - date
+        - new
+        - old
         type: string
-      type:
-        enum:
-        - 1
-        - -1
-        type: integer
       year:
         type: integer
     required:
     - page
     - season
     - sort
-    - type
     - year
     type: object
   requests.SortFilterAnime:
@@ -225,7 +215,8 @@ definitions:
       sort:
         enum:
         - popularity
-        - date
+        - new
+        - old
         type: string
       status:
         enum:
@@ -237,15 +228,45 @@ definitions:
         type: string
       themes:
         type: string
-      type:
-        enum:
-        - 1
-        - -1
-        type: integer
     required:
     - page
     - sort
-    - type
+    type: object
+  requests.SortFilterGame:
+    properties:
+      genres:
+        type: string
+      page:
+        minimum: 1
+        type: integer
+      platform:
+        type: string
+      sort:
+        enum:
+        - popularity
+        - new
+        - old
+        type: string
+      tba:
+        type: boolean
+    required:
+    - page
+    - sort
+    type: object
+  requests.SortGame:
+    properties:
+      page:
+        minimum: 1
+        type: integer
+      sort:
+        enum:
+        - popularity
+        - new
+        - old
+        type: string
+    required:
+    - page
+    - sort
     type: object
   requests.UpdateAnimeList:
     properties:
@@ -693,6 +714,62 @@ paths:
       summary: User Registration
       tags:
       - auth
+  /game:
+    get:
+      consumes:
+      - application/json
+      description: Returns games by sort and filter
+      parameters:
+      - description: Sort and Filter Game
+        in: body
+        name: sortfiltergame
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortFilterGame'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Game'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Games by Sort and Filter
+      tags:
+      - game
+  /game/upcoming:
+    get:
+      consumes:
+      - application/json
+      description: Returns upcoming games by sort with pagination
+      parameters:
+      - description: Sort Game
+        in: body
+        name: sortgame
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortGame'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Game'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Upcoming Games by Sort
+      tags:
+      - game
   /list:
     delete:
       consumes:
@@ -729,7 +806,7 @@ paths:
       - BearerAuth: []
       summary: Delete List by Type
       tags:
-      - lists
+      - user_list
     get:
       consumes:
       - application/json
@@ -755,7 +832,7 @@ paths:
       - BearerAuth: []
       summary: Get User List by User ID
       tags:
-      - lists
+      - user_list
     patch:
       consumes:
       - application/json
@@ -791,7 +868,7 @@ paths:
       - BearerAuth: []
       summary: Update User List Visibility
       tags:
-      - lists
+      - user_list
   /list/anime:
     get:
       consumes:
@@ -829,7 +906,7 @@ paths:
       - BearerAuth: []
       summary: Get Anime List by User ID
       tags:
-      - lists
+      - user_list
     patch:
       consumes:
       - application/json
@@ -869,7 +946,7 @@ paths:
       - BearerAuth: []
       summary: Update Anime List
       tags:
-      - lists
+      - user_list
     post:
       consumes:
       - application/json
@@ -905,7 +982,7 @@ paths:
       - BearerAuth: []
       summary: Create Anime List
       tags:
-      - lists
+      - user_list
   /list/game:
     get:
       consumes:
@@ -943,7 +1020,7 @@ paths:
       - BearerAuth: []
       summary: Get Game List by User ID
       tags:
-      - lists
+      - user_list
     post:
       consumes:
       - application/json
@@ -979,7 +1056,7 @@ paths:
       - BearerAuth: []
       summary: Create Game List
       tags:
-      - lists
+      - user_list
   /list/movie:
     post:
       consumes:
@@ -1012,7 +1089,7 @@ paths:
       - BearerAuth: []
       summary: Create Movie Watch List
       tags:
-      - lists
+      - user_list
   /list/tv:
     post:
       consumes:
@@ -1045,7 +1122,7 @@ paths:
       - BearerAuth: []
       summary: Create TVSeries Watch List
       tags:
-      - lists
+      - user_list
   /user:
     delete:
       consumes:

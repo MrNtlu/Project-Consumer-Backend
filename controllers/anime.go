@@ -21,7 +21,7 @@ func NewAnimeController(mongoDB *db.MongoDB) AnimeController {
 
 // Get Upcoming Animes
 // @Summary Get Upcoming Animes by Sort
-// @Description Returns upcoming animes by sort
+// @Description Returns upcoming animes by sort with pagination
 // @Tags anime
 // @Accept application/json
 // @Produce application/json

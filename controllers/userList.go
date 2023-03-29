@@ -23,7 +23,7 @@ func NewUserListController(mongoDB *db.MongoDB) UserListController {
 // Create Anime List
 // @Summary Create Anime List
 // @Description Creates Anime List
-// @Tags lists
+// @Tags user_list
 // @Accept application/json
 // @Produce application/json
 // @Param createanimelist body requests.CreateAnimeList true "Create Anime List"
@@ -74,7 +74,7 @@ func (u *UserListController) CreateAnimeList(c *gin.Context) {
 // Create Game List
 // @Summary Create Game List
 // @Description Creates Game List
-// @Tags lists
+// @Tags user_list
 // @Accept application/json
 // @Produce application/json
 // @Param creategamelist body requests.CreateGameList true "Create Game List"
@@ -119,7 +119,7 @@ func (u *UserListController) CreateGameList(c *gin.Context) {
 // Create Movie Watch List
 // @Summary Create Movie Watch List
 // @Description Creates Movie Watch List
-// @Tags lists
+// @Tags user_list
 // @Accept application/json
 // @Produce application/json
 // @Param createmoviewatchlist body requests.CreateMovieWatchList true "Create Movie Watch List"
@@ -152,7 +152,7 @@ func (u *UserListController) CreateMovieWatchList(c *gin.Context) {
 // Create TVSeries Watch List
 // @Summary Create TVSeries Watch List
 // @Description Creates TVSeries Watch List
-// @Tags lists
+// @Tags user_list
 // @Accept application/json
 // @Produce application/json
 // @Param createtvserieswatchlist body requests.CreateTVSeriesWatchList true "Create TVSeries Watch List"
@@ -185,7 +185,7 @@ func (u *UserListController) CreateTVSeriesWatchList(c *gin.Context) {
 // Update User List Visibility
 // @Summary Update User List Visibility
 // @Description Updates user list is_public value
-// @Tags lists
+// @Tags user_list
 // @Accept application/json
 // @Produce application/json
 // @Param updateuserlist body requests.UpdateUserList true "Update User List"
@@ -230,7 +230,7 @@ func (u *UserListController) UpdateUserListPublicVisibility(c *gin.Context) {
 // Update Anime List
 // @Summary Update Anime List
 // @Description Updates anime list
-// @Tags lists
+// @Tags user_list
 // @Accept application/json
 // @Produce application/json
 // @Param updateanimelist body requests.UpdateAnimeList true "Update Anime List"
@@ -291,7 +291,7 @@ func (u *UserListController) UpdateAnimeListByID(c *gin.Context) {
 // Get User List
 // @Summary Get User List by User ID
 // @Description Returns user list by user id
-// @Tags lists
+// @Tags user_list
 // @Accept application/json
 // @Produce application/json
 // @Security BearerAuth
@@ -319,7 +319,7 @@ func (u *UserListController) GetUserListByUserID(c *gin.Context) {
 // Get Anime List
 // @Summary Get Anime List by User ID
 // @Description Returns anime list by user id
-// @Tags lists
+// @Tags user_list
 // @Accept application/json
 // @Produce application/json
 // @Param sortlist query requests.SortList true "Sort List"
@@ -357,7 +357,7 @@ func (u *UserListController) GetAnimeListByUserID(c *gin.Context) {
 // Get Game List
 // @Summary Get Game List by User ID
 // @Description Returns game list by user id
-// @Tags lists
+// @Tags user_list
 // @Accept application/json
 // @Produce application/json
 // @Param sortlist query requests.SortList true "Sort List"
@@ -395,7 +395,7 @@ func (u *UserListController) GetGameListByUserID(c *gin.Context) {
 // Delete List by Type
 // @Summary Delete List by Type
 // @Description Deletes list by type and user id
-// @Tags lists
+// @Tags user_list
 // @Accept application/json
 // @Produce application/json
 // @Param deletelist body requests.DeleteList true "Delete List"

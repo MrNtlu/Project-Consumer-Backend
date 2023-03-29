@@ -187,6 +187,92 @@ const docTemplate = `{
                 }
             }
         },
+        "/game": {
+            "get": {
+                "description": "Returns games by sort and filter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "game"
+                ],
+                "summary": "Get Games by Sort and Filter",
+                "parameters": [
+                    {
+                        "description": "Sort and Filter Game",
+                        "name": "sortfiltergame",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortFilterGame"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Game"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/game/upcoming": {
+            "get": {
+                "description": "Returns upcoming games by sort with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "game"
+                ],
+                "summary": "Get Upcoming Games by Sort",
+                "parameters": [
+                    {
+                        "description": "Sort Game",
+                        "name": "sortgame",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortGame"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Game"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/list": {
             "get": {
                 "security": [
@@ -202,7 +288,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists"
+                    "user_list"
                 ],
                 "summary": "Get User List by User ID",
                 "parameters": [
@@ -243,7 +329,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists"
+                    "user_list"
                 ],
                 "summary": "Delete List by Type",
                 "parameters": [
@@ -299,7 +385,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists"
+                    "user_list"
                 ],
                 "summary": "Update User List Visibility",
                 "parameters": [
@@ -357,7 +443,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists"
+                    "user_list"
                 ],
                 "summary": "Get Anime List by User ID",
                 "parameters": [
@@ -413,7 +499,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists"
+                    "user_list"
                 ],
                 "summary": "Create Anime List",
                 "parameters": [
@@ -469,7 +555,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists"
+                    "user_list"
                 ],
                 "summary": "Update Anime List",
                 "parameters": [
@@ -533,7 +619,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists"
+                    "user_list"
                 ],
                 "summary": "Get Game List by User ID",
                 "parameters": [
@@ -589,7 +675,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists"
+                    "user_list"
                 ],
                 "summary": "Create Game List",
                 "parameters": [
@@ -647,7 +733,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists"
+                    "user_list"
                 ],
                 "summary": "Create Movie Watch List",
                 "parameters": [
@@ -699,7 +785,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "lists"
+                    "user_list"
                 ],
                 "summary": "Create TVSeries Watch List",
                 "parameters": [
@@ -1305,8 +1391,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "page",
-                "sort",
-                "type"
+                "sort"
             ],
             "properties": {
                 "page": {
@@ -1317,14 +1402,8 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "popularity",
-                        "date"
-                    ]
-                },
-                "type": {
-                    "type": "integer",
-                    "enum": [
-                        1,
-                        -1
+                        "new",
+                        "old"
                     ]
                 }
             }
@@ -1335,7 +1414,6 @@ const docTemplate = `{
                 "page",
                 "season",
                 "sort",
-                "type",
                 "year"
             ],
             "properties": {
@@ -1356,14 +1434,8 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "popularity",
-                        "date"
-                    ]
-                },
-                "type": {
-                    "type": "integer",
-                    "enum": [
-                        1,
-                        -1
+                        "new",
+                        "old"
                     ]
                 },
                 "year": {
@@ -1375,8 +1447,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "page",
-                "sort",
-                "type"
+                "sort"
             ],
             "properties": {
                 "demographics": {
@@ -1393,7 +1464,8 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "popularity",
-                        "date"
+                        "new",
+                        "old"
                     ]
                 },
                 "status": {
@@ -1409,12 +1481,56 @@ const docTemplate = `{
                 },
                 "themes": {
                     "type": "string"
+                }
+            }
+        },
+        "requests.SortFilterGame": {
+            "type": "object",
+            "required": [
+                "page",
+                "sort"
+            ],
+            "properties": {
+                "genres": {
+                    "type": "string"
                 },
-                "type": {
+                "page": {
                     "type": "integer",
+                    "minimum": 1
+                },
+                "platform": {
+                    "type": "string"
+                },
+                "sort": {
+                    "type": "string",
                     "enum": [
-                        1,
-                        -1
+                        "popularity",
+                        "new",
+                        "old"
+                    ]
+                },
+                "tba": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "requests.SortGame": {
+            "type": "object",
+            "required": [
+                "page",
+                "sort"
+            ],
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "new",
+                        "old"
                     ]
                 }
             }

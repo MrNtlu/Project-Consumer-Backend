@@ -50,10 +50,13 @@ func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.SortAnime) (
 	switch data.Sort {
 	case "popularity":
 		sortType = "popularity"
-		sortOrder = data.SortOrder
-	case "date":
+		sortOrder = -1
+	case "new":
 		sortType = "aired.from"
-		sortOrder = data.SortOrder
+		sortOrder = -1
+	case "old":
+		sortType = "aired.from"
+		sortOrder = 1
 	}
 
 	match := bson.M{"$match": bson.M{
@@ -138,10 +141,13 @@ func (animeModel *AnimeModel) GetAnimesByYearAndSeason(data requests.SortByYearS
 		} else {
 			sortType = "mal_score"
 		}
-		sortOrder = data.SortOrder
-	case "date":
+		sortOrder = -1
+	case "new":
 		sortType = "aired.from"
-		sortOrder = data.SortOrder
+		sortOrder = -1
+	case "old":
+		sortType = "aired.from"
+		sortOrder = 1
 	}
 
 	match := bson.M{
@@ -231,10 +237,13 @@ func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterA
 		} else {
 			sortType = "mal_score"
 		}
-		sortOrder = data.SortOrder
-	case "date":
+		sortOrder = -1
+	case "new":
 		sortType = "aired.from"
-		sortOrder = data.SortOrder
+		sortOrder = -1
+	case "old":
+		sortType = "aired.from"
+		sortOrder = 1
 	}
 
 	match := bson.M{}
@@ -295,7 +304,7 @@ func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterA
 	return animes, paginatedData.Pagination, nil
 }
 
-// Get user's is listed etc. values
+//TODO Get user's is listed etc. values
 func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime, error) {
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 
