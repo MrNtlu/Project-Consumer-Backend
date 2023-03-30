@@ -294,6 +294,32 @@ definitions:
     required:
     - id
     type: object
+  requests.UpdateGameList:
+    properties:
+      achievement_status:
+        minimum: 0
+        type: number
+      id:
+        type: string
+      is_updating_score:
+        type: boolean
+      score:
+        maximum: 10
+        minimum: 0
+        type: number
+      status:
+        enum:
+        - active
+        - finished
+        - dropped
+        - planto
+        type: string
+      times_finished:
+        minimum: 0
+        type: integer
+    required:
+    - id
+    type: object
   requests.UpdateUserList:
     properties:
       is_public:
@@ -1019,6 +1045,46 @@ paths:
       security:
       - BearerAuth: []
       summary: Get Game List by User ID
+      tags:
+      - user_list
+    patch:
+      consumes:
+      - application/json
+      description: Updates game list
+      parameters:
+      - description: Update Game List
+        in: body
+        name: updategamelist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.UpdateGameList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "403":
+          description: Unauthorized update
+          schema:
+            type: string
+        "404":
+          description: Could not found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Update Game List
       tags:
       - user_list
     post:

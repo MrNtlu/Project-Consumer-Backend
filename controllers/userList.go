@@ -90,16 +90,22 @@ func (u *UserListController) CreateGameList(c *gin.Context) {
 		return
 	}
 
-	// gameModel := models.NewGameModel(u.Database)
-	// game, err := gameModel.GetGameDetails()
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{
-	// 		"error": err.Error(),
-	// 	})
+	gameModel := models.NewGameModel(u.Database)
+	game, err := gameModel.GetGameDetails(requests.ID{
+		ID: data.GameID,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
 
-	// 	return
-	// }
-	//TODO Check if game found
+		return
+	}
+
+	if game.TitleOriginal == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
 
 	uid := jwt.ExtractClaims(c)["id"].(string)
 
@@ -286,6 +292,56 @@ func (u *UserListController) UpdateAnimeListByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Anime list updated."})
+}
+
+// Update Game List
+// @Summary Update Game List
+// @Description Updates game list
+// @Tags user_list
+// @Accept application/json
+// @Produce application/json
+// @Param updategamelist body requests.UpdateGameList true "Update Game List"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {string} string
+// @Failure 403 {string} string "Unauthorized update"
+// @Failure 404 {string} string "Could not found"
+// @Failure 500 {string} string
+// @Router /list/game [patch]
+func (u *UserListController) UpdateGameListByID(c *gin.Context) {
+	var data requests.UpdateGameList
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	userListModel := models.NewUserListModel(u.Database)
+
+	gameList, err := userListModel.GetBaseGameListByID(data.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if gameList.UserID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	if uid != gameList.UserID {
+		c.JSON(http.StatusForbidden, gin.H{"error": ErrUnauthorized})
+		return
+	}
+
+	if err := userListModel.UpdateGameListByID(gameList, data); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Game list updated."})
 }
 
 // Get User List

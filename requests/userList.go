@@ -45,6 +45,15 @@ type UpdateAnimeList struct {
 	WatchedEpisodes *int64   `json:"watched_episodes" binding:"omitempty,number,min=0"`
 }
 
+type UpdateGameList struct {
+	ID                string   `json:"id" binding:"required"`
+	IsUpdatingScore   bool     `json:"is_updating_score"`
+	Score             *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
+	TimesFinished     *int     `json:"times_finished" binding:"omitempty,number,min=0"`
+	Status            *string  `json:"status" binding:"omitempty,oneof=active finished dropped planto"`
+	AchievementStatus *float32 `json:"achievement_status" binding:"omitempty,number,min=0"`
+}
+
 type DeleteList struct {
 	ID   string `json:"id" binding:"required"`
 	Type string `json:"type" binding:"required,oneof=anime game movie tv"`

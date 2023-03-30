@@ -31,7 +31,7 @@ const (
 
 /* TODO Endpoints
 * [x] Get upcoming by popularity etc.
-* [] Get games by release date, popularity, genre, platform etc.
+* [x] Get games by release date, popularity, genre, platform etc.
 * [x] Get game details
  */
 

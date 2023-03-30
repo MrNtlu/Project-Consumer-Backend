@@ -36,7 +36,7 @@ const (
 * [x] Get anime by popularity, genre etc.
 * [x] Get top airing
 * [x] Get top upcoming
-* [] Get anime details
+* [x] Get anime details
  */
 
 func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.SortAnime) ([]responses.Anime, p.PaginationData, error) {

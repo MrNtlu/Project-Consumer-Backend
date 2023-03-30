@@ -321,6 +321,42 @@ func (userListModel *UserListModel) UpdateAnimeListByID(animeList AnimeList, dat
 	return nil
 }
 
+func (userListModel *UserListModel) UpdateGameListByID(gameList GameList, data requests.UpdateGameList) error {
+	if data.IsUpdatingScore || data.TimesFinished != nil ||
+		data.Status != nil || data.AchievementStatus != nil {
+		set := bson.M{}
+
+		if data.IsUpdatingScore && gameList.Score != data.Score {
+			set["score"] = data.Score
+		}
+
+		if data.TimesFinished != nil && gameList.TimesFinished != *data.TimesFinished {
+			set["times_finished"] = data.TimesFinished
+		}
+
+		if data.Status != nil && gameList.Status != *data.Status {
+			set["status"] = data.Status
+		}
+
+		if data.AchievementStatus != nil && gameList.AchievementStatus != data.AchievementStatus {
+			set["achievement_status"] = data.AchievementStatus
+		}
+
+		if _, err := userListModel.GameListCollection.UpdateOne(context.TODO(), bson.M{
+			"_id": gameList.ID,
+		}, bson.M{"$set": set}); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"game_list_id": gameList.ID,
+				"data":         data,
+			}).Error("failed to update game list: ", err)
+
+			return fmt.Errorf("Failed to update game list.")
+		}
+	}
+
+	return nil
+}
+
 //! Get
 func (userListModel *UserListModel) GetBaseUserListByUserID(uid string) (UserList, error) {
 	result := userListModel.UserListCollection.FindOne(context.TODO(), bson.M{"user_id": uid})
@@ -353,6 +389,24 @@ func (userListModel *UserListModel) GetBaseAnimeListByID(animeListID string) (An
 
 	return animeList, nil
 }
+
+func (userListModel *UserListModel) GetBaseGameListByID(gameListID string) (GameList, error) {
+	objectID, _ := primitive.ObjectIDFromHex(gameListID)
+
+	result := userListModel.GameListCollection.FindOne(context.TODO(), bson.M{"_id": objectID})
+
+	var gameList GameList
+	if err := result.Decode(&gameList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": gameListID,
+		}).Error("failed to find game list by id: ", err)
+
+		return GameList{}, fmt.Errorf("Failed to find game list by id.")
+	}
+
+	return gameList, nil
+}
+
 func (userListModel *UserListModel) GetUserListByUserID(uid string) (responses.UserList, error) {
 	match := bson.M{"$match": bson.M{
 		"user_id": uid,

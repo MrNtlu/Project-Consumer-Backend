@@ -31,6 +31,7 @@ func userListRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mon
 		{
 			game.POST("", userListController.CreateGameList)
 			game.GET("", userListController.GetGameListByUserID)
+			game.PATCH("", userListController.UpdateGameListByID)
 		}
 
 		movie := baseRoute.Group("/movie").Use(jwtToken.MiddlewareFunc())

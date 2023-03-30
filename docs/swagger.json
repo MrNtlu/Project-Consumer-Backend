@@ -713,6 +713,68 @@
                         }
                     }
                 }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates game list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_list"
+                ],
+                "summary": "Update Game List",
+                "parameters": [
+                    {
+                        "description": "Update Game List",
+                        "name": "updategamelist",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.UpdateGameList"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized update",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Could not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
             }
         },
         "/list/movie": {
@@ -1563,6 +1625,42 @@
                     "minimum": 0
                 },
                 "watched_episodes": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "requests.UpdateGameList": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "achievement_status": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_updating_score": {
+                    "type": "boolean"
+                },
+                "score": {
+                    "type": "number",
+                    "maximum": 10,
+                    "minimum": 0
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "finished",
+                        "dropped",
+                        "planto"
+                    ]
+                },
+                "times_finished": {
                     "type": "integer",
                     "minimum": 0
                 }
