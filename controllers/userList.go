@@ -344,6 +344,118 @@ func (u *UserListController) UpdateGameListByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Game list updated."})
 }
 
+// Update Movie List
+// @Summary Update Movie List
+// @Description Updates movie list
+// @Tags user_list
+// @Accept application/json
+// @Produce application/json
+// @Param updatemovielist body requests.UpdateMovieList true "Update Movie List"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {string} string
+// @Failure 403 {string} string "Unauthorized update"
+// @Failure 404 {string} string "Could not found"
+// @Failure 500 {string} string
+// @Router /list/movie [patch]
+func (u *UserListController) UpdateMovieListByID(c *gin.Context) {
+	var data requests.UpdateMovieList
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	userListModel := models.NewUserListModel(u.Database)
+
+	movieList, err := userListModel.GetBaseMovieListByID(data.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if movieList.UserID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	if uid != movieList.UserID {
+		c.JSON(http.StatusForbidden, gin.H{"error": ErrUnauthorized})
+		return
+	}
+
+	if err := userListModel.UpdateMovieListByID(movieList, data); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Movie list updated."})
+}
+
+// Update TV Series List
+// @Summary Update TV Series List
+// @Description Updates tv series list
+// @Tags user_list
+// @Accept application/json
+// @Produce application/json
+// @Param updatetvserieslist body requests.UpdateTVSeriesList true "Update TV Series List"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {string} string
+// @Failure 403 {string} string "Unauthorized update"
+// @Failure 404 {string} string "Could not found"
+// @Failure 500 {string} string
+// @Router /list/tv [patch]
+func (u *UserListController) UpdateTVSeriesListByID(c *gin.Context) {
+	var data requests.UpdateTVSeriesList
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	userListModel := models.NewUserListModel(u.Database)
+
+	tvList, err := userListModel.GetBaseTVSeriesListByID(data.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if tvList.UserID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	if uid != tvList.UserID {
+		c.JSON(http.StatusForbidden, gin.H{"error": ErrUnauthorized})
+		return
+	}
+
+	//TODO Implement
+	// if data.WatchedEpisodes != nil {
+	// 	tvSeriesModel := models.NewTVSeriesModel(u.Database)
+	// 	tvSeries, _ := tvSeriesModel.GetTVSeriesDetails(requests.ID{
+	// 		ID: tvList.TvID,
+	// 	})
+
+	// 	if tvSeries.Episodes != nil && *data.WatchedEpisodes > *tvSeries.Episodes {
+	// 		data.WatchedEpisodes = tvSeries.Episodes
+	// 	}
+	// }
+
+	if err := userListModel.UpdateTVSeriesListByID(tvList, data); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "TV series watch list updated."})
+}
+
 // Get User List
 // @Summary Get User List by User ID
 // @Description Returns user list by user id
@@ -446,6 +558,44 @@ func (u *UserListController) GetGameListByUserID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": gameList})
+}
+
+// Get Movie Watch List
+// @Summary Get Movie Watch List by User ID
+// @Description Returns movie watch list by user id
+// @Tags user_list
+// @Accept application/json
+// @Produce application/json
+// @Param sortlist query requests.SortList true "Sort List"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} responses.MovieList
+// @Failure 500 {string} string
+// @Router /list/movie [get]
+func (u *UserListController) GetMovieListByUserID(c *gin.Context) {
+	var data requests.SortList
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	userListModel := models.NewUserListModel(u.Database)
+
+	movieList, err := userListModel.GetMovieListByUserID(uid, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": movieList})
 }
 
 // Delete List by Type

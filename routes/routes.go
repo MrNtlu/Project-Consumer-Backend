@@ -12,6 +12,7 @@ func SetupRoutes(router *gin.Engine, jwtToken *jwt.GinJWTMiddleware, mongoDB *db
 	apiRouter := router.Group("/api/v1")
 
 	userRouter(apiRouter, jwtToken, mongoDB)
+	movieRouter(apiRouter, mongoDB)
 	animeRouter(apiRouter, mongoDB)
 	gameRouter(apiRouter, mongoDB)
 	userListRouter(apiRouter, jwtToken, mongoDB)

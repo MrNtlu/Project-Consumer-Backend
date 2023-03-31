@@ -11,7 +11,7 @@ type CreateGameList struct {
 	GameID            string   `json:"game_id" binding:"required"`
 	Status            string   `json:"status" binding:"required,oneof=active finished dropped planto"`
 	Score             *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
-	AchievementStatus *float32 `json:"achievement_status"`
+	AchievementStatus *float32 `json:"achievement_status" binding:"omitempty,number,min=0,max=100"`
 }
 
 type CreateMovieWatchList struct {
@@ -23,8 +23,8 @@ type CreateMovieWatchList struct {
 type CreateTVSeriesWatchList struct {
 	TvID            string   `json:"tv_id" binding:"required"`
 	Status          string   `json:"status" binding:"required,oneof=active finished dropped planto"`
-	WatchedEpisodes *int     `json:"watched_episodes" binding:"required,number"`
-	WatchedSeasons  *int     `json:"watched_seasons" binding:"required,number"`
+	WatchedEpisodes *int     `json:"watched_episodes" binding:"required,number,min=0"`
+	WatchedSeasons  *int     `json:"watched_seasons" binding:"required,number,min=0"`
 	Score           *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
 }
 
@@ -52,6 +52,24 @@ type UpdateGameList struct {
 	TimesFinished     *int     `json:"times_finished" binding:"omitempty,number,min=0"`
 	Status            *string  `json:"status" binding:"omitempty,oneof=active finished dropped planto"`
 	AchievementStatus *float32 `json:"achievement_status" binding:"omitempty,number,min=0"`
+}
+
+type UpdateMovieList struct {
+	ID              string   `json:"id" binding:"required"`
+	IsUpdatingScore bool     `json:"is_updating_score"`
+	Score           *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
+	TimesFinished   *int     `json:"times_finished" binding:"omitempty,number,min=0"`
+	Status          *string  `json:"status" binding:"omitempty,oneof=active finished dropped planto"`
+}
+
+type UpdateTVSeriesList struct {
+	ID              string   `json:"id" binding:"required"`
+	IsUpdatingScore bool     `json:"is_updating_score"`
+	Score           *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
+	TimesFinished   *int     `json:"times_finished" binding:"omitempty,number,min=0"`
+	Status          *string  `json:"status" binding:"omitempty,oneof=active finished dropped planto"`
+	WatchedEpisodes *int     `json:"watched_episodes" binding:"omitempty,number,min=0"`
+	WatchedSeasons  *int     `json:"watched_seasons" binding:"omitempty,number,min=0"`
 }
 
 type DeleteList struct {

@@ -60,6 +60,8 @@ definitions:
   requests.CreateGameList:
     properties:
       achievement_status:
+        maximum: 100
+        minimum: 0
         type: number
       game_id:
         type: string
@@ -113,8 +115,10 @@ definitions:
       tv_id:
         type: string
       watched_episodes:
+        minimum: 0
         type: integer
       watched_seasons:
+        minimum: 0
         type: integer
     required:
     - status
@@ -315,6 +319,58 @@ definitions:
         - planto
         type: string
       times_finished:
+        minimum: 0
+        type: integer
+    required:
+    - id
+    type: object
+  requests.UpdateMovieList:
+    properties:
+      id:
+        type: string
+      is_updating_score:
+        type: boolean
+      score:
+        maximum: 10
+        minimum: 0
+        type: number
+      status:
+        enum:
+        - active
+        - finished
+        - dropped
+        - planto
+        type: string
+      times_finished:
+        minimum: 0
+        type: integer
+    required:
+    - id
+    type: object
+  requests.UpdateTVSeriesList:
+    properties:
+      id:
+        type: string
+      is_updating_score:
+        type: boolean
+      score:
+        maximum: 10
+        minimum: 0
+        type: number
+      status:
+        enum:
+        - active
+        - finished
+        - dropped
+        - planto
+        type: string
+      times_finished:
+        minimum: 0
+        type: integer
+      watched_episodes:
+        minimum: 0
+        type: integer
+      watched_seasons:
         minimum: 0
         type: integer
     required:
@@ -578,6 +634,104 @@ definitions:
       stores:
         type: integer
       url:
+        type: string
+    type: object
+  responses.Genre:
+    properties:
+      name:
+        type: string
+      tmdb_id:
+        type: string
+    type: object
+  responses.Movie:
+    properties:
+      _id:
+        type: string
+      description:
+        type: string
+      genres:
+        items:
+          $ref: '#/definitions/responses.Genre'
+        type: array
+      image_url:
+        type: string
+      imdb_id:
+        type: string
+      length:
+        type: integer
+      production_companies:
+        items:
+          $ref: '#/definitions/responses.ProductionAndCompany'
+        type: array
+      release_date:
+        type: string
+      small_image_url:
+        type: string
+      status:
+        type: string
+      streaming:
+        items:
+          $ref: '#/definitions/responses.Streaming'
+        type: array
+      title_en:
+        type: string
+      title_original:
+        type: string
+      tmdb_id:
+        type: string
+      tmdb_popularity:
+        type: number
+      tmdb_vote:
+        type: number
+      tmdb_vote_count:
+        type: integer
+    type: object
+  responses.MovieList:
+    properties:
+      movie:
+        $ref: '#/definitions/responses.Movie'
+      movie_id:
+        type: string
+      score:
+        type: number
+      status:
+        type: string
+      times_finished:
+        type: integer
+      user_id:
+        type: string
+    type: object
+  responses.ProductionAndCompany:
+    properties:
+      logo:
+        type: string
+      name:
+        type: string
+      origin_country:
+        type: string
+    type: object
+  responses.Streaming:
+    properties:
+      buy_options:
+        items:
+          $ref: '#/definitions/responses.StreamingPlatform'
+        type: array
+      country_code:
+        type: string
+      rent_options:
+        items:
+          $ref: '#/definitions/responses.StreamingPlatform'
+        type: array
+      streaming_platforms:
+        items:
+          $ref: '#/definitions/responses.StreamingPlatform'
+        type: array
+    type: object
+  responses.StreamingPlatform:
+    properties:
+      logo:
+        type: string
+      name:
         type: string
     type: object
   responses.UserInfo:
@@ -1124,6 +1278,83 @@ paths:
       tags:
       - user_list
   /list/movie:
+    get:
+      consumes:
+      - application/json
+      description: Returns movie watch list by user id
+      parameters:
+      - enum:
+        - popularity
+        - new
+        - old
+        - score
+        in: query
+        name: sort
+        required: true
+        type: string
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.MovieList'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Movie Watch List by User ID
+      tags:
+      - user_list
+    patch:
+      consumes:
+      - application/json
+      description: Updates movie list
+      parameters:
+      - description: Update Movie List
+        in: body
+        name: updatemovielist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.UpdateMovieList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "403":
+          description: Unauthorized update
+          schema:
+            type: string
+        "404":
+          description: Could not found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Update Movie List
+      tags:
+      - user_list
     post:
       consumes:
       - application/json
@@ -1157,6 +1388,46 @@ paths:
       tags:
       - user_list
   /list/tv:
+    patch:
+      consumes:
+      - application/json
+      description: Updates tv series list
+      parameters:
+      - description: Update TV Series List
+        in: body
+        name: updatetvserieslist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.UpdateTVSeriesList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "403":
+          description: Unauthorized update
+          schema:
+            type: string
+        "404":
+          description: Could not found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Update TV Series List
+      tags:
+      - user_list
     post:
       consumes:
       - application/json

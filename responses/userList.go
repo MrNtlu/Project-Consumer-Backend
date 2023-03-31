@@ -36,3 +36,12 @@ type GameList struct {
 	TimesFinished     int                `bson:"times_finished" json:"times_finished"`
 	Game              Game               `bson:"game" json:"game"`
 }
+
+type MovieList struct {
+	UserID        string   `bson:"user_id" json:"user_id"`
+	MovieID       string   `bson:"movie_id" json:"movie_id"`
+	Status        string   `bson:"status" json:"status"`
+	Score         *float32 `bson:"score" json:"score"`
+	TimesFinished int      `bson:"times_finished" json:"times_finished"`
+	Movie         Movie    `bson:"movie" json:"movie"`
+}

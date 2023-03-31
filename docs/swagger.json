@@ -778,6 +778,62 @@
             }
         },
         "/list/movie": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns movie watch list by user id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_list"
+                ],
+                "summary": "Get Movie Watch List by User ID",
+                "parameters": [
+                    {
+                        "enum": [
+                            "popularity",
+                            "new",
+                            "old",
+                            "score"
+                        ],
+                        "type": "string",
+                        "name": "sort",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.MovieList"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -816,6 +872,68 @@
                 "responses": {
                     "201": {
                         "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates movie list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_list"
+                ],
+                "summary": "Update Movie List",
+                "parameters": [
+                    {
+                        "description": "Update Movie List",
+                        "name": "updatemovielist",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.UpdateMovieList"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized update",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Could not found",
                         "schema": {
                             "type": "string"
                         }
@@ -868,6 +986,68 @@
                 "responses": {
                     "201": {
                         "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates tv series list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_list"
+                ],
+                "summary": "Update TV Series List",
+                "parameters": [
+                    {
+                        "description": "Update TV Series List",
+                        "name": "updatetvserieslist",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.UpdateTVSeriesList"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized update",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Could not found",
                         "schema": {
                             "type": "string"
                         }
@@ -1307,7 +1487,9 @@
             ],
             "properties": {
                 "achievement_status": {
-                    "type": "number"
+                    "type": "number",
+                    "maximum": 100,
+                    "minimum": 0
                 },
                 "game_id": {
                     "type": "string"
@@ -1381,10 +1563,12 @@
                     "type": "string"
                 },
                 "watched_episodes": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "watched_seasons": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
@@ -1661,6 +1845,78 @@
                     ]
                 },
                 "times_finished": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "requests.UpdateMovieList": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "is_updating_score": {
+                    "type": "boolean"
+                },
+                "score": {
+                    "type": "number",
+                    "maximum": 10,
+                    "minimum": 0
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "finished",
+                        "dropped",
+                        "planto"
+                    ]
+                },
+                "times_finished": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "requests.UpdateTVSeriesList": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "is_updating_score": {
+                    "type": "boolean"
+                },
+                "score": {
+                    "type": "number",
+                    "maximum": 10,
+                    "minimum": 0
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "finished",
+                        "dropped",
+                        "planto"
+                    ]
+                },
+                "times_finished": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "watched_episodes": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "watched_seasons": {
                     "type": "integer",
                     "minimum": 0
                 }
@@ -2059,6 +2315,156 @@
                     "type": "integer"
                 },
                 "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.Genre": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "tmdb_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.Movie": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Genre"
+                    }
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "imdb_id": {
+                    "type": "string"
+                },
+                "length": {
+                    "type": "integer"
+                },
+                "production_companies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.ProductionAndCompany"
+                    }
+                },
+                "release_date": {
+                    "type": "string"
+                },
+                "small_image_url": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "streaming": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Streaming"
+                    }
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "tmdb_id": {
+                    "type": "string"
+                },
+                "tmdb_popularity": {
+                    "type": "number"
+                },
+                "tmdb_vote": {
+                    "type": "number"
+                },
+                "tmdb_vote_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "responses.MovieList": {
+            "type": "object",
+            "properties": {
+                "movie": {
+                    "$ref": "#/definitions/responses.Movie"
+                },
+                "movie_id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.ProductionAndCompany": {
+            "type": "object",
+            "properties": {
+                "logo": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "origin_country": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.Streaming": {
+            "type": "object",
+            "properties": {
+                "buy_options": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.StreamingPlatform"
+                    }
+                },
+                "country_code": {
+                    "type": "string"
+                },
+                "rent_options": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.StreamingPlatform"
+                    }
+                },
+                "streaming_platforms": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.StreamingPlatform"
+                    }
+                }
+            }
+        },
+        "responses.StreamingPlatform": {
+            "type": "object",
+            "properties": {
+                "logo": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }

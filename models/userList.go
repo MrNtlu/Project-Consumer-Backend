@@ -247,6 +247,7 @@ func (userListModel *UserListModel) CreateMovieWatchList(uid string, data reques
 	return nil
 }
 
+// TODO Like anime calculate max episode and seasons
 func (userListModel *UserListModel) CreateTVSeriesWatchList(uid string, data requests.CreateTVSeriesWatchList) error {
 	tvSeriesWatchList := createTVSeriesWatchListObject(
 		uid, data.TvID, data.Status, *data.WatchedEpisodes,
@@ -357,6 +358,78 @@ func (userListModel *UserListModel) UpdateGameListByID(gameList GameList, data r
 	return nil
 }
 
+func (userListModel *UserListModel) UpdateMovieListByID(movieList MovieWatchList, data requests.UpdateMovieList) error {
+	if data.IsUpdatingScore || data.TimesFinished != nil || data.Status != nil {
+		set := bson.M{}
+
+		if data.IsUpdatingScore && movieList.Score != data.Score {
+			set["score"] = data.Score
+		}
+
+		if data.TimesFinished != nil && movieList.TimesFinished != *data.TimesFinished {
+			set["times_finished"] = data.TimesFinished
+		}
+
+		if data.Status != nil && movieList.Status != *data.Status {
+			set["status"] = data.Status
+		}
+
+		if _, err := userListModel.GameListCollection.UpdateOne(context.TODO(), bson.M{
+			"_id": movieList.ID,
+		}, bson.M{"$set": set}); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"movie_list_id": movieList.ID,
+				"data":          data,
+			}).Error("failed to update movie list: ", err)
+
+			return fmt.Errorf("Failed to update movie watch list.")
+		}
+	}
+
+	return nil
+}
+
+func (userListModel *UserListModel) UpdateTVSeriesListByID(tvList TVSeriesWatchList, data requests.UpdateTVSeriesList) error {
+	if data.IsUpdatingScore || data.TimesFinished != nil ||
+		data.Status != nil || data.WatchedEpisodes != nil ||
+		data.WatchedSeasons != nil {
+		set := bson.M{}
+
+		if data.IsUpdatingScore && tvList.Score != data.Score {
+			set["score"] = data.Score
+		}
+
+		if data.TimesFinished != nil && tvList.TimesFinished != *data.TimesFinished {
+			set["times_finished"] = data.TimesFinished
+		}
+
+		if data.Status != nil && tvList.Status != *data.Status {
+			set["status"] = data.Status
+		}
+
+		if data.WatchedEpisodes != nil && tvList.WatchedEpisodes != *data.WatchedEpisodes {
+			set["watched_episodes"] = data.WatchedEpisodes
+		}
+
+		if data.WatchedSeasons != nil && tvList.WatchedSeasons != *data.WatchedSeasons {
+			set["watched_seasons"] = data.WatchedSeasons
+		}
+
+		if _, err := userListModel.GameListCollection.UpdateOne(context.TODO(), bson.M{
+			"_id": tvList.ID,
+		}, bson.M{"$set": set}); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"tv_list_id": tvList.ID,
+				"data":       data,
+			}).Error("failed to update tv list: ", err)
+
+			return fmt.Errorf("Failed to update tv series watch list.")
+		}
+	}
+
+	return nil
+}
+
 //! Get
 func (userListModel *UserListModel) GetBaseUserListByUserID(uid string) (UserList, error) {
 	result := userListModel.UserListCollection.FindOne(context.TODO(), bson.M{"user_id": uid})
@@ -405,6 +478,40 @@ func (userListModel *UserListModel) GetBaseGameListByID(gameListID string) (Game
 	}
 
 	return gameList, nil
+}
+
+func (userListModel *UserListModel) GetBaseMovieListByID(movieID string) (MovieWatchList, error) {
+	objectID, _ := primitive.ObjectIDFromHex(movieID)
+
+	result := userListModel.MovieWatchListCollection.FindOne(context.TODO(), bson.M{"_id": objectID})
+
+	var movieList MovieWatchList
+	if err := result.Decode(&movieList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": movieID,
+		}).Error("failed to find movie list by id: ", err)
+
+		return MovieWatchList{}, fmt.Errorf("Failed to find movie watch list by id.")
+	}
+
+	return movieList, nil
+}
+
+func (userListModel *UserListModel) GetBaseTVSeriesListByID(movieID string) (TVSeriesWatchList, error) {
+	objectID, _ := primitive.ObjectIDFromHex(movieID)
+
+	result := userListModel.TVSeriesWatchListCollection.FindOne(context.TODO(), bson.M{"_id": objectID})
+
+	var tvList TVSeriesWatchList
+	if err := result.Decode(&tvList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": movieID,
+		}).Error("failed to find tv series list by id: ", err)
+
+		return TVSeriesWatchList{}, fmt.Errorf("Failed to find tv series watch list by id.")
+	}
+
+	return tvList, nil
 }
 
 func (userListModel *UserListModel) GetUserListByUserID(uid string) (responses.UserList, error) {
@@ -611,6 +718,68 @@ func (userListModel *UserListModel) GetGameListByUserID(uid string, data request
 	}
 
 	return gameList, nil
+}
+
+func (userListModel *UserListModel) GetMovieListByUserID(uid string, data requests.SortList) ([]responses.MovieList, error) {
+	var (
+		sortType  string
+		sortOrder int8
+	)
+
+	sortType, sortOrder = getListSortHandler(data.Sort)
+
+	match := bson.M{"$match": bson.M{
+		"user_id": uid,
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"movie_obj_id": bson.M{
+			"$toObjectId": "$movie_id",
+		},
+		"status_priority": statusPriorityAggregation(),
+	}}
+
+	lookup := bson.M{"$lookup": bson.M{
+		"from":         "movies",
+		"localField":   "movie_obj_id",
+		"foreignField": "_id",
+		"as":           "movie",
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$movie",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"status_priority": 1,
+		sortType:          sortOrder,
+	}}
+
+	cursor, err := userListModel.MovieWatchListCollection.Aggregate(context.TODO(), bson.A{
+		match, addFields, lookup, unwind, sort,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to aggregate movie watch list: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate movie watch list.")
+	}
+
+	var movieList []responses.MovieList
+	if err = cursor.All(context.TODO(), &movieList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to decode movie watch list: ", err)
+
+		return nil, fmt.Errorf("Failed to decode movie watch list.")
+	}
+
+	return movieList, nil
 }
 
 //! Delete
