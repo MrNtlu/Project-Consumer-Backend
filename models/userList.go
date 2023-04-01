@@ -84,7 +84,7 @@ type MovieWatchList struct {
 	UpdatedAt     time.Time          `bson:"updated_at" json:"-"`
 }
 
-// TODO
+//TODO
 // This has to be different
 // Unlike anime, seasons are not separated.
 type TVSeriesWatchList struct {
@@ -247,7 +247,7 @@ func (userListModel *UserListModel) CreateMovieWatchList(uid string, data reques
 	return nil
 }
 
-// TODO Like anime calculate max episode and seasons
+//TODO Like anime calculate max episode and seasons
 func (userListModel *UserListModel) CreateTVSeriesWatchList(uid string, data requests.CreateTVSeriesWatchList) error {
 	tvSeriesWatchList := createTVSeriesWatchListObject(
 		uid, data.TvID, data.Status, *data.WatchedEpisodes,
