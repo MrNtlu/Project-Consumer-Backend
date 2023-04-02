@@ -44,6 +44,7 @@ func userListRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mon
 		tv := baseRoute.Group("/tv").Use(jwtToken.MiddlewareFunc())
 		{
 			tv.POST("", userListController.CreateTVSeriesWatchList)
+			tv.GET("", userListController.GetTVSeriesListByUserID)
 			tv.PATCH("", userListController.UpdateTVSeriesListByID)
 		}
 	}

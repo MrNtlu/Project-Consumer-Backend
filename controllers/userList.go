@@ -140,6 +140,23 @@ func (u *UserListController) CreateMovieWatchList(c *gin.Context) {
 		return
 	}
 
+	movieModel := models.NewMovieModel(u.Database)
+	movie, err := movieModel.GetMovieDetails(requests.ID{
+		ID: data.MovieID,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	if movie.TitleOriginal == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
+
 	uid := jwt.ExtractClaims(c)["id"].(string)
 
 	userListModel := models.NewUserListModel(u.Database)
@@ -173,11 +190,28 @@ func (u *UserListController) CreateTVSeriesWatchList(c *gin.Context) {
 		return
 	}
 
+	tvSeriesModel := models.NewTVModel(u.Database)
+	tvSeries, err := tvSeriesModel.GetTVSeriesDetails(requests.ID{
+		ID: data.TvID,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	if tvSeries.TitleOriginal == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
+
 	uid := jwt.ExtractClaims(c)["id"].(string)
 
 	userListModel := models.NewUserListModel(u.Database)
 
-	if err := userListModel.CreateTVSeriesWatchList(uid, data); err != nil {
+	if err := userListModel.CreateTVSeriesWatchList(uid, data, tvSeries); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -596,6 +630,44 @@ func (u *UserListController) GetMovieListByUserID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": movieList})
+}
+
+// Get TV Series Watch List
+// @Summary Get TV Series Watch List by User ID
+// @Description Returns tv series watch list by user id
+// @Tags user_list
+// @Accept application/json
+// @Produce application/json
+// @Param sortlist query requests.SortList true "Sort List"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} responses.TVSeriesList
+// @Failure 500 {string} string
+// @Router /list/tv [get]
+func (u *UserListController) GetTVSeriesListByUserID(c *gin.Context) {
+	var data requests.SortList
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	userListModel := models.NewUserListModel(u.Database)
+
+	tvSeriesList, err := userListModel.GetTVSeriesListByUserID(uid, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": tvSeriesList})
 }
 
 // Delete List by Type

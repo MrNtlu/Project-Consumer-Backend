@@ -951,6 +951,62 @@ const docTemplate = `{
             }
         },
         "/list/tv": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns tv series watch list by user id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_list"
+                ],
+                "summary": "Get TV Series Watch List by User ID",
+                "parameters": [
+                    {
+                        "enum": [
+                            "popularity",
+                            "new",
+                            "old",
+                            "score"
+                        ],
+                        "type": "string",
+                        "name": "sort",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.TVSeriesList"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -2469,6 +2525,106 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "responses.TVSeries": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "first_air_date": {
+                    "type": "string"
+                },
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Genre"
+                    }
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "networks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.ProductionAndCompany"
+                    }
+                },
+                "production_companies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.ProductionAndCompany"
+                    }
+                },
+                "small_image_url": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "streaming": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Streaming"
+                    }
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "tmdb_id": {
+                    "type": "string"
+                },
+                "tmdb_popularity": {
+                    "type": "number"
+                },
+                "tmdb_vote": {
+                    "type": "number"
+                },
+                "tmdb_vote_count": {
+                    "type": "integer"
+                },
+                "total_episodes": {
+                    "type": "integer"
+                },
+                "total_seasons": {
+                    "type": "integer"
+                }
+            }
+        },
+        "responses.TVSeriesList": {
+            "type": "object",
+            "properties": {
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "tv_id": {
+                    "type": "string"
+                },
+                "tv_series": {
+                    "$ref": "#/definitions/responses.TVSeries"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "watched_episodes": {
+                    "type": "integer"
+                },
+                "watched_seasons": {
+                    "type": "integer"
                 }
             }
         },

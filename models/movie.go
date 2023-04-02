@@ -2,11 +2,14 @@ package models
 
 import (
 	"app/db"
+	"app/requests"
 	"app/responses"
 	"context"
+	"fmt"
 
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -24,15 +27,30 @@ func NewMovieModel(mongoDB *db.MongoDB) *MovieModel {
 // 	movieUpcomingPaginationLimit = 20
 // )
 
-func (movieModel *MovieModel) GetMovies() []responses.Movie {
-	cursor, _ := movieModel.Collection.Aggregate(context.TODO(), bson.A{})
+/* TODO Endpoints
+* [ ] Get upcoming movies by popularity etc.
+* [ ] Get movies by release date, popularity, genre etc. (sort & filter)
+* [ ] Get movie details
+* [ ] Get top movies by every decade 1980's 1990's etc.
+* [ ] Get top movies by every genre (?)
+* [ ]
+ */
 
-	var movies []responses.Movie
-	if err := cursor.All(context.TODO(), &movies); err != nil {
-		logrus.Error("failed to decode movies", err)
+func (movieModel *MovieModel) GetMovieDetails(data requests.ID) (responses.Movie, error) {
+	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 
-		return nil
+	result := movieModel.Collection.FindOne(context.TODO(), bson.M{
+		"_id": objectID,
+	})
+
+	var movie responses.Movie
+	if err := result.Decode(&movie); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"game_id": data.ID,
+		}).Error("failed to find movie details by id: ", err)
+
+		return responses.Movie{}, fmt.Errorf("Failed to find movie by id.")
 	}
 
-	return movies
+	return movie, nil
 }

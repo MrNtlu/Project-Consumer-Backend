@@ -84,9 +84,6 @@ type MovieWatchList struct {
 	UpdatedAt     time.Time          `bson:"updated_at" json:"-"`
 }
 
-//TODO
-// This has to be different
-// Unlike anime, seasons are not separated.
 type TVSeriesWatchList struct {
 	ID              primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	UserID          string             `bson:"user_id" json:"user_id"`
@@ -167,15 +164,6 @@ func handleTimesFinished(status string) int {
 	return 0
 }
 
-/* TODO
-* [x] Create user list when they register
-* [x] Add xx list
-* [] Get user list and others
-* [] Update xx list by ID
-* [x] Delete xx list by ID
-* [x] Delete all by user list
- */
-
 //! Create
 func (userListModel *UserListModel) CreateUserList(uid, slug string) {
 	userListObject := createUserListObject(uid, slug)
@@ -247,12 +235,21 @@ func (userListModel *UserListModel) CreateMovieWatchList(uid string, data reques
 	return nil
 }
 
-//TODO Like anime calculate max episode and seasons
-func (userListModel *UserListModel) CreateTVSeriesWatchList(uid string, data requests.CreateTVSeriesWatchList) error {
+func (userListModel *UserListModel) CreateTVSeriesWatchList(
+	uid string, data requests.CreateTVSeriesWatchList, tvSeries responses.TVSeries,
+) error {
 	tvSeriesWatchList := createTVSeriesWatchListObject(
 		uid, data.TvID, data.Status, *data.WatchedEpisodes,
 		*data.WatchedSeasons, data.Score,
 	)
+
+	if (*data.WatchedEpisodes > tvSeries.TotalEpisodes) || (data.Status == "finished" && *data.WatchedEpisodes < tvSeries.TotalEpisodes) {
+		tvSeriesWatchList.WatchedEpisodes = tvSeries.TotalEpisodes
+	}
+
+	if (*data.WatchedSeasons > tvSeries.TotalSeasons) || (data.Status == "finished" && *data.WatchedSeasons < tvSeries.TotalSeasons) {
+		tvSeriesWatchList.WatchedSeasons = tvSeries.TotalSeasons
+	}
 
 	if _, err := userListModel.TVSeriesWatchListCollection.InsertOne(context.TODO(), tvSeriesWatchList); err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -780,6 +777,68 @@ func (userListModel *UserListModel) GetMovieListByUserID(uid string, data reques
 	}
 
 	return movieList, nil
+}
+
+func (userListModel *UserListModel) GetTVSeriesListByUserID(uid string, data requests.SortList) ([]responses.TVSeriesList, error) {
+	var (
+		sortType  string
+		sortOrder int8
+	)
+
+	sortType, sortOrder = getListSortHandler(data.Sort)
+
+	match := bson.M{"$match": bson.M{
+		"user_id": uid,
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"tv_obj_id": bson.M{
+			"$toObjectId": "$tv_id",
+		},
+		"status_priority": statusPriorityAggregation(),
+	}}
+
+	lookup := bson.M{"$lookup": bson.M{
+		"from":         "tv-series",
+		"localField":   "tv_obj_id",
+		"foreignField": "_id",
+		"as":           "tv_series",
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$tv_series",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"status_priority": 1,
+		sortType:          sortOrder,
+	}}
+
+	cursor, err := userListModel.TVSeriesWatchListCollection.Aggregate(context.TODO(), bson.A{
+		match, addFields, lookup, unwind, sort,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to aggregate tv series watch list: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate tv series watch list.")
+	}
+
+	var tvSeriesList []responses.TVSeriesList
+	if err = cursor.All(context.TODO(), &tvSeriesList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to decode movie tv series list: ", err)
+
+		return nil, fmt.Errorf("Failed to decode movie tv series list.")
+	}
+
+	return tvSeriesList, nil
 }
 
 //! Delete

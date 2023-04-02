@@ -45,3 +45,14 @@ type MovieList struct {
 	TimesFinished int      `bson:"times_finished" json:"times_finished"`
 	Movie         Movie    `bson:"movie" json:"movie"`
 }
+
+type TVSeriesList struct {
+	UserID          string   `bson:"user_id" json:"user_id"`
+	TvID            string   `bson:"tv_id" json:"tv_id"`
+	Status          string   `bson:"status" json:"status"`
+	Score           *float32 `bson:"score" json:"score"`
+	WatchedEpisodes int      `bson:"watched_episodes" json:"watched_episodes"`
+	WatchedSeasons  int      `bson:"watched_seasons" json:"watched_seasons"`
+	TimesFinished   int      `bson:"times_finished" json:"times_finished"`
+	TVSeries        TVSeries `bson:"tv_series" json:"tv_series"`
+}
