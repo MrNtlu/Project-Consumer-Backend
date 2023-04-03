@@ -4,6 +4,7 @@ import (
 	"app/db"
 	"app/requests"
 	"app/responses"
+	"app/utils"
 	"context"
 	"fmt"
 	"time"
@@ -39,31 +40,35 @@ const (
 * [x] Get anime details
  */
 
-func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.SortAnime) ([]responses.Anime, p.PaginationData, error) {
+func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.SortUpcoming) ([]responses.Anime, p.PaginationData, error) {
 	currentSeason := getSeasonFromMonth()
 
 	var (
-		sortType  string
-		sortOrder int8
+		sortType            string
+		sortOrder           int8
+		hasReleaseDateOrder int8
 	)
 
 	switch data.Sort {
 	case "popularity":
 		sortType = "popularity"
 		sortOrder = -1
-	case "new":
-		sortType = "aired.from"
-		sortOrder = -1
-	case "old":
+		hasReleaseDateOrder = -1
+	case "soon":
 		sortType = "aired.from"
 		sortOrder = 1
+		hasReleaseDateOrder = -1
+	case "later":
+		sortType = "aired.from"
+		sortOrder = -1
+		hasReleaseDateOrder = 1
 	}
 
 	match := bson.M{"$match": bson.M{
 		"is_airing": false,
 		"$or": bson.A{
 			bson.M{"status": "Not yet aired"},
-			bson.M{"aired.from": bson.M{"$gte": time.Now().UTC()}},
+			bson.M{"aired.from": bson.M{"$gte": utils.GetCurrentDate()}},
 		},
 	}}
 
@@ -105,7 +110,7 @@ func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.SortAnime) (
 	}}
 
 	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animeUpcomingPaginationLimit).
-		Page(data.Page).Sort("has_year", -1).Sort(sortType, sortOrder).Sort("_id", 1).Aggregate(match, addFields)
+		Page(data.Page).Sort("has_year", hasReleaseDateOrder).Sort(sortType, sortOrder).Sort("_id", 1).Aggregate(match, addFields)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
@@ -120,7 +125,6 @@ func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.SortAnime) (
 		if marshallErr := bson.Unmarshal(raw, &anime); marshallErr == nil {
 			upcomingAnimes = append(upcomingAnimes, *anime)
 		}
-
 	}
 
 	return upcomingAnimes, paginatedData.Pagination, nil

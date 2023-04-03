@@ -25,12 +25,12 @@ func NewAnimeController(mongoDB *db.MongoDB) AnimeController {
 // @Tags anime
 // @Accept application/json
 // @Produce application/json
-// @Param sortanime body requests.SortAnime true "Sort Anime"
+// @Param sortupcoming body requests.SortUpcoming true "Sort Upcoming"
 // @Success 200 {array} responses.Anime
 // @Failure 500 {string} string
 // @Router /anime/upcoming [get]
 func (a *AnimeController) GetUpcomingAnimesBySort(c *gin.Context) {
-	var data requests.SortAnime
+	var data requests.SortUpcoming
 	if err := c.ShouldBindQuery(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": validatorErrorHandler(err),

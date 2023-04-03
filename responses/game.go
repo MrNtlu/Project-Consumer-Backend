@@ -24,6 +24,7 @@ type Game struct {
 	Developers                []string                      `bson:"developers" json:"developers"`
 	Publishers                []string                      `bson:"publishers" json:"publishers"`
 	Stores                    []GameStore                   `bson:"stores" json:"stores"`
+	HasReleaseDate            bool                          `bson:"has_release_date" json:"has_release_date"`
 }
 
 type GameMetacriticScorePlatform struct {

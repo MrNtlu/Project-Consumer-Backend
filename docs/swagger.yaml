@@ -166,21 +166,6 @@ definitions:
     - password
     - username
     type: object
-  requests.SortAnime:
-    properties:
-      page:
-        minimum: 1
-        type: integer
-      sort:
-        enum:
-        - popularity
-        - new
-        - old
-        type: string
-    required:
-    - page
-    - sort
-    type: object
   requests.SortByYearSeasonAnime:
     properties:
       page:
@@ -257,7 +242,7 @@ definitions:
     - page
     - sort
     type: object
-  requests.SortGame:
+  requests.SortUpcoming:
     properties:
       page:
         minimum: 1
@@ -265,8 +250,8 @@ definitions:
       sort:
         enum:
         - popularity
-        - new
-        - old
+        - soon
+        - later
         type: string
     required:
     - page
@@ -544,6 +529,8 @@ definitions:
         items:
           $ref: '#/definitions/responses.GameGenre'
         type: array
+      has_release_date:
+        type: boolean
       metacritic_score:
         type: integer
       metacritic_score_by_platform:
@@ -641,7 +628,7 @@ definitions:
       name:
         type: string
       tmdb_id:
-        type: string
+        type: integer
     type: object
   responses.Movie:
     properties:
@@ -710,6 +697,21 @@ definitions:
       origin_country:
         type: string
     type: object
+  responses.Season:
+    properties:
+      air_date:
+        type: string
+      description:
+        type: string
+      episode_count:
+        type: integer
+      image_url:
+        type: string
+      name:
+        type: string
+      season_num:
+        type: integer
+    type: object
   responses.Streaming:
     properties:
       buy_options:
@@ -756,6 +758,10 @@ definitions:
         items:
           $ref: '#/definitions/responses.ProductionAndCompany'
         type: array
+      seasons:
+        items:
+          $ref: '#/definitions/responses.Season'
+        type: array
       small_image_url:
         type: string
       status:
@@ -769,7 +775,7 @@ definitions:
       title_original:
         type: string
       tmdb_id:
-        type: string
+        type: integer
       tmdb_popularity:
         type: number
       tmdb_vote:
@@ -994,12 +1000,12 @@ paths:
       - application/json
       description: Returns upcoming games by sort with pagination
       parameters:
-      - description: Sort Game
+      - description: Sort Upcoming
         in: body
-        name: sortgame
+        name: sortupcoming
         required: true
         schema:
-          $ref: '#/definitions/requests.SortGame'
+          $ref: '#/definitions/requests.SortUpcoming'
       produces:
       - application/json
       responses:
@@ -1563,6 +1569,90 @@ paths:
       summary: Create TVSeries Watch List
       tags:
       - user_list
+  /movie/upcoming:
+    get:
+      consumes:
+      - application/json
+      description: Returns upcoming movies by sort with pagination
+      parameters:
+      - description: Sort Upcoming
+        in: body
+        name: sortupcoming
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortUpcoming'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Movie'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Upcoming Movies by Sort
+      tags:
+      - movie
+  /tv/upcoming:
+    get:
+      consumes:
+      - application/json
+      description: Returns upcoming tv series by sort with pagination
+      parameters:
+      - description: Sort Upcoming
+        in: body
+        name: sortupcoming
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortUpcoming'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.TVSeries'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Upcoming TV Series by Sort
+      tags:
+      - movie
+  /tv/upcoming/season:
+    get:
+      consumes:
+      - application/json
+      description: Returns upcoming tv series by sort with pagination
+      parameters:
+      - description: Sort Upcoming
+        in: body
+        name: sortupcoming
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortUpcoming'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.TVSeries'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Upcoming Seasons for TV Series by Sort
+      tags:
+      - movie
   /user:
     delete:
       consumes:

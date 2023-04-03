@@ -25,12 +25,12 @@ func NewGameController(mongoDB *db.MongoDB) GameController {
 // @Tags game
 // @Accept application/json
 // @Produce application/json
-// @Param sortgame body requests.SortGame true "Sort Game"
+// @Param sortupcoming body requests.SortUpcoming true "Sort Upcoming"
 // @Success 200 {array} responses.Game
 // @Failure 500 {string} string
 // @Router /game/upcoming [get]
 func (g *GameController) GetUpcomingGamesBySort(c *gin.Context) {
-	var data requests.SortGame
+	var data requests.SortUpcoming
 	if err := c.ShouldBindQuery(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": validatorErrorHandler(err),

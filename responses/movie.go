@@ -29,7 +29,7 @@ type ProductionAndCompany struct {
 }
 
 type Genre struct {
-	TmdbID string `bson:"tmdb_id" json:"tmdb_id"`
+	TmdbID int    `bson:"tmdb_id" json:"tmdb_id"`
 	Name   string `bson:"name" json:"name"`
 }
 

@@ -245,12 +245,12 @@ const docTemplate = `{
                 "summary": "Get Upcoming Games by Sort",
                 "parameters": [
                     {
-                        "description": "Sort Game",
-                        "name": "sortgame",
+                        "description": "Sort Upcoming",
+                        "name": "sortupcoming",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/requests.SortGame"
+                            "$ref": "#/definitions/requests.SortUpcoming"
                         }
                     }
                 ],
@@ -1120,6 +1120,135 @@ const docTemplate = `{
                 }
             }
         },
+        "/movie/upcoming": {
+            "get": {
+                "description": "Returns upcoming movies by sort with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movie"
+                ],
+                "summary": "Get Upcoming Movies by Sort",
+                "parameters": [
+                    {
+                        "description": "Sort Upcoming",
+                        "name": "sortupcoming",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortUpcoming"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Movie"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/tv/upcoming": {
+            "get": {
+                "description": "Returns upcoming tv series by sort with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movie"
+                ],
+                "summary": "Get Upcoming TV Series by Sort",
+                "parameters": [
+                    {
+                        "description": "Sort Upcoming",
+                        "name": "sortupcoming",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortUpcoming"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.TVSeries"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/tv/upcoming/season": {
+            "get": {
+                "description": "Returns upcoming tv series by sort with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movie"
+                ],
+                "summary": "Get Upcoming Seasons for TV Series by Sort",
+                "parameters": [
+                    {
+                        "description": "Sort Upcoming",
+                        "name": "sortupcoming",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortUpcoming"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.TVSeries"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/user": {
             "delete": {
                 "security": [
@@ -1689,27 +1818,6 @@ const docTemplate = `{
                 }
             }
         },
-        "requests.SortAnime": {
-            "type": "object",
-            "required": [
-                "page",
-                "sort"
-            ],
-            "properties": {
-                "page": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "sort": {
-                    "type": "string",
-                    "enum": [
-                        "popularity",
-                        "new",
-                        "old"
-                    ]
-                }
-            }
-        },
         "requests.SortByYearSeasonAnime": {
             "type": "object",
             "required": [
@@ -1816,7 +1924,7 @@ const docTemplate = `{
                 }
             }
         },
-        "requests.SortGame": {
+        "requests.SortUpcoming": {
             "type": "object",
             "required": [
                 "page",
@@ -1831,8 +1939,8 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "popularity",
-                        "new",
-                        "old"
+                        "soon",
+                        "later"
                     ]
                 }
             }
@@ -2237,6 +2345,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/responses.GameGenre"
                     }
                 },
+                "has_release_date": {
+                    "type": "boolean"
+                },
                 "metacritic_score": {
                     "type": "integer"
                 },
@@ -2385,7 +2496,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tmdb_id": {
-                    "type": "string"
+                    "type": "integer"
                 }
             }
         },
@@ -2491,6 +2602,29 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.Season": {
+            "type": "object",
+            "properties": {
+                "air_date": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "episode_count": {
+                    "type": "integer"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "season_num": {
+                    "type": "integer"
+                }
+            }
+        },
         "responses.Streaming": {
             "type": "object",
             "properties": {
@@ -2561,6 +2695,12 @@ const docTemplate = `{
                         "$ref": "#/definitions/responses.ProductionAndCompany"
                     }
                 },
+                "seasons": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Season"
+                    }
+                },
                 "small_image_url": {
                     "type": "string"
                 },
@@ -2580,7 +2720,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tmdb_id": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "tmdb_popularity": {
                     "type": "number"

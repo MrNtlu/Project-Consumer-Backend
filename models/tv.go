@@ -4,9 +4,11 @@ import (
 	"app/db"
 	"app/requests"
 	"app/responses"
+	"app/utils"
 	"context"
 	"fmt"
 
+	p "github.com/gobeam/mongo-go-pagination"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -23,14 +25,141 @@ func NewTVModel(mongoDB *db.MongoDB) *TVModel {
 	}
 }
 
+const (
+	tvSeriesUpcomingPaginationLimit = 10
+)
+
 /* TODO Endpoints
-* [ ] Get upcoming tv series by popularity etc.
+* [x] Get upcoming tv series by popularity etc.
 * [ ] Get tv series by release date, popularity, genre etc. (sort & filter)
 * [ ] Get tv series details
 * [ ] Get top tv series by every decade 1980's 1990's etc.
 * [ ] Get top tv series by every genre (?)
 * [ ]
  */
+
+func (tvModel *TVModel) GetUpcomingTVSeries(data requests.SortUpcoming) ([]responses.TVSeries, p.PaginationData, error) {
+	var (
+		sortType        string
+		sortOrder       int8
+		hasAirDateOrder int8
+	)
+
+	switch data.Sort {
+	case "popularity":
+		sortType = "tmdb_popularity"
+		sortOrder = -1
+		hasAirDateOrder = -1
+	case "soon":
+		sortType = "first_air_date"
+		sortOrder = 1
+		hasAirDateOrder = -1
+	case "later":
+		sortType = "first_air_date"
+		sortOrder = -1
+		hasAirDateOrder = 1
+	}
+
+	match := bson.M{"$match": bson.M{
+		"status": "In Production",
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"has_air_date": bson.M{
+			"$or": bson.A{
+				bson.M{
+					"$ne": bson.A{"$release_date", ""},
+				},
+				bson.M{
+					"$ne": bson.A{"$release_date", nil},
+				},
+			},
+		},
+	}}
+
+	paginatedData, err := p.New(tvModel.Collection).Context(context.TODO()).Limit(tvSeriesUpcomingPaginationLimit).
+		Page(data.Page).Sort("has_air_date", hasAirDateOrder).Sort(sortType, sortOrder).Sort("_id", 1).Aggregate(match, addFields)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate upcoming tv series: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get upcoming tv series.")
+	}
+
+	var upcomingTVSeries []responses.TVSeries
+	for _, raw := range paginatedData.Data {
+		var tvSeries *responses.TVSeries
+		if marshalErr := bson.Unmarshal(raw, &tvSeries); marshalErr == nil {
+			upcomingTVSeries = append(upcomingTVSeries, *tvSeries)
+		}
+	}
+
+	return upcomingTVSeries, paginatedData.Pagination, nil
+}
+
+//TODO Get the latest season and sort by that.
+func (tvModel *TVModel) GetUpcomingSeasonTVSeries(data requests.SortUpcoming) ([]responses.TVSeries, p.PaginationData, error) {
+	var (
+		sortType        string
+		sortOrder       int8
+		hasAirDateOrder int8
+	)
+
+	switch data.Sort {
+	case "popularity":
+		sortType = "tmdb_popularity"
+		sortOrder = -1
+		hasAirDateOrder = -1
+	case "soon":
+		sortType = "release_date"
+		sortOrder = 1
+		hasAirDateOrder = -1
+	case "later":
+		sortType = "release_date"
+		sortOrder = -1
+		hasAirDateOrder = 1
+	}
+
+	match := bson.M{"$match": bson.M{
+		"seasons.air_date": bson.M{
+			"$gte": utils.GetCurrentDate(),
+		},
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"has_release_date": bson.M{
+			"$or": bson.A{
+				bson.M{
+					"$ne": bson.A{"$release_date", ""},
+				},
+				bson.M{
+					"$ne": bson.A{"$release_date", nil},
+				},
+			},
+		},
+	}}
+
+	paginatedData, err := p.New(tvModel.Collection).Context(context.TODO()).Limit(tvSeriesUpcomingPaginationLimit).
+		Page(data.Page).Sort("has_air_date", hasAirDateOrder).Sort(sortType, sortOrder).Sort("_id", 1).Aggregate(match, addFields)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate upcoming tv series: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get upcoming tv series.")
+	}
+
+	var upcomingTVSeries []responses.TVSeries
+	for _, raw := range paginatedData.Data {
+		var tvSeries *responses.TVSeries
+		if marshalErr := bson.Unmarshal(raw, &tvSeries); marshalErr == nil {
+			upcomingTVSeries = append(upcomingTVSeries, *tvSeries)
+		}
+	}
+
+	return upcomingTVSeries, paginatedData.Pagination, nil
+}
 
 func (tvModel *TVModel) GetTVSeriesDetails(data requests.ID) (responses.TVSeries, error) {
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)

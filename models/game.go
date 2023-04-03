@@ -4,6 +4,7 @@ import (
 	"app/db"
 	"app/requests"
 	"app/responses"
+	"app/utils"
 	"context"
 	"fmt"
 	"time"
@@ -35,34 +36,52 @@ const (
 * [x] Get game details
  */
 
-func (gameModel *GameModel) GetUpcomingGamesBySort(data requests.SortGame) ([]responses.Game, p.PaginationData, error) {
+func (gameModel *GameModel) GetUpcomingGamesBySort(data requests.SortUpcoming) ([]responses.Game, p.PaginationData, error) {
 	var (
-		sortType  string
-		sortOrder int8
+		sortType            string
+		sortOrder           int8
+		hasReleaseDateOrder int8
 	)
 
 	switch data.Sort {
 	case "popularity":
 		sortType = "rawg_rating"
 		sortOrder = -1
-	case "new":
-		sortType = "release_date"
-		sortOrder = -1
-	case "old":
+		hasReleaseDateOrder = -1
+	case "soon":
 		sortType = "release_date"
 		sortOrder = 1
+		hasReleaseDateOrder = -1
+	case "later":
+		sortType = "release_date"
+		sortOrder = -1
+		hasReleaseDateOrder = 1
 	}
 
 	match := bson.M{"$match": bson.M{
 		"$or": bson.A{
 			bson.M{"tba": true},
-			bson.M{"release_date": bson.M{"$gte": time.Now().UTC()}},
+			bson.M{"release_date": bson.M{"$gte": utils.GetCurrentDate()}},
 		},
 	}}
 
-	var games []responses.Game
+	addFields := bson.M{"$addFields": bson.M{
+		"has_release_date": bson.M{
+			"$and": bson.A{
+				bson.M{
+					"$ne": bson.A{"$release_date", nil},
+				},
+				bson.M{
+					"$ne": bson.A{"$release_date", ""},
+				},
+			},
+		},
+	}}
+
+	fmt.Println(time.Now().UTC(), utils.GetCurrentDate())
+
 	paginatedData, err := p.New(gameModel.Collection).Context(context.TODO()).Limit(gameUpcomingPaginationLimit).
-		Page(data.Page).Sort(sortType, sortOrder).Filter(match).Decode(&games).Find()
+		Page(data.Page).Sort("has_release_date", hasReleaseDateOrder).Sort(sortType, sortOrder).Sort("_id", 1).Aggregate(match, addFields)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
@@ -71,7 +90,15 @@ func (gameModel *GameModel) GetUpcomingGamesBySort(data requests.SortGame) ([]re
 		return nil, p.PaginationData{}, fmt.Errorf("Failed to get upcoming games.")
 	}
 
-	return games, paginatedData.Pagination, nil
+	var upcomingGames []responses.Game
+	for _, raw := range paginatedData.Data {
+		var game *responses.Game
+		if marshalErr := bson.Unmarshal(raw, &game); marshalErr == nil {
+			upcomingGames = append(upcomingGames, *game)
+		}
+	}
+
+	return upcomingGames, paginatedData.Pagination, nil
 }
 
 func (gameModel *GameModel) GetGamesByFilterAndSort(data requests.SortFilterGame) ([]responses.Game, p.PaginationData, error) {
