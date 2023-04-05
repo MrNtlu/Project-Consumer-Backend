@@ -141,6 +141,29 @@ definitions:
     - id
     - type
     type: object
+  requests.FilterByDecade:
+    properties:
+      decade:
+        maximum: 2050
+        minimum: 1900
+        type: integer
+      page:
+        minimum: 1
+        type: integer
+    required:
+    - decade
+    - page
+    type: object
+  requests.FilterByGenre:
+    properties:
+      genre:
+        type: string
+      page:
+        minimum: 1
+        type: integer
+    required:
+    - page
+    type: object
   requests.ForgotPassword:
     properties:
       email_address:
@@ -238,6 +261,75 @@ definitions:
         type: string
       tba:
         type: boolean
+    required:
+    - page
+    - sort
+    type: object
+  requests.SortFilterMovie:
+    properties:
+      genres:
+        type: string
+      page:
+        minimum: 1
+        type: integer
+      productionCompanies:
+        type: string
+      releaseDateFrom:
+        maximum: 2050
+        minimum: 1900
+        type: integer
+      releaseDateTo:
+        maximum: 2050
+        minimum: 1900
+        type: integer
+      sort:
+        enum:
+        - popularity
+        - new
+        - old
+        type: string
+      status:
+        enum:
+        - production
+        - released
+        - planned
+        type: string
+    required:
+    - page
+    - sort
+    type: object
+  requests.SortFilterTVSeries:
+    properties:
+      firstAirDateFrom:
+        maximum: 2050
+        minimum: 1900
+        type: integer
+      firstAirDateTo:
+        maximum: 2050
+        minimum: 1900
+        type: integer
+      genres:
+        type: string
+      numSeason:
+        minimum: 1
+        type: integer
+      page:
+        minimum: 1
+        type: integer
+      productionCompanies:
+        type: string
+      sort:
+        enum:
+        - popularity
+        - new
+        - old
+        type: string
+      status:
+        enum:
+        - production
+        - ended
+        - airing
+        type: string
     required:
     - page
     - sort
@@ -1569,6 +1661,90 @@ paths:
       summary: Create TVSeries Watch List
       tags:
       - user_list
+  /movie:
+    get:
+      consumes:
+      - application/json
+      description: Returns movies by sort and filter with pagination
+      parameters:
+      - description: Sort and Filter Movie
+        in: body
+        name: sortfiltermovie
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortFilterMovie'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Movie'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Movies by Sort and Filter
+      tags:
+      - movie
+  /movie/decade:
+    get:
+      consumes:
+      - application/json
+      description: Returns popular movies by decade with pagination
+      parameters:
+      - description: Filter by Decade
+        in: body
+        name: filterbydecade
+        required: true
+        schema:
+          $ref: '#/definitions/requests.FilterByDecade'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Movie'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Popular Movies by decade
+      tags:
+      - movie
+  /movie/genre:
+    get:
+      consumes:
+      - application/json
+      description: Returns popular movies by genre with pagination
+      parameters:
+      - description: Filter by Genre
+        in: body
+        name: filterbygenre
+        required: true
+        schema:
+          $ref: '#/definitions/requests.FilterByGenre'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Movie'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Popular Movies by genre
+      tags:
+      - movie
   /movie/upcoming:
     get:
       consumes:
@@ -1597,6 +1773,62 @@ paths:
       summary: Get Upcoming Movies by Sort
       tags:
       - movie
+  /tv:
+    get:
+      consumes:
+      - application/json
+      description: Returns tv series by sort and filter with pagination
+      parameters:
+      - description: Sort and Filter TV Series
+        in: body
+        name: sortfiltertvseries
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortFilterTVSeries'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.TVSeries'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get TV Series by Sort and Filter
+      tags:
+      - tv
+  /tv/decade:
+    get:
+      consumes:
+      - application/json
+      description: Returns popular tv series by genre with pagination
+      parameters:
+      - description: Filter by Genre
+        in: body
+        name: filterbygenre
+        required: true
+        schema:
+          $ref: '#/definitions/requests.FilterByGenre'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.TVSeries'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Popular TV Series by genre
+      tags:
+      - tv
   /tv/upcoming:
     get:
       consumes:
@@ -1624,7 +1856,7 @@ paths:
             type: string
       summary: Get Upcoming TV Series by Sort
       tags:
-      - movie
+      - tv
   /tv/upcoming/season:
     get:
       consumes:
@@ -1652,7 +1884,7 @@ paths:
             type: string
       summary: Get Upcoming Seasons for TV Series by Sort
       tags:
-      - movie
+      - tv
   /user:
     delete:
       consumes:

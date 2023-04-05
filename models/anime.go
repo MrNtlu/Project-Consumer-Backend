@@ -28,6 +28,7 @@ func NewAnimeModel(mongoDB *db.MongoDB) *AnimeModel {
 
 const (
 	animeUpcomingPaginationLimit = 20
+	animePaginationLimit         = 20
 )
 
 /* TODO Endpoints
@@ -295,14 +296,14 @@ func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterA
 	}
 
 	var animes []responses.Anime
-	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animeUpcomingPaginationLimit).
+	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animePaginationLimit).
 		Page(data.Page).Sort(sortType, sortOrder).Filter(match).Decode(&animes).Find()
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
-		}).Error("failed to aggregate animes by season and year: ", err)
+		}).Error("failed to aggregate animes by sort and filter: ", err)
 
-		return nil, p.PaginationData{}, fmt.Errorf("Failed to get animes by season and year.")
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get animes by selected filters.")
 	}
 
 	return animes, paginatedData.Pagination, nil

@@ -28,6 +28,7 @@ func NewGameModel(mongoDB *db.MongoDB) *GameModel {
 
 const (
 	gameUpcomingPaginationLimit = 20
+	gamePaginationLimit         = 20
 )
 
 /* TODO Endpoints
@@ -143,7 +144,7 @@ func (gameModel *GameModel) GetGamesByFilterAndSort(data requests.SortFilterGame
 	}
 
 	var games []responses.Game
-	paginatedData, err := p.New(gameModel.Collection).Context(context.TODO()).Limit(gameUpcomingPaginationLimit).
+	paginatedData, err := p.New(gameModel.Collection).Context(context.TODO()).Limit(gamePaginationLimit).
 		Page(data.Page).Sort(sortType, sortOrder).Filter(match).Decode(&games).Find()
 	if err != nil {
 		logrus.WithFields(logrus.Fields{

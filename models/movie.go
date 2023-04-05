@@ -6,6 +6,7 @@ import (
 	"app/responses"
 	"context"
 	"fmt"
+	"strconv"
 
 	p "github.com/gobeam/mongo-go-pagination"
 	"github.com/sirupsen/logrus"
@@ -26,13 +27,14 @@ func NewMovieModel(mongoDB *db.MongoDB) *MovieModel {
 
 const (
 	movieUpcomingPaginationLimit = 20
+	moviePaginationLimit         = 20
 )
 
 /* TODO Endpoints
 * [x] Get upcoming movies by popularity etc.
-* [ ] Get movies by release date, popularity, genre etc. (sort & filter)
+* [x] Get movies by release date, popularity, genre etc. (sort & filter)
 * [ ] Get movie details
-* [ ] Get top movies by every decade 1980's 1990's etc.
+* [x] Get top movies by every decade 1980's 1990's etc.
 * [ ] Get top movies by every genre (?)
  */
 
@@ -89,6 +91,86 @@ func (movieModel *MovieModel) GetUpcomingMoviesBySort(data requests.SortUpcoming
 	}
 
 	return upcomingMovies, paginatedData.Pagination, nil
+}
+
+func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterMovie) ([]responses.Movie, p.PaginationData, error) {
+	var (
+		sortType  string
+		sortOrder int8
+	)
+
+	switch data.Sort {
+	case "popularity":
+		sortType = "tmdb_popularity"
+		sortOrder = -1
+	case "soon":
+		sortType = "release_date"
+		sortOrder = 1
+	case "later":
+		sortType = "release_date"
+		sortOrder = -1
+	}
+
+	match := bson.M{}
+	if data.Status != nil || data.Genres != nil || data.ProductionCompanies != nil ||
+		data.ReleaseDateFrom != nil || data.ReleaseDateTo != nil {
+
+		if data.Status != nil {
+			switch *data.Status {
+			case "production":
+				match["$or"] = bson.A{
+					bson.M{
+						"status": "Post Production",
+					},
+					bson.M{
+						"status": "In Production",
+					},
+				}
+			case "released":
+				match["status"] = "Released"
+			case "planned":
+				match["status"] = "Planned"
+			}
+		}
+
+		if data.Genres != nil {
+			match["genres.name"] = bson.M{
+				"$in": bson.A{data.Genres},
+			}
+		}
+
+		if data.ProductionCompanies != nil {
+			match["production_companies.name"] = bson.M{
+				"$in": bson.A{data.ProductionCompanies},
+			}
+		}
+
+		if data.ReleaseDateFrom != nil {
+			if data.ReleaseDateTo != nil {
+				match["release_date"] = bson.M{
+					"$gte": strconv.Itoa(*data.ReleaseDateFrom),
+					"$lt":  strconv.Itoa(*data.ReleaseDateTo),
+				}
+			} else {
+				match["release_date"] = bson.M{
+					"$gte": strconv.Itoa(*data.ReleaseDateFrom),
+				}
+			}
+		}
+	}
+
+	var movies []responses.Movie
+	paginatedData, err := p.New(movieModel.Collection).Context(context.TODO()).Limit(moviePaginationLimit).
+		Page(data.Page).Sort(sortType, sortOrder).Filter(match).Decode(&movies).Find()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate movies by sort and filter: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get movies by selected filters.")
+	}
+
+	return movies, paginatedData.Pagination, nil
 }
 
 func (movieModel *MovieModel) GetMovieDetails(data requests.ID) (responses.Movie, error) {

@@ -1120,6 +1120,135 @@ const docTemplate = `{
                 }
             }
         },
+        "/movie": {
+            "get": {
+                "description": "Returns movies by sort and filter with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movie"
+                ],
+                "summary": "Get Movies by Sort and Filter",
+                "parameters": [
+                    {
+                        "description": "Sort and Filter Movie",
+                        "name": "sortfiltermovie",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortFilterMovie"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Movie"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/movie/decade": {
+            "get": {
+                "description": "Returns popular movies by decade with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movie"
+                ],
+                "summary": "Get Popular Movies by decade",
+                "parameters": [
+                    {
+                        "description": "Filter by Decade",
+                        "name": "filterbydecade",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.FilterByDecade"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Movie"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/movie/genre": {
+            "get": {
+                "description": "Returns popular movies by genre with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movie"
+                ],
+                "summary": "Get Popular Movies by genre",
+                "parameters": [
+                    {
+                        "description": "Filter by Genre",
+                        "name": "filterbygenre",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.FilterByGenre"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Movie"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/movie/upcoming": {
             "get": {
                 "description": "Returns upcoming movies by sort with pagination",
@@ -1163,6 +1292,92 @@ const docTemplate = `{
                 }
             }
         },
+        "/tv": {
+            "get": {
+                "description": "Returns tv series by sort and filter with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tv"
+                ],
+                "summary": "Get TV Series by Sort and Filter",
+                "parameters": [
+                    {
+                        "description": "Sort and Filter TV Series",
+                        "name": "sortfiltertvseries",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortFilterTVSeries"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.TVSeries"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/tv/decade": {
+            "get": {
+                "description": "Returns popular tv series by genre with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tv"
+                ],
+                "summary": "Get Popular TV Series by genre",
+                "parameters": [
+                    {
+                        "description": "Filter by Genre",
+                        "name": "filterbygenre",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.FilterByGenre"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.TVSeries"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/tv/upcoming": {
             "get": {
                 "description": "Returns upcoming tv series by sort with pagination",
@@ -1173,7 +1388,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "movie"
+                    "tv"
                 ],
                 "summary": "Get Upcoming TV Series by Sort",
                 "parameters": [
@@ -1216,7 +1431,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "movie"
+                    "tv"
                 ],
                 "summary": "Get Upcoming Seasons for TV Series by Sort",
                 "parameters": [
@@ -1781,6 +1996,39 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.FilterByDecade": {
+            "type": "object",
+            "required": [
+                "decade",
+                "page"
+            ],
+            "properties": {
+                "decade": {
+                    "type": "integer",
+                    "maximum": 2050,
+                    "minimum": 1900
+                },
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "requests.FilterByGenre": {
+            "type": "object",
+            "required": [
+                "page"
+            ],
+            "properties": {
+                "genre": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
         "requests.ForgotPassword": {
             "type": "object",
             "required": [
@@ -1921,6 +2169,100 @@ const docTemplate = `{
                 },
                 "tba": {
                     "type": "boolean"
+                }
+            }
+        },
+        "requests.SortFilterMovie": {
+            "type": "object",
+            "required": [
+                "page",
+                "sort"
+            ],
+            "properties": {
+                "genres": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "productionCompanies": {
+                    "type": "string"
+                },
+                "releaseDateFrom": {
+                    "type": "integer",
+                    "maximum": 2050,
+                    "minimum": 1900
+                },
+                "releaseDateTo": {
+                    "type": "integer",
+                    "maximum": 2050,
+                    "minimum": 1900
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "new",
+                        "old"
+                    ]
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "production",
+                        "released",
+                        "planned"
+                    ]
+                }
+            }
+        },
+        "requests.SortFilterTVSeries": {
+            "type": "object",
+            "required": [
+                "page",
+                "sort"
+            ],
+            "properties": {
+                "firstAirDateFrom": {
+                    "type": "integer",
+                    "maximum": 2050,
+                    "minimum": 1900
+                },
+                "firstAirDateTo": {
+                    "type": "integer",
+                    "maximum": 2050,
+                    "minimum": 1900
+                },
+                "genres": {
+                    "type": "string"
+                },
+                "numSeason": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "productionCompanies": {
+                    "type": "string"
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "new",
+                        "old"
+                    ]
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "production",
+                        "ended",
+                        "airing"
+                    ]
                 }
             }
         },

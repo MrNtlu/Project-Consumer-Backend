@@ -75,7 +75,7 @@ func (a *AnimeController) GetAnimesByYearAndSeason(c *gin.Context) {
 
 	animeModel := models.NewAnimeModel(a.Database)
 
-	upcomingAnimes, pagination, err := animeModel.GetAnimesByYearAndSeason(data)
+	animes, pagination, err := animeModel.GetAnimesByYearAndSeason(data)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -84,7 +84,7 @@ func (a *AnimeController) GetAnimesByYearAndSeason(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": upcomingAnimes})
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": animes})
 }
 
 // Get Upcoming Animes
@@ -133,7 +133,7 @@ func (a *AnimeController) GetAnimesBySortAndFilter(c *gin.Context) {
 
 	animeModel := models.NewAnimeModel(a.Database)
 
-	animeList, pagination, err := animeModel.GetAnimesBySortAndFilter(data)
+	animes, pagination, err := animeModel.GetAnimesBySortAndFilter(data)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -142,5 +142,5 @@ func (a *AnimeController) GetAnimesBySortAndFilter(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": animeList})
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": animes})
 }
