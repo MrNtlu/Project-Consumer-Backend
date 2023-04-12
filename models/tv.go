@@ -172,12 +172,12 @@ func (tvModel *TVModel) GetTVSeriesBySortAndFilter(data requests.SortFilterTVSer
 	case "popularity":
 		sortType = "tmdb_popularity"
 		sortOrder = -1
-	case "soon":
-		sortType = "first_air_date"
-		sortOrder = 1
-	case "later":
+	case "new":
 		sortType = "first_air_date"
 		sortOrder = -1
+	case "old":
+		sortType = "first_air_date"
+		sortOrder = 1
 	}
 
 	match := bson.M{}

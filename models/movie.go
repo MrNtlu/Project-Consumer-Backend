@@ -103,12 +103,12 @@ func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterM
 	case "popularity":
 		sortType = "tmdb_popularity"
 		sortOrder = -1
-	case "soon":
-		sortType = "release_date"
-		sortOrder = 1
-	case "later":
+	case "new":
 		sortType = "release_date"
 		sortOrder = -1
+	case "old":
+		sortType = "release_date"
+		sortOrder = 1
 	}
 
 	match := bson.M{}
