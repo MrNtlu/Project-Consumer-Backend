@@ -93,6 +93,7 @@ func (movieModel *MovieModel) GetUpcomingMoviesBySort(data requests.SortUpcoming
 	return upcomingMovies, paginatedData.Pagination, nil
 }
 
+// TODO If sort type is old, don't show movies without the release date.
 func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterMovie) ([]responses.Movie, p.PaginationData, error) {
 	var (
 		sortType  string
