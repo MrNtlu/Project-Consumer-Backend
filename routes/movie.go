@@ -3,6 +3,7 @@ package routes
 import (
 	"app/controllers"
 	"app/db"
+	"app/helpers"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,5 +17,6 @@ func movieRouter(router *gin.RouterGroup, mongoDB *db.MongoDB) {
 		movie.GET("", movieController.GetMoviesBySortAndFilter)
 		movie.GET("/decade", movieController.GetPopularMoviesByDecade)
 		movie.GET("/genre", movieController.GetPopularMoviesByGenre)
+		movie.Use(helpers.OptionalTokenCheck).GET("/details", movieController.GetMovieDetails)
 	}
 }

@@ -93,7 +93,6 @@ func (movieModel *MovieModel) GetUpcomingMoviesBySort(data requests.SortUpcoming
 	return upcomingMovies, paginatedData.Pagination, nil
 }
 
-// TODO If sort type is old, don't show movies without the release date.
 func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterMovie) ([]responses.Movie, p.PaginationData, error) {
 	var (
 		sortType  string
@@ -191,4 +190,70 @@ func (movieModel *MovieModel) GetMovieDetails(data requests.ID) (responses.Movie
 	}
 
 	return movie, nil
+}
+
+func (movieModel *MovieModel) GetMovieDetailsWithWatchList(data requests.ID, uuid string) (responses.MovieDetails, error) {
+	objectID, _ := primitive.ObjectIDFromHex(data.ID)
+
+	match := bson.M{"$match": bson.M{
+		"_id": objectID,
+	}}
+	set := bson.M{"$set": bson.M{
+		"movie_id": bson.M{
+			"$toString": "$_id",
+		},
+	}}
+	lookup := bson.M{"$lookup": bson.M{
+		"from": "movie-watch-lists",
+		"let": bson.M{
+			"uuid":     uuid,
+			"movie_id": "$movie_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$and": bson.A{
+							bson.M{"$eq": bson.A{"$movie_id", "$$movie_id"}},
+							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "watch_list",
+	}}
+	unwindInvesting := bson.M{"$unwind": bson.M{
+		"path":                       "$watch_list",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	cursor, err := movieModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, set, lookup, unwindInvesting,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uuid,
+			"id":  data.ID,
+		}).Error("failed to aggregate movie details: ", err)
+
+		return responses.MovieDetails{}, fmt.Errorf("Failed to aggregate movie details with watch list.")
+	}
+
+	var movieDetails []responses.MovieDetails
+	if err = cursor.All(context.TODO(), &movieDetails); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uuid,
+			"id":  data.ID,
+		}).Error("failed to decode movie details: ", err)
+
+		return responses.MovieDetails{}, fmt.Errorf("Failed to decode movie details.")
+	}
+
+	if len(movieDetails) > 0 {
+		return movieDetails[0], nil
+	}
+
+	return responses.MovieDetails{}, nil
 }

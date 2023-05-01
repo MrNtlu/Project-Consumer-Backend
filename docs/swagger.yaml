@@ -171,6 +171,13 @@ definitions:
     required:
     - email_address
     type: object
+  requests.ID:
+    properties:
+      id:
+        type: string
+    required:
+    - id
+    type: object
   requests.Register:
     properties:
       email_address:
@@ -764,6 +771,64 @@ definitions:
         type: number
       tmdb_vote_count:
         type: integer
+    type: object
+  responses.MovieDetails:
+    properties:
+      _id:
+        type: string
+      description:
+        type: string
+      genres:
+        items:
+          $ref: '#/definitions/responses.Genre'
+        type: array
+      image_url:
+        type: string
+      imdb_id:
+        type: string
+      length:
+        type: integer
+      production_companies:
+        items:
+          $ref: '#/definitions/responses.ProductionAndCompany'
+        type: array
+      release_date:
+        type: string
+      small_image_url:
+        type: string
+      status:
+        type: string
+      streaming:
+        items:
+          $ref: '#/definitions/responses.Streaming'
+        type: array
+      title_en:
+        type: string
+      title_original:
+        type: string
+      tmdb_id:
+        type: string
+      tmdb_popularity:
+        type: number
+      tmdb_vote:
+        type: number
+      tmdb_vote_count:
+        type: integer
+      watch_list:
+        $ref: '#/definitions/responses.MovieDetailsWatchList'
+    type: object
+  responses.MovieDetailsWatchList:
+    properties:
+      movie_id:
+        type: string
+      score:
+        type: number
+      status:
+        type: string
+      times_finished:
+        type: integer
+      user_id:
+        type: string
     type: object
   responses.MovieList:
     properties:
@@ -1715,6 +1780,34 @@ paths:
           schema:
             type: string
       summary: Get Popular Movies by decade
+      tags:
+      - movie
+  /movie/details:
+    get:
+      consumes:
+      - application/json
+      description: Returns movie details with optional authentication
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ID'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.MovieDetails'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Movie Details
       tags:
       - movie
   /movie/genre:

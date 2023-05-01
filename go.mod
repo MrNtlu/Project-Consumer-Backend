@@ -29,6 +29,7 @@ require (
 	github.com/go-playground/validator/v10 v10.11.2 // indirect
 	github.com/gobeam/mongo-go-pagination v0.0.8 // indirect
 	github.com/goccy/go-json v0.10.0 // indirect
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-jwt/jwt/v4 v4.4.3 // indirect
 	github.com/golang-module/dongle v0.2.8 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect

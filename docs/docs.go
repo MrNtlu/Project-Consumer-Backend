@@ -1206,6 +1206,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/movie/details": {
+            "get": {
+                "description": "Returns movie details with optional authentication",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movie"
+                ],
+                "summary": "Get Movie Details",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ID"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.MovieDetails"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/movie/genre": {
             "get": {
                 "description": "Returns popular movies by genre with pagination",
@@ -2036,6 +2079,17 @@ const docTemplate = `{
             ],
             "properties": {
                 "email_address": {
+                    "type": "string"
+                }
+            }
+        },
+        "requests.ID": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
                     "type": "string"
                 }
             }
@@ -2904,6 +2958,94 @@ const docTemplate = `{
                 },
                 "tmdb_vote_count": {
                     "type": "integer"
+                }
+            }
+        },
+        "responses.MovieDetails": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Genre"
+                    }
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "imdb_id": {
+                    "type": "string"
+                },
+                "length": {
+                    "type": "integer"
+                },
+                "production_companies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.ProductionAndCompany"
+                    }
+                },
+                "release_date": {
+                    "type": "string"
+                },
+                "small_image_url": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "streaming": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Streaming"
+                    }
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "tmdb_id": {
+                    "type": "string"
+                },
+                "tmdb_popularity": {
+                    "type": "number"
+                },
+                "tmdb_vote": {
+                    "type": "number"
+                },
+                "tmdb_vote_count": {
+                    "type": "integer"
+                },
+                "watch_list": {
+                    "$ref": "#/definitions/responses.MovieDetailsWatchList"
+                }
+            }
+        },
+        "responses.MovieDetailsWatchList": {
+            "type": "object",
+            "properties": {
+                "movie_id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
                 }
             }
         },
