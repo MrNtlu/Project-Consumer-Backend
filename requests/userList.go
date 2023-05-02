@@ -2,6 +2,7 @@ package requests
 
 type CreateAnimeList struct {
 	AnimeID         string   `json:"anime_id" binding:"required"`
+	AnimeMALID      int64    `json:"anime_mal_id" binding:"required"`
 	Status          string   `json:"status" binding:"required,oneof=active finished dropped planto"`
 	WatchedEpisodes *int64   `json:"watched_episodes" binding:"required,number,min=0"`
 	Score           *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
@@ -9,19 +10,22 @@ type CreateAnimeList struct {
 
 type CreateGameList struct {
 	GameID            string   `json:"game_id" binding:"required"`
+	GameRAWGID        int64    `json:"game_rawg_id" binding:"required"`
 	Status            string   `json:"status" binding:"required,oneof=active finished dropped planto"`
 	Score             *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
 	AchievementStatus *float32 `json:"achievement_status" binding:"omitempty,number,min=0,max=100"`
 }
 
 type CreateMovieWatchList struct {
-	MovieID string   `json:"movie_id" binding:"required"`
-	Status  string   `json:"status" binding:"required,oneof=active finished dropped planto"`
-	Score   *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
+	MovieID     string   `json:"movie_id" binding:"required"`
+	MovieTmdbID string   `json:"movie_tmdb_id" binding:"required"`
+	Status      string   `json:"status" binding:"required,oneof=active finished dropped planto"`
+	Score       *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
 }
 
 type CreateTVSeriesWatchList struct {
 	TvID            string   `json:"tv_id" binding:"required"`
+	TvTmdbID        string   `json:"tv_tmdb_id" binding:"required"`
 	Status          string   `json:"status" binding:"required,oneof=active finished dropped planto"`
 	WatchedEpisodes *int     `json:"watched_episodes" binding:"required,number,min=0"`
 	WatchedSeasons  *int     `json:"watched_seasons" binding:"required,number,min=0"`

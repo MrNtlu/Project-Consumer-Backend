@@ -192,6 +192,7 @@ func (movieModel *MovieModel) GetMovieDetails(data requests.ID) (responses.Movie
 	return movie, nil
 }
 
+//TODO check watchlist lookup with both movie_id and movie_tmdb_id
 func (movieModel *MovieModel) GetMovieDetailsWithWatchList(data requests.ID, uuid string) (responses.MovieDetails, error) {
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 
