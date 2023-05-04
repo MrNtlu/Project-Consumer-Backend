@@ -37,6 +37,47 @@ type Anime struct {
 	Relations     []AnimeRelation    `bson:"relations" json:"relations"`
 }
 
+type AnimeDetails struct {
+	ID            primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	TitleOriginal string             `bson:"title_original" json:"title_original"`
+	TitleEn       string             `bson:"title_en" json:"title_en"`
+	TitleJP       string             `bson:"title_jp" json:"title_jp"`
+	Description   string             `bson:"description" json:"description"`
+	ImageURL      string             `bson:"image_url" json:"image_url"`
+	SmallImageURL string             `bson:"small_image_url" json:"small_image_url"`
+	MalID         int64              `bson:"mal_id" json:"mal_id"`
+	MalScore      float64            `bson:"mal_score" json:"mal_score"`
+	MalScoredBy   int64              `bson:"mal_scored_by" json:"mal_scored_by"`
+	Trailer       *string            `bson:"trailer" json:"trailer"`
+	Type          string             `bson:"type" json:"type"`
+	Source        string             `bson:"source" json:"source"`
+	Episodes      *int64             `bson:"episodes" json:"episodes"`
+	Season        *string            `bson:"season" json:"season"`
+	Year          *int               `bson:"year" json:"year"`
+	Status        string             `bson:"status" json:"status"`
+	IsAiring      bool               `bson:"is_airing" json:"is_airing"`
+	Streaming     []AnimeNameURL     `bson:"streaming" json:"streaming"`
+	Aired         AnimeAirDate       `bson:"aired" json:"aired"`
+	AgeRating     *string            `bson:"age_rating" json:"age_rating"`
+	Producers     []AnimeNameURL     `bson:"producers" json:"producers"`
+	Studios       []AnimeNameURL     `bson:"studios" json:"studios"`
+	Genres        []AnimeGenre       `bson:"genres" json:"genres"`
+	Themes        []AnimeGenre       `bson:"themes" json:"themes"`
+	Demographics  []AnimeGenre       `bson:"demographics" json:"demographics"`
+	Relations     []AnimeRelation    `bson:"relations" json:"relations"`
+	AnimeList     AnimeDetailsList   `bson:"anime_list" json:"anime_list"`
+}
+
+type AnimeDetailsList struct {
+	ID              primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	UserID          string             `bson:"user_id" json:"user_id"`
+	AnimeID         string             `bson:"anime_id" json:"anime_id"`
+	Status          string             `bson:"status" json:"status"`
+	WatchedEpisodes int                `bson:"watched_episodes" json:"watched_episodes"`
+	Score           *float32           `bson:"score" json:"score"`
+	TimesFinished   int                `bson:"times_finished" json:"times_finished"`
+}
+
 type AnimeNameURL struct {
 	Name string `bson:"name" json:"name"`
 	Url  string `bson:"url" json:"url"`

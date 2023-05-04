@@ -3,6 +3,7 @@ package routes
 import (
 	"app/controllers"
 	"app/db"
+	"app/helpers"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,5 +18,6 @@ func tvRouter(router *gin.RouterGroup, mongoDB *db.MongoDB) {
 		tv.GET("", tvController.GetTVSeriesBySortAndFilter)
 		tv.GET("/decade", tvController.GetPopularTVSeriesByDecade)
 		tv.GET("/genre", tvController.GetPopularTVSeriesByGenre)
+		tv.Use(helpers.OptionalTokenCheck).GET("/details", tvController.GetTVSeriesDetails)
 	}
 }

@@ -144,3 +144,56 @@ func (a *AnimeController) GetAnimesBySortAndFilter(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": animes})
 }
+
+// Get Anime Details
+// @Summary Get Anime Details
+// @Description Returns anime details with optional authentication
+// @Tags anime
+// @Accept application/json
+// @Produce application/json
+// @Param id body requests.ID true "ID"
+// @Success 200 {array} responses.Anime
+// @Success 200 {array} responses.AnimeDetails
+// @Failure 500 {string} string
+// @Router /anime/details [get]
+func (a *AnimeController) GetAnimeDetails(c *gin.Context) {
+	var data requests.ID
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	animeModel := models.NewAnimeModel(a.Database)
+
+	uid, OK := c.Get("uuid")
+	if OK && uid != nil {
+		animeDetails, err := animeModel.GetAnimeDetailsWithWatchList(data, uid.(string))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": animeDetails,
+		})
+	} else {
+		animeDetails, err := animeModel.GetAnimeDetails(data)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": animeDetails,
+		})
+	}
+}

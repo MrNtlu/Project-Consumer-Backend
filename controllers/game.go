@@ -86,3 +86,56 @@ func (g *GameController) GetGamesByFilterAndSort(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": games})
 }
+
+// Get Game Details
+// @Summary Get Game Details
+// @Description Returns game details with optional authentication
+// @Tags game
+// @Accept application/json
+// @Produce application/json
+// @Param id body requests.ID true "ID"
+// @Success 200 {array} responses.Game
+// @Success 200 {array} responses.GameDetails
+// @Failure 500 {string} string
+// @Router /game/details [get]
+func (g *GameController) GetGameDetails(c *gin.Context) {
+	var data requests.ID
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	gameModel := models.NewGameModel(g.Database)
+
+	uid, OK := c.Get("uuid")
+	if OK && uid != nil {
+		gameDetails, err := gameModel.GetGameDetailsWithPlayList(data, uid.(string))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": gameDetails,
+		})
+	} else {
+		gameDetails, err := gameModel.GetGameDetails(data)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": gameDetails,
+		})
+	}
+}

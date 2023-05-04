@@ -262,3 +262,78 @@ func (tvModel *TVModel) GetTVSeriesDetails(data requests.ID) (responses.TVSeries
 
 	return tvSeries, nil
 }
+
+func (tvModel *TVModel) GetTVSeriesDetailsWithWatchList(data requests.ID, uuid string) (responses.TVSeriesDetails, error) {
+	objectID, _ := primitive.ObjectIDFromHex(data.ID)
+
+	match := bson.M{"$match": bson.M{
+		"_id": objectID,
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"tv_id": bson.M{
+			"$toString": "$_id",
+		},
+	}}
+
+	lookup := bson.M{"$lookup": bson.M{
+		"from": "movie-watch-lists",
+		"let": bson.M{
+			"uuid":    uuid,
+			"tv_id":   "$tv_id",
+			"tmdb_id": "$tmdb_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$and": bson.A{
+							bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$tv_id", "$$tv_id"}},
+									bson.M{"$eq": bson.A{"$tv_tmdb_id", "$$tmdb_id"}},
+								},
+							},
+							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "tv_list",
+	}}
+
+	unwindWatchList := bson.M{"$unwind": bson.M{
+		"path":                       "$tv_list",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, set, lookup, unwindWatchList,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uuid,
+			"id":  data.ID,
+		}).Error("failed to aggregate tv details: ", err)
+
+		return responses.TVSeriesDetails{}, fmt.Errorf("Failed to aggregate tv details with watch list.")
+	}
+
+	var tvDetails []responses.TVSeriesDetails
+	if err = cursor.All(context.TODO(), &tvDetails); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uuid,
+			"id":  data.ID,
+		}).Error("failed to decode tv details: ", err)
+
+		return responses.TVSeriesDetails{}, fmt.Errorf("Failed to decode tv details.")
+	}
+
+	if len(tvDetails) > 0 {
+		return tvDetails[0], nil
+	}
+
+	return responses.TVSeriesDetails{}, nil
+}

@@ -44,11 +44,12 @@ type MovieDetails struct {
 }
 
 type MovieDetailsWatchList struct {
-	UserID        string   `bson:"user_id" json:"user_id"`
-	MovieID       string   `bson:"movie_id" json:"movie_id"`
-	Status        string   `bson:"status" json:"status"`
-	Score         *float32 `bson:"score" json:"score"`
-	TimesFinished int      `bson:"times_finished" json:"times_finished"`
+	ID            primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	UserID        string             `bson:"user_id" json:"user_id"`
+	MovieID       string             `bson:"movie_id" json:"movie_id"`
+	Status        string             `bson:"status" json:"status"`
+	Score         *float32           `bson:"score" json:"score"`
+	TimesFinished int                `bson:"times_finished" json:"times_finished"`
 }
 
 type ProductionAndCompany struct {

@@ -38,6 +38,8 @@ definitions:
     properties:
       anime_id:
         type: string
+      anime_mal_id:
+        type: integer
       score:
         maximum: 10
         minimum: 0
@@ -54,6 +56,7 @@ definitions:
         type: integer
     required:
     - anime_id
+    - anime_mal_id
     - status
     - watched_episodes
     type: object
@@ -65,6 +68,8 @@ definitions:
         type: number
       game_id:
         type: string
+      game_rawg_id:
+        type: integer
       score:
         maximum: 10
         minimum: 0
@@ -78,11 +83,14 @@ definitions:
         type: string
     required:
     - game_id
+    - game_rawg_id
     - status
     type: object
   requests.CreateMovieWatchList:
     properties:
       movie_id:
+        type: string
+      movie_tmdb_id:
         type: string
       score:
         maximum: 10
@@ -97,6 +105,7 @@ definitions:
         type: string
     required:
     - movie_id
+    - movie_tmdb_id
     - status
     type: object
   requests.CreateTVSeriesWatchList:
@@ -114,6 +123,8 @@ definitions:
         type: string
       tv_id:
         type: string
+      tv_tmdb_id:
+        type: string
       watched_episodes:
         minimum: 0
         type: integer
@@ -123,6 +134,7 @@ definitions:
     required:
     - status
     - tv_id
+    - tv_tmdb_id
     - watched_episodes
     - watched_seasons
     type: object
@@ -555,6 +567,96 @@ definitions:
       to_year:
         type: integer
     type: object
+  responses.AnimeDetails:
+    properties:
+      _id:
+        type: string
+      age_rating:
+        type: string
+      aired:
+        $ref: '#/definitions/responses.AnimeAirDate'
+      anime_list:
+        $ref: '#/definitions/responses.AnimeDetailsList'
+      demographics:
+        items:
+          $ref: '#/definitions/responses.AnimeGenre'
+        type: array
+      description:
+        type: string
+      episodes:
+        type: integer
+      genres:
+        items:
+          $ref: '#/definitions/responses.AnimeGenre'
+        type: array
+      image_url:
+        type: string
+      is_airing:
+        type: boolean
+      mal_id:
+        type: integer
+      mal_score:
+        type: number
+      mal_scored_by:
+        type: integer
+      producers:
+        items:
+          $ref: '#/definitions/responses.AnimeNameURL'
+        type: array
+      relations:
+        items:
+          $ref: '#/definitions/responses.AnimeRelation'
+        type: array
+      season:
+        type: string
+      small_image_url:
+        type: string
+      source:
+        type: string
+      status:
+        type: string
+      streaming:
+        items:
+          $ref: '#/definitions/responses.AnimeNameURL'
+        type: array
+      studios:
+        items:
+          $ref: '#/definitions/responses.AnimeNameURL'
+        type: array
+      themes:
+        items:
+          $ref: '#/definitions/responses.AnimeGenre'
+        type: array
+      title_en:
+        type: string
+      title_jp:
+        type: string
+      title_original:
+        type: string
+      trailer:
+        type: string
+      type:
+        type: string
+      year:
+        type: integer
+    type: object
+  responses.AnimeDetailsList:
+    properties:
+      _id:
+        type: string
+      anime_id:
+        type: string
+      score:
+        type: number
+      status:
+        type: string
+      times_finished:
+        type: integer
+      user_id:
+        type: string
+      watched_episodes:
+        type: integer
+    type: object
   responses.AnimeGenre:
     properties:
       mal_id:
@@ -571,6 +673,8 @@ definitions:
       anime:
         $ref: '#/definitions/responses.Anime'
       anime_id:
+        type: string
+      anime_mal_id:
         type: string
       score:
         type: number
@@ -673,6 +777,88 @@ definitions:
       title_original:
         type: string
     type: object
+  responses.GameDetails:
+    properties:
+      _id:
+        type: string
+      age_rating:
+        type: string
+      background_image:
+        type: string
+      description:
+        type: string
+      developers:
+        items:
+          type: string
+        type: array
+      game_list:
+        $ref: '#/definitions/responses.GameDetailsList'
+      genres:
+        items:
+          $ref: '#/definitions/responses.GameGenre'
+        type: array
+      has_release_date:
+        type: boolean
+      metacritic_score:
+        type: integer
+      metacritic_score_by_platform:
+        items:
+          $ref: '#/definitions/responses.GameMetacriticScorePlatform'
+        type: array
+      platforms:
+        items:
+          type: string
+        type: array
+      publishers:
+        items:
+          type: string
+        type: array
+      rawg_id:
+        type: integer
+      rawg_rating:
+        type: number
+      rawg_rating_count:
+        type: integer
+      related_games:
+        items:
+          $ref: '#/definitions/responses.GameRelation'
+        type: array
+      release_date:
+        type: string
+      stores:
+        items:
+          $ref: '#/definitions/responses.GameStore'
+        type: array
+      subreddit:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      tba:
+        type: boolean
+      title:
+        type: string
+      title_original:
+        type: string
+    type: object
+  responses.GameDetailsList:
+    properties:
+      _id:
+        type: string
+      achievement_status:
+        type: number
+      game_id:
+        type: string
+      score:
+        type: number
+      status:
+        type: string
+      times_finished:
+        type: integer
+      user_id:
+        type: string
+    type: object
   responses.GameGenre:
     properties:
       name:
@@ -690,6 +876,8 @@ definitions:
         $ref: '#/definitions/responses.Game'
       game_id:
         type: string
+      game_rawg_id:
+        type: integer
       score:
         type: number
       status:
@@ -819,6 +1007,8 @@ definitions:
     type: object
   responses.MovieDetailsWatchList:
     properties:
+      _id:
+        type: string
       movie_id:
         type: string
       score:
@@ -832,9 +1022,13 @@ definitions:
     type: object
   responses.MovieList:
     properties:
+      _id:
+        type: string
       movie:
         $ref: '#/definitions/responses.Movie'
       movie_id:
+        type: string
+      movie_tmdb_id:
         type: string
       score:
         type: number
@@ -893,6 +1087,25 @@ definitions:
       name:
         type: string
     type: object
+  responses.TVDetailsList:
+    properties:
+      _id:
+        type: string
+      score:
+        type: number
+      status:
+        type: string
+      times_finished:
+        type: integer
+      tv_id:
+        type: string
+      user_id:
+        type: string
+      watched_episodes:
+        type: integer
+      watched_seasons:
+        type: integer
+    type: object
   responses.TVSeries:
     properties:
       _id:
@@ -944,8 +1157,63 @@ definitions:
       total_seasons:
         type: integer
     type: object
+  responses.TVSeriesDetails:
+    properties:
+      _id:
+        type: string
+      description:
+        type: string
+      first_air_date:
+        type: string
+      genres:
+        items:
+          $ref: '#/definitions/responses.Genre'
+        type: array
+      image_url:
+        type: string
+      networks:
+        items:
+          $ref: '#/definitions/responses.ProductionAndCompany'
+        type: array
+      production_companies:
+        items:
+          $ref: '#/definitions/responses.ProductionAndCompany'
+        type: array
+      seasons:
+        items:
+          $ref: '#/definitions/responses.Season'
+        type: array
+      small_image_url:
+        type: string
+      status:
+        type: string
+      streaming:
+        items:
+          $ref: '#/definitions/responses.Streaming'
+        type: array
+      title_en:
+        type: string
+      title_original:
+        type: string
+      tmdb_id:
+        type: integer
+      tmdb_popularity:
+        type: number
+      tmdb_vote:
+        type: number
+      tmdb_vote_count:
+        type: integer
+      total_episodes:
+        type: integer
+      total_seasons:
+        type: integer
+      tv_list:
+        $ref: '#/definitions/responses.TVDetailsList'
+    type: object
   responses.TVSeriesList:
     properties:
+      _id:
+        type: string
       score:
         type: number
       status:
@@ -956,6 +1224,8 @@ definitions:
         type: string
       tv_series:
         $ref: '#/definitions/responses.TVSeries'
+      tv_tmdb_id:
+        type: string
       user_id:
         type: string
       watched_episodes:
@@ -988,6 +1258,8 @@ definitions:
         type: number
       anime_count:
         type: integer
+      anime_total_finished:
+        type: integer
       anime_total_watched_episodes:
         type: integer
       game_avg_score:
@@ -998,8 +1270,22 @@ definitions:
         type: integer
       is_public:
         type: boolean
+      movie_avg_score:
+        type: number
+      movie_count:
+        type: integer
+      movie_total_finished:
+        type: integer
       slug:
         type: string
+      tv_avg_score:
+        type: number
+      tv_count:
+        type: integer
+      tv_total_finished:
+        type: integer
+      tv_total_watched_episodes:
+        type: integer
       user_id:
         type: string
     type: object
@@ -1042,6 +1328,34 @@ paths:
           schema:
             type: string
       summary: Get Animes by Sort and Filter
+      tags:
+      - anime
+  /anime/details:
+    get:
+      consumes:
+      - application/json
+      description: Returns anime details with optional authentication
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ID'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.AnimeDetails'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Anime Details
       tags:
       - anime
   /anime/season:
@@ -1149,6 +1463,34 @@ paths:
           schema:
             type: string
       summary: Get Games by Sort and Filter
+      tags:
+      - game
+  /game/details:
+    get:
+      consumes:
+      - application/json
+      description: Returns game details with optional authentication
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ID'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.GameDetails'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Game Details
       tags:
       - game
   /game/upcoming:
@@ -1920,6 +2262,34 @@ paths:
           schema:
             type: string
       summary: Get Popular TV Series by genre
+      tags:
+      - tv
+  /tv/details:
+    get:
+      consumes:
+      - application/json
+      description: Returns tv series details with optional authentication
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ID'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.TVSeriesDetails'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get TV Series Details
       tags:
       - tv
   /tv/upcoming:

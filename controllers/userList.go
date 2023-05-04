@@ -467,17 +467,16 @@ func (u *UserListController) UpdateTVSeriesListByID(c *gin.Context) {
 		return
 	}
 
-	//TODO Implement
-	// if data.WatchedEpisodes != nil {
-	// 	tvSeriesModel := models.NewTVSeriesModel(u.Database)
-	// 	tvSeries, _ := tvSeriesModel.GetTVSeriesDetails(requests.ID{
-	// 		ID: tvList.TvID,
-	// 	})
+	if data.WatchedEpisodes != nil {
+		tvSeriesModel := models.NewTVModel(u.Database)
+		tvSeries, _ := tvSeriesModel.GetTVSeriesDetails(requests.ID{
+			ID: tvList.TvID,
+		})
 
-	// 	if tvSeries.Episodes != nil && *data.WatchedEpisodes > *tvSeries.Episodes {
-	// 		data.WatchedEpisodes = tvSeries.Episodes
-	// 	}
-	// }
+		if tvSeries.TotalEpisodes != 0 && *data.WatchedEpisodes > tvSeries.TotalEpisodes {
+			data.WatchedEpisodes = &tvSeries.TotalEpisodes
+		}
+	}
 
 	if err := userListModel.UpdateTVSeriesListByID(tvList, data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

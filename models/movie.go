@@ -192,30 +192,37 @@ func (movieModel *MovieModel) GetMovieDetails(data requests.ID) (responses.Movie
 	return movie, nil
 }
 
-//TODO check watchlist lookup with both movie_id and movie_tmdb_id
 func (movieModel *MovieModel) GetMovieDetailsWithWatchList(data requests.ID, uuid string) (responses.MovieDetails, error) {
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 
 	match := bson.M{"$match": bson.M{
 		"_id": objectID,
 	}}
+
 	set := bson.M{"$set": bson.M{
 		"movie_id": bson.M{
 			"$toString": "$_id",
 		},
 	}}
+
 	lookup := bson.M{"$lookup": bson.M{
 		"from": "movie-watch-lists",
 		"let": bson.M{
 			"uuid":     uuid,
 			"movie_id": "$movie_id",
+			"tmdb_id":  "$tmdb_id",
 		},
 		"pipeline": bson.A{
 			bson.M{
 				"$match": bson.M{
 					"$expr": bson.M{
 						"$and": bson.A{
-							bson.M{"$eq": bson.A{"$movie_id", "$$movie_id"}},
+							bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$movie_id", "$$movie_id"}},
+									bson.M{"$eq": bson.A{"$movie_tmdb_id", "$$tmdb_id"}},
+								},
+							},
 							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
 						},
 					},
@@ -224,14 +231,15 @@ func (movieModel *MovieModel) GetMovieDetailsWithWatchList(data requests.ID, uui
 		},
 		"as": "watch_list",
 	}}
-	unwindInvesting := bson.M{"$unwind": bson.M{
+
+	unwindWatchList := bson.M{"$unwind": bson.M{
 		"path":                       "$watch_list",
 		"includeArrayIndex":          "index",
 		"preserveNullAndEmptyArrays": true,
 	}}
 
 	cursor, err := movieModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, set, lookup, unwindInvesting,
+		match, set, lookup, unwindWatchList,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{

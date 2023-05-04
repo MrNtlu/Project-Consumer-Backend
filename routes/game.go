@@ -3,6 +3,7 @@ package routes
 import (
 	"app/controllers"
 	"app/db"
+	"app/helpers"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,5 +15,6 @@ func gameRouter(router *gin.RouterGroup, mongoDB *db.MongoDB) {
 	{
 		game.GET("/upcoming", gameController.GetUpcomingGamesBySort)
 		game.GET("", gameController.GetGamesByFilterAndSort)
+		game.Use(helpers.OptionalTokenCheck).GET("/details", gameController.GetGameDetails)
 	}
 }

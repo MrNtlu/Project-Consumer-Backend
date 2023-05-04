@@ -157,7 +157,6 @@ func (gameModel *GameModel) GetGamesByFilterAndSort(data requests.SortFilterGame
 	return games, paginatedData.Pagination, nil
 }
 
-//TODO Get user's is listed etc. values
 func (gameModel *GameModel) GetGameDetails(data requests.ID) (responses.Game, error) {
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 
@@ -175,4 +174,79 @@ func (gameModel *GameModel) GetGameDetails(data requests.ID) (responses.Game, er
 	}
 
 	return game, nil
+}
+
+func (gameModel *GameModel) GetGameDetailsWithPlayList(data requests.ID, uuid string) (responses.GameDetails, error) {
+	objectID, _ := primitive.ObjectIDFromHex(data.ID)
+
+	match := bson.M{"$match": bson.M{
+		"_id": objectID,
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"game_id": bson.M{
+			"$toString": "$_id",
+		},
+	}}
+
+	lookup := bson.M{"$lookup": bson.M{
+		"from": "movie-watch-lists",
+		"let": bson.M{
+			"uuid":    uuid,
+			"game_id": "$game_id",
+			"rawg_id": "$rawg_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$and": bson.A{
+							bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$game_id", "$$game_id"}},
+									bson.M{"$eq": bson.A{"$game_rawg_id", "$$rawg_id"}},
+								},
+							},
+							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "game_list",
+	}}
+
+	unwindWatchList := bson.M{"$unwind": bson.M{
+		"path":                       "$game_list",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, set, lookup, unwindWatchList,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uuid,
+			"id":  data.ID,
+		}).Error("failed to aggregate game details: ", err)
+
+		return responses.GameDetails{}, fmt.Errorf("Failed to aggregate game details with watch list.")
+	}
+
+	var gameDetails []responses.GameDetails
+	if err = cursor.All(context.TODO(), &gameDetails); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uuid,
+			"id":  data.ID,
+		}).Error("failed to decode game details: ", err)
+
+		return responses.GameDetails{}, fmt.Errorf("Failed to decode game details.")
+	}
+
+	if len(gameDetails) > 0 {
+		return gameDetails[0], nil
+	}
+
+	return responses.GameDetails{}, nil
 }

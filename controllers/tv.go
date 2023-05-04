@@ -199,3 +199,56 @@ func (tv *TVController) GetPopularTVSeriesByGenre(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": tvSeries})
 }
+
+// Get TV Series Details
+// @Summary Get TV Series Details
+// @Description Returns tv series details with optional authentication
+// @Tags tv
+// @Accept application/json
+// @Produce application/json
+// @Param id body requests.ID true "ID"
+// @Success 200 {array} responses.TVSeries
+// @Success 200 {array} responses.TVSeriesDetails
+// @Failure 500 {string} string
+// @Router /tv/details [get]
+func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
+	var data requests.ID
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	tvModel := models.NewTVModel(tv.Database)
+
+	uid, OK := c.Get("uuid")
+	if OK && uid != nil {
+		tvSeriesDetails, err := tvModel.GetTVSeriesDetailsWithWatchList(data, uid.(string))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": tvSeriesDetails,
+		})
+	} else {
+		tvSeriesDetails, err := tvModel.GetTVSeriesDetails(data)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": tvSeriesDetails,
+		})
+	}
+}

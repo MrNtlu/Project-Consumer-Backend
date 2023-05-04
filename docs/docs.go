@@ -66,6 +66,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/anime/details": {
+            "get": {
+                "description": "Returns anime details with optional authentication",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "anime"
+                ],
+                "summary": "Get Anime Details",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ID"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.AnimeDetails"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/anime/season": {
             "get": {
                 "description": "Returns animes by year and season",
@@ -218,6 +261,49 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/responses.Game"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/game/details": {
+            "get": {
+                "description": "Returns game details with optional authentication",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "game"
+                ],
+                "summary": "Get Game Details",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ID"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.GameDetails"
                             }
                         }
                     },
@@ -1421,6 +1507,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/tv/details": {
+            "get": {
+                "description": "Returns tv series details with optional authentication",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tv"
+                ],
+                "summary": "Get TV Series Details",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ID"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.TVSeriesDetails"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/tv/upcoming": {
             "get": {
                 "description": "Returns upcoming tv series by sort with pagination",
@@ -1898,12 +2027,16 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "anime_id",
+                "anime_mal_id",
                 "status",
                 "watched_episodes"
             ],
             "properties": {
                 "anime_id": {
                     "type": "string"
+                },
+                "anime_mal_id": {
+                    "type": "integer"
                 },
                 "score": {
                     "type": "number",
@@ -1929,6 +2062,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "game_id",
+                "game_rawg_id",
                 "status"
             ],
             "properties": {
@@ -1939,6 +2073,9 @@ const docTemplate = `{
                 },
                 "game_id": {
                     "type": "string"
+                },
+                "game_rawg_id": {
+                    "type": "integer"
                 },
                 "score": {
                     "type": "number",
@@ -1960,10 +2097,14 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "movie_id",
+                "movie_tmdb_id",
                 "status"
             ],
             "properties": {
                 "movie_id": {
+                    "type": "string"
+                },
+                "movie_tmdb_id": {
                     "type": "string"
                 },
                 "score": {
@@ -1987,6 +2128,7 @@ const docTemplate = `{
             "required": [
                 "status",
                 "tv_id",
+                "tv_tmdb_id",
                 "watched_episodes",
                 "watched_seasons"
             ],
@@ -2006,6 +2148,9 @@ const docTemplate = `{
                     ]
                 },
                 "tv_id": {
+                    "type": "string"
+                },
+                "tv_tmdb_id": {
                     "type": "string"
                 },
                 "watched_episodes": {
@@ -2629,6 +2774,142 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.AnimeDetails": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "age_rating": {
+                    "type": "string"
+                },
+                "aired": {
+                    "$ref": "#/definitions/responses.AnimeAirDate"
+                },
+                "anime_list": {
+                    "$ref": "#/definitions/responses.AnimeDetailsList"
+                },
+                "demographics": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeGenre"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "episodes": {
+                    "type": "integer"
+                },
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeGenre"
+                    }
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "is_airing": {
+                    "type": "boolean"
+                },
+                "mal_id": {
+                    "type": "integer"
+                },
+                "mal_score": {
+                    "type": "number"
+                },
+                "mal_scored_by": {
+                    "type": "integer"
+                },
+                "producers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeNameURL"
+                    }
+                },
+                "relations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeRelation"
+                    }
+                },
+                "season": {
+                    "type": "string"
+                },
+                "small_image_url": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "streaming": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeNameURL"
+                    }
+                },
+                "studios": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeNameURL"
+                    }
+                },
+                "themes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeGenre"
+                    }
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_jp": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "trailer": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "responses.AnimeDetailsList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "anime_id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "watched_episodes": {
+                    "type": "integer"
+                }
+            }
+        },
         "responses.AnimeGenre": {
             "type": "object",
             "properties": {
@@ -2653,6 +2934,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/responses.Anime"
                 },
                 "anime_id": {
+                    "type": "string"
+                },
+                "anime_mal_id": {
                     "type": "string"
                 },
                 "score": {
@@ -2809,6 +3093,130 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.GameDetails": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "age_rating": {
+                    "type": "string"
+                },
+                "background_image": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "developers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "game_list": {
+                    "$ref": "#/definitions/responses.GameDetailsList"
+                },
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.GameGenre"
+                    }
+                },
+                "has_release_date": {
+                    "type": "boolean"
+                },
+                "metacritic_score": {
+                    "type": "integer"
+                },
+                "metacritic_score_by_platform": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.GameMetacriticScorePlatform"
+                    }
+                },
+                "platforms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "publishers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rawg_id": {
+                    "type": "integer"
+                },
+                "rawg_rating": {
+                    "type": "number"
+                },
+                "rawg_rating_count": {
+                    "type": "integer"
+                },
+                "related_games": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.GameRelation"
+                    }
+                },
+                "release_date": {
+                    "type": "string"
+                },
+                "stores": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.GameStore"
+                    }
+                },
+                "subreddit": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "tba": {
+                    "type": "boolean"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.GameDetailsList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "achievement_status": {
+                    "type": "number"
+                },
+                "game_id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "responses.GameGenre": {
             "type": "object",
             "properties": {
@@ -2834,6 +3242,9 @@ const docTemplate = `{
                 },
                 "game_id": {
                     "type": "string"
+                },
+                "game_rawg_id": {
+                    "type": "integer"
                 },
                 "score": {
                     "type": "number"
@@ -3032,6 +3443,9 @@ const docTemplate = `{
         "responses.MovieDetailsWatchList": {
             "type": "object",
             "properties": {
+                "_id": {
+                    "type": "string"
+                },
                 "movie_id": {
                     "type": "string"
                 },
@@ -3052,10 +3466,16 @@ const docTemplate = `{
         "responses.MovieList": {
             "type": "object",
             "properties": {
+                "_id": {
+                    "type": "string"
+                },
                 "movie": {
                     "$ref": "#/definitions/responses.Movie"
                 },
                 "movie_id": {
+                    "type": "string"
+                },
+                "movie_tmdb_id": {
                     "type": "string"
                 },
                 "score": {
@@ -3146,6 +3566,35 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.TVDetailsList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "tv_id": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "watched_episodes": {
+                    "type": "integer"
+                },
+                "watched_seasons": {
+                    "type": "integer"
+                }
+            }
+        },
         "responses.TVSeries": {
             "type": "object",
             "properties": {
@@ -3223,9 +3672,92 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.TVSeriesDetails": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "first_air_date": {
+                    "type": "string"
+                },
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Genre"
+                    }
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "networks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.ProductionAndCompany"
+                    }
+                },
+                "production_companies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.ProductionAndCompany"
+                    }
+                },
+                "seasons": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Season"
+                    }
+                },
+                "small_image_url": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "streaming": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Streaming"
+                    }
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "tmdb_id": {
+                    "type": "integer"
+                },
+                "tmdb_popularity": {
+                    "type": "number"
+                },
+                "tmdb_vote": {
+                    "type": "number"
+                },
+                "tmdb_vote_count": {
+                    "type": "integer"
+                },
+                "total_episodes": {
+                    "type": "integer"
+                },
+                "total_seasons": {
+                    "type": "integer"
+                },
+                "tv_list": {
+                    "$ref": "#/definitions/responses.TVDetailsList"
+                }
+            }
+        },
         "responses.TVSeriesList": {
             "type": "object",
             "properties": {
+                "_id": {
+                    "type": "string"
+                },
                 "score": {
                     "type": "number"
                 },
@@ -3240,6 +3772,9 @@ const docTemplate = `{
                 },
                 "tv_series": {
                     "$ref": "#/definitions/responses.TVSeries"
+                },
+                "tv_tmdb_id": {
+                    "type": "string"
                 },
                 "user_id": {
                     "type": "string"
@@ -3290,6 +3825,9 @@ const docTemplate = `{
                 "anime_count": {
                     "type": "integer"
                 },
+                "anime_total_finished": {
+                    "type": "integer"
+                },
                 "anime_total_watched_episodes": {
                     "type": "integer"
                 },
@@ -3305,8 +3843,29 @@ const docTemplate = `{
                 "is_public": {
                     "type": "boolean"
                 },
+                "movie_avg_score": {
+                    "type": "number"
+                },
+                "movie_count": {
+                    "type": "integer"
+                },
+                "movie_total_finished": {
+                    "type": "integer"
+                },
                 "slug": {
                     "type": "string"
+                },
+                "tv_avg_score": {
+                    "type": "number"
+                },
+                "tv_count": {
+                    "type": "integer"
+                },
+                "tv_total_finished": {
+                    "type": "integer"
+                },
+                "tv_total_watched_episodes": {
+                    "type": "integer"
                 },
                 "user_id": {
                     "type": "string"

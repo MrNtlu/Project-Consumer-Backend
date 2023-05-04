@@ -309,7 +309,81 @@ func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterA
 	return animes, paginatedData.Pagination, nil
 }
 
-//TODO Get user's is listed etc. values
+func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uuid string) (responses.AnimeDetails, error) {
+	objectID, _ := primitive.ObjectIDFromHex(data.ID)
+
+	match := bson.M{"$match": bson.M{
+		"_id": objectID,
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"anime_id": bson.M{
+			"$toString": "$_id",
+		},
+	}}
+
+	lookup := bson.M{"$lookup": bson.M{
+		"from": "anime-lists",
+		"let": bson.M{
+			"uuid":     uuid,
+			"anime_id": "$anime_id",
+			"mal_id":   "$mal_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$and": bson.A{
+							bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$anime_id", "$$anime_id"}},
+									bson.M{"$eq": bson.A{"$anime_mal_id", "$$anime_id"}},
+								},
+							},
+							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "anime_list",
+	}}
+
+	unwindWatchList := bson.M{"$unwind": bson.M{
+		"path":                       "$anime_list",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, set, lookup, unwindWatchList,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uuid,
+			"id":  data.ID,
+		}).Error("failed to aggregate anime details: ", err)
+
+		return responses.AnimeDetails{}, fmt.Errorf("Failed to aggregate anime details with watch list.")
+	}
+
+	var animeDetails []responses.AnimeDetails
+	if err = cursor.All(context.TODO(), &animeDetails); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uuid,
+			"id":  data.ID,
+		}).Error("failed to decode anime details: ", err)
+
+		return responses.AnimeDetails{}, fmt.Errorf("Failed to decode anime details.")
+	}
+
+	if len(animeDetails) > 0 {
+		return animeDetails[0], nil
+	}
+
+	return responses.AnimeDetails{}, nil
+}
+
 func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime, error) {
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 

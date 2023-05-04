@@ -49,8 +49,6 @@ type UserList struct {
 	IsPublic bool               `bson:"is_public" json:"is_public"`
 }
 
-//TODO On every update object id changes, so we should change it.
-
 type AnimeList struct {
 	ID              primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	UserID          string             `bson:"user_id" json:"user_id"`
@@ -521,7 +519,6 @@ func (userListModel *UserListModel) GetBaseTVSeriesListByID(movieID string) (TVS
 	return tvList, nil
 }
 
-//TODO Get movie & tv watch list
 func (userListModel *UserListModel) GetUserListByUserID(uid string) (responses.UserList, error) {
 	match := bson.M{"$match": bson.M{
 		"user_id": uid,
@@ -541,6 +538,20 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string) (responses.U
 		"as":           "game_list",
 	}}
 
+	movieListLookup := bson.M{"$lookup": bson.M{
+		"from":         "movie-watch-lists",
+		"localField":   "user_id",
+		"foreignField": "user_id",
+		"as":           "movie_watch_list",
+	}}
+
+	tvListLookup := bson.M{"$lookup": bson.M{
+		"from":         "tvseries-watch-lists",
+		"localField":   "user_id",
+		"foreignField": "user_id",
+		"as":           "tv_watch_list",
+	}}
+
 	addFields := bson.M{"$addFields": bson.M{
 		"anime_count": bson.M{
 			"$size": "$anime_list",
@@ -548,11 +559,29 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string) (responses.U
 		"game_count": bson.M{
 			"$size": "$game_list",
 		},
+		"movie_count": bson.M{
+			"$size": "$movie_watch_list",
+		},
+		"tv_count": bson.M{
+			"$size": "$tv_watch_list",
+		},
 		"anime_total_watched_episodes": bson.M{
 			"$sum": "$anime_list.watched_episodes",
 		},
+		"tv_total_watched_episodes": bson.M{
+			"$sum": "$tv_watch_list.watched_episodes",
+		},
+		"anime_total_finished": bson.M{
+			"$sum": "$anime_list.times_finished",
+		},
 		"game_total_finished": bson.M{
 			"$sum": "$game_list.times_finished",
+		},
+		"movie_total_finished": bson.M{
+			"$sum": "$movie_watch_list.times_finished",
+		},
+		"tv_total_finished": bson.M{
+			"$sum": "$tv_watch_list.times_finished",
 		},
 		"anime_avg_score": bson.M{
 			"$divide": bson.A{
@@ -574,10 +603,31 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string) (responses.U
 				},
 			},
 		},
+		"movie_avg_score": bson.M{
+			"$divide": bson.A{
+				bson.M{
+					"$sum": "$movie_watch_list.score",
+				},
+				bson.M{
+					"$size": "$movie_watch_list",
+				},
+			},
+		},
+		"tv_avg_score": bson.M{
+			"$divide": bson.A{
+				bson.M{
+					"$sum": "$tv_watch_list.score",
+				},
+				bson.M{
+					"$size": "$tv_watch_list",
+				},
+			},
+		},
 	}}
 
 	cursor, err := userListModel.UserListCollection.Aggregate(context.TODO(), bson.A{
-		match, animeListLookup, gameListLookup, addFields,
+		match, animeListLookup, gameListLookup, movieListLookup,
+		tvListLookup, addFields,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -603,7 +653,6 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string) (responses.U
 	return responses.UserList{}, nil
 }
 
-//TODO on lookup, check with both anime id and anime mal ID
 func (userListModel *UserListModel) GetAnimeListByUserID(uid string, data requests.SortList) ([]responses.AnimeList, error) {
 	var (
 		sortType  string
@@ -624,10 +673,24 @@ func (userListModel *UserListModel) GetAnimeListByUserID(uid string, data reques
 	}}
 
 	lookup := bson.M{"$lookup": bson.M{
-		"from":         "animes",
-		"localField":   "anime_obj_id",
-		"foreignField": "_id",
-		"as":           "anime",
+		"from": "animes",
+		"let": bson.M{
+			"anime_obj_id": "$anime_obj_id",
+			"anime_mal_id": "$anime_mal_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$or": bson.A{
+							bson.M{"$eq": bson.A{"$_id", "$$anime_obj_id"}},
+							bson.M{"$eq": bson.A{"$mal_id", "$$anime_mal_id"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "anime",
 	}}
 
 	unwind := bson.M{"$unwind": bson.M{
@@ -667,7 +730,6 @@ func (userListModel *UserListModel) GetAnimeListByUserID(uid string, data reques
 	return animeList, nil
 }
 
-//TODO on lookup, check with both game id and game rawg ID
 func (userListModel *UserListModel) GetGameListByUserID(uid string, data requests.SortList) ([]responses.GameList, error) {
 	var (
 		sortType  string
@@ -688,10 +750,24 @@ func (userListModel *UserListModel) GetGameListByUserID(uid string, data request
 	}}
 
 	lookup := bson.M{"$lookup": bson.M{
-		"from":         "games",
-		"localField":   "game_obj_id",
-		"foreignField": "_id",
-		"as":           "game",
+		"from": "games",
+		"let": bson.M{
+			"game_obj_id":  "$game_obj_id",
+			"game_rawg_id": "$game_rawg_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$or": bson.A{
+							bson.M{"$eq": bson.A{"$_id", "$$game_obj_id"}},
+							bson.M{"$eq": bson.A{"$rawg_id", "$$game_rawg_id"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "game",
 	}}
 
 	unwind := bson.M{"$unwind": bson.M{
@@ -730,7 +806,6 @@ func (userListModel *UserListModel) GetGameListByUserID(uid string, data request
 	return gameList, nil
 }
 
-//TODO on lookup, check with both movie id and movie tmdb ID
 func (userListModel *UserListModel) GetMovieListByUserID(uid string, data requests.SortList) ([]responses.MovieList, error) {
 	var (
 		sortType  string
@@ -751,10 +826,24 @@ func (userListModel *UserListModel) GetMovieListByUserID(uid string, data reques
 	}}
 
 	lookup := bson.M{"$lookup": bson.M{
-		"from":         "movies",
-		"localField":   "movie_obj_id",
-		"foreignField": "_id",
-		"as":           "movie",
+		"from": "movies",
+		"let": bson.M{
+			"movie_obj_id":  "$movie_obj_id",
+			"movie_tmdb_id": "$movie_tmdb_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$or": bson.A{
+							bson.M{"$eq": bson.A{"$_id", "$$movie_obj_id"}},
+							bson.M{"$eq": bson.A{"$$tmdb_id", "$$movie_tmdb_id"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "movie",
 	}}
 
 	unwind := bson.M{"$unwind": bson.M{
@@ -793,7 +882,6 @@ func (userListModel *UserListModel) GetMovieListByUserID(uid string, data reques
 	return movieList, nil
 }
 
-//TODO on lookup, check with both tv id and tv tmdb ID
 func (userListModel *UserListModel) GetTVSeriesListByUserID(uid string, data requests.SortList) ([]responses.TVSeriesList, error) {
 	var (
 		sortType  string
@@ -814,10 +902,24 @@ func (userListModel *UserListModel) GetTVSeriesListByUserID(uid string, data req
 	}}
 
 	lookup := bson.M{"$lookup": bson.M{
-		"from":         "tv-series",
-		"localField":   "tv_obj_id",
-		"foreignField": "_id",
-		"as":           "tv_series",
+		"from": "tv-series",
+		"let": bson.M{
+			"tv_obj_id":  "$tv_obj_id",
+			"tv_tmdb_id": "$tv_tmdb_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$or": bson.A{
+							bson.M{"$eq": bson.A{"$_id", "$$tv_obj_id"}},
+							bson.M{"$eq": bson.A{"$$tmdb_id", "$$tv_tmdb_id"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "tv_series",
 	}}
 
 	unwind := bson.M{"$unwind": bson.M{
