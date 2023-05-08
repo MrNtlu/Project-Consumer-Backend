@@ -2638,6 +2638,20 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.Actor": {
+            "type": "object",
+            "properties": {
+                "character": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "responses.Anime": {
             "type": "object",
             "properties": {
@@ -2649,6 +2663,12 @@ const docTemplate = `{
                 },
                 "aired": {
                     "$ref": "#/definitions/responses.AnimeAirDate"
+                },
+                "characters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeCharacter"
+                    }
                 },
                 "demographics": {
                     "type": "array",
@@ -2774,6 +2794,23 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.AnimeCharacter": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "type": "string"
+                },
+                "mal_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
         "responses.AnimeDetails": {
             "type": "object",
             "properties": {
@@ -2788,6 +2825,12 @@ const docTemplate = `{
                 },
                 "anime_list": {
                     "$ref": "#/definitions/responses.AnimeDetailsList"
+                },
+                "characters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeCharacter"
+                    }
                 },
                 "demographics": {
                     "type": "array",
@@ -3313,6 +3356,12 @@ const docTemplate = `{
                 "_id": {
                     "type": "string"
                 },
+                "actors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Actor"
+                    }
+                },
                 "description": {
                     "type": "string"
                 },
@@ -3377,6 +3426,12 @@ const docTemplate = `{
             "properties": {
                 "_id": {
                     "type": "string"
+                },
+                "actors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Actor"
+                    }
                 },
                 "description": {
                     "type": "string"

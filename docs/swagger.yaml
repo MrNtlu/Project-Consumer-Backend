@@ -477,6 +477,15 @@ definitions:
       is_public:
         type: boolean
     type: object
+  responses.Actor:
+    properties:
+      character:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+    type: object
   responses.Anime:
     properties:
       _id:
@@ -485,6 +494,10 @@ definitions:
         type: string
       aired:
         $ref: '#/definitions/responses.AnimeAirDate'
+      characters:
+        items:
+          $ref: '#/definitions/responses.AnimeCharacter'
+        type: array
       demographics:
         items:
           $ref: '#/definitions/responses.AnimeGenre'
@@ -567,6 +580,17 @@ definitions:
       to_year:
         type: integer
     type: object
+  responses.AnimeCharacter:
+    properties:
+      image:
+        type: string
+      mal_id:
+        type: integer
+      name:
+        type: string
+      role:
+        type: string
+    type: object
   responses.AnimeDetails:
     properties:
       _id:
@@ -577,6 +601,10 @@ definitions:
         $ref: '#/definitions/responses.AnimeAirDate'
       anime_list:
         $ref: '#/definitions/responses.AnimeDetailsList'
+      characters:
+        items:
+          $ref: '#/definitions/responses.AnimeCharacter'
+        type: array
       demographics:
         items:
           $ref: '#/definitions/responses.AnimeGenre'
@@ -921,6 +949,10 @@ definitions:
     properties:
       _id:
         type: string
+      actors:
+        items:
+          $ref: '#/definitions/responses.Actor'
+        type: array
       description:
         type: string
       genres:
@@ -964,6 +996,10 @@ definitions:
     properties:
       _id:
         type: string
+      actors:
+        items:
+          $ref: '#/definitions/responses.Actor'
+        type: array
       description:
         type: string
       genres:

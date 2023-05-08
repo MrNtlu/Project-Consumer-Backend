@@ -35,6 +35,7 @@ type Anime struct {
 	Themes        []AnimeGenre       `bson:"themes" json:"themes"`
 	Demographics  []AnimeGenre       `bson:"demographics" json:"demographics"`
 	Relations     []AnimeRelation    `bson:"relations" json:"relations"`
+	Characters    []AnimeCharacter   `bson:"characters" json:"characters"`
 }
 
 type AnimeDetails struct {
@@ -66,6 +67,7 @@ type AnimeDetails struct {
 	Demographics  []AnimeGenre       `bson:"demographics" json:"demographics"`
 	Relations     []AnimeRelation    `bson:"relations" json:"relations"`
 	AnimeList     AnimeDetailsList   `bson:"anime_list" json:"anime_list"`
+	Characters    []AnimeCharacter   `bson:"characters" json:"characters"`
 }
 
 type AnimeDetailsList struct {
@@ -92,6 +94,13 @@ type AnimeAirDate struct {
 	ToDay     int    `bson:"to_day" json:"to_day"`
 	ToMonth   int    `bson:"to_month" json:"to_month"`
 	ToYear    int    `bson:"to_year" json:"to_year"`
+}
+
+type AnimeCharacter struct {
+	Name  string `bson:"name" json:"name"`
+	Role  string `bson:"role" json:"role"`
+	Image string `bson:"image" json:"image"`
+	MalID int64  `bson:"mal_id" json:"mal_id"`
 }
 
 type AnimeGenre struct {

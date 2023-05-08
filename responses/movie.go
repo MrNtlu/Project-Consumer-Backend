@@ -20,6 +20,7 @@ type Movie struct {
 	ProductionCompanies []ProductionAndCompany `bson:"production_companies" json:"production_companies"`
 	Genres              []Genre                `bson:"genres" json:"genres"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
+	Actors              []Actor                `bson:"actors" json:"actors"`
 }
 
 type MovieDetails struct {
@@ -41,6 +42,7 @@ type MovieDetails struct {
 	Genres              []Genre                `bson:"genres" json:"genres"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
 	WatchList           MovieDetailsWatchList  `bson:"watch_list" json:"watch_list"`
+	Actors              []Actor                `bson:"actors" json:"actors"`
 }
 
 type MovieDetailsWatchList struct {
@@ -56,6 +58,12 @@ type ProductionAndCompany struct {
 	Logo          *string `bson:"logo" json:"logo"`
 	Name          string  `bson:"name" json:"name"`
 	OriginCountry string  `bson:"origin_country" json:"origin_country"`
+}
+
+type Actor struct {
+	Image     *string `bson:"image" json:"image"`
+	Name      string  `bson:"name" json:"name"`
+	Character string  `bson:"character" json:"character"`
 }
 
 type Genre struct {
