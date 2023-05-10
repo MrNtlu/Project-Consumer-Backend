@@ -22,6 +22,8 @@ type TVSeries struct {
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
 	Seasons             []Season               `bson:"seasons" json:"seasons"`
 	Networks            []ProductionAndCompany `bson:"networks" json:"networks"`
+	Actors              []Actor                `bson:"actors" json:"actors"`
+	Translations        []Translation          `bson:"translations" json:"translations"`
 }
 
 type TVSeriesDetails struct {
@@ -44,6 +46,8 @@ type TVSeriesDetails struct {
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
 	Seasons             []Season               `bson:"seasons" json:"seasons"`
 	Networks            []ProductionAndCompany `bson:"networks" json:"networks"`
+	Translations        []Translation          `bson:"translations" json:"translations"`
+	Actors              []Actor                `bson:"actors" json:"actors"`
 	TVList              TVDetailsList          `bson:"tv_list" json:"tv_list"`
 }
 

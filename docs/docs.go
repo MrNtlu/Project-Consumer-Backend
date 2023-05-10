@@ -3418,6 +3418,12 @@ const docTemplate = `{
                 },
                 "tmdb_vote_count": {
                     "type": "integer"
+                },
+                "translations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Translation"
+                    }
                 }
             }
         },
@@ -3489,6 +3495,12 @@ const docTemplate = `{
                 },
                 "tmdb_vote_count": {
                     "type": "integer"
+                },
+                "translations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Translation"
+                    }
                 },
                 "watch_list": {
                     "$ref": "#/definitions/responses.MovieDetailsWatchList"
@@ -3656,6 +3668,12 @@ const docTemplate = `{
                 "_id": {
                     "type": "string"
                 },
+                "actors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Actor"
+                    }
+                },
                 "description": {
                     "type": "string"
                 },
@@ -3724,6 +3742,12 @@ const docTemplate = `{
                 },
                 "total_seasons": {
                     "type": "integer"
+                },
+                "translations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Translation"
+                    }
                 }
             }
         },
@@ -3733,6 +3757,12 @@ const docTemplate = `{
                 "_id": {
                     "type": "string"
                 },
+                "actors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Actor"
+                    }
+                },
                 "description": {
                     "type": "string"
                 },
@@ -3801,6 +3831,12 @@ const docTemplate = `{
                 },
                 "total_seasons": {
                     "type": "integer"
+                },
+                "translations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Translation"
+                    }
                 },
                 "tv_list": {
                     "$ref": "#/definitions/responses.TVDetailsList"
@@ -3839,6 +3875,26 @@ const docTemplate = `{
                 },
                 "watched_seasons": {
                     "type": "integer"
+                }
+            }
+        },
+        "responses.Translation": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "lan_code": {
+                    "type": "string"
+                },
+                "lan_name": {
+                    "type": "string"
+                },
+                "lan_name_en": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },

@@ -991,6 +991,10 @@ definitions:
         type: number
       tmdb_vote_count:
         type: integer
+      translations:
+        items:
+          $ref: '#/definitions/responses.Translation'
+        type: array
     type: object
   responses.MovieDetails:
     properties:
@@ -1038,6 +1042,10 @@ definitions:
         type: number
       tmdb_vote_count:
         type: integer
+      translations:
+        items:
+          $ref: '#/definitions/responses.Translation'
+        type: array
       watch_list:
         $ref: '#/definitions/responses.MovieDetailsWatchList'
     type: object
@@ -1146,6 +1154,10 @@ definitions:
     properties:
       _id:
         type: string
+      actors:
+        items:
+          $ref: '#/definitions/responses.Actor'
+        type: array
       description:
         type: string
       first_air_date:
@@ -1192,11 +1204,19 @@ definitions:
         type: integer
       total_seasons:
         type: integer
+      translations:
+        items:
+          $ref: '#/definitions/responses.Translation'
+        type: array
     type: object
   responses.TVSeriesDetails:
     properties:
       _id:
         type: string
+      actors:
+        items:
+          $ref: '#/definitions/responses.Actor'
+        type: array
       description:
         type: string
       first_air_date:
@@ -1243,6 +1263,10 @@ definitions:
         type: integer
       total_seasons:
         type: integer
+      translations:
+        items:
+          $ref: '#/definitions/responses.Translation'
+        type: array
       tv_list:
         $ref: '#/definitions/responses.TVDetailsList'
     type: object
@@ -1268,6 +1292,19 @@ definitions:
         type: integer
       watched_seasons:
         type: integer
+    type: object
+  responses.Translation:
+    properties:
+      description:
+        type: string
+      lan_code:
+        type: string
+      lan_name:
+        type: string
+      lan_name_en:
+        type: string
+      title:
+        type: string
     type: object
   responses.UserInfo:
     properties:
