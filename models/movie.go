@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type MovieModel struct {
@@ -27,13 +28,14 @@ func NewMovieModel(mongoDB *db.MongoDB) *MovieModel {
 
 const (
 	movieUpcomingPaginationLimit = 20
+	movieSearchLimit             = 50
 	moviePaginationLimit         = 20
 )
 
 /* TODO Endpoints
 * [x] Get upcoming movies by popularity etc.
 * [x] Get movies by release date, popularity, genre etc. (sort & filter)
-* [ ] Get movie details
+* [x] Get movie details
 * [x] Get top movies by every decade 1980's 1990's etc.
 * [ ] Get top movies by every genre (?)
  */
@@ -265,4 +267,30 @@ func (movieModel *MovieModel) GetMovieDetailsWithWatchList(data requests.ID, uui
 	}
 
 	return responses.MovieDetails{}, nil
+}
+
+func (movieModel *MovieModel) SearchMovieByTitle(data requests.Search) ([]responses.Movie, error) {
+	opts := options.Find().SetLimit(movieSearchLimit)
+
+	cursor, err := movieModel.Collection.Find(context.TODO(), bson.M{
+		"$text": bson.M{
+			"$search": data.Search,
+		},
+	}, opts)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to search movies: ", err)
+
+		return nil, fmt.Errorf("Failed to search movies.")
+	}
+
+	var movies []responses.Movie
+	if err = cursor.All(context.TODO(), &movies); err != nil {
+		logrus.Error("failed to decode searched movies: ", err)
+
+		return nil, err
+	}
+
+	return movies, nil
 }

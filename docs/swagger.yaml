@@ -208,6 +208,13 @@ definitions:
     - password
     - username
     type: object
+  requests.Search:
+    properties:
+      search:
+        type: string
+    required:
+    - search
+    type: object
   requests.SortByYearSeasonAnime:
     properties:
       page:
@@ -2251,6 +2258,34 @@ paths:
           schema:
             type: string
       summary: Get Popular Movies by genre
+      tags:
+      - movie
+  /movie/search:
+    get:
+      consumes:
+      - application/json
+      description: Search movies
+      parameters:
+      - description: Search
+        in: body
+        name: search
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Search'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Movie'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Search Movie
       tags:
       - movie
   /movie/upcoming:

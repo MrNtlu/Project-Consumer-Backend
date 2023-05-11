@@ -1378,6 +1378,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/movie/search": {
+            "get": {
+                "description": "Search movies",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movie"
+                ],
+                "summary": "Search Movie",
+                "parameters": [
+                    {
+                        "description": "Search",
+                        "name": "search",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.Search"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Movie"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/movie/upcoming": {
             "get": {
                 "description": "Returns upcoming movies by sort with pagination",
@@ -2261,6 +2304,17 @@ const docTemplate = `{
                     "minLength": 6
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "requests.Search": {
+            "type": "object",
+            "required": [
+                "search"
+            ],
+            "properties": {
+                "search": {
                     "type": "string"
                 }
             }

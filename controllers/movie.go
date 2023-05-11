@@ -218,3 +218,39 @@ func (m *MovieController) GetMovieDetails(c *gin.Context) {
 		})
 	}
 }
+
+// Search Movie
+// @Summary Search Movie
+// @Description Search movies
+// @Tags movie
+// @Accept application/json
+// @Produce application/json
+// @Param search body requests.Search true "Search"
+// @Success 200 {array} responses.Movie
+// @Failure 500 {string} string
+// @Router /movie/search [get]
+func (m *MovieController) SearchMovieByTitle(c *gin.Context) {
+	var data requests.Search
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	movieModel := models.NewMovieModel(m.Database)
+
+	movies, err := movieModel.SearchMovieByTitle(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": movies,
+	})
+}
