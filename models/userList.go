@@ -837,7 +837,7 @@ func (userListModel *UserListModel) GetMovieListByUserID(uid string, data reques
 					"$expr": bson.M{
 						"$or": bson.A{
 							bson.M{"$eq": bson.A{"$_id", "$$movie_obj_id"}},
-							bson.M{"$eq": bson.A{"$$tmdb_id", "$$movie_tmdb_id"}},
+							bson.M{"$eq": bson.A{"$tmdb_id", "$$movie_tmdb_id"}},
 						},
 					},
 				},
@@ -913,7 +913,7 @@ func (userListModel *UserListModel) GetTVSeriesListByUserID(uid string, data req
 					"$expr": bson.M{
 						"$or": bson.A{
 							bson.M{"$eq": bson.A{"$_id", "$$tv_obj_id"}},
-							bson.M{"$eq": bson.A{"$$tmdb_id", "$$tv_tmdb_id"}},
+							bson.M{"$eq": bson.A{"$tmdb_id", "$$tv_tmdb_id"}},
 						},
 					},
 				},
