@@ -270,7 +270,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.ConsumeLaterList"
                         }
                     },
                     "404": {
@@ -1119,7 +1119,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.MovieWatchList"
                         }
                     },
                     "500": {
@@ -2172,6 +2172,65 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.ConsumeLaterList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "content_external_id": {
+                    "type": "string"
+                },
+                "content_external_int_id": {
+                    "type": "integer"
+                },
+                "content_id": {
+                    "type": "string"
+                },
+                "content_type": {
+                    "description": "anime, movie, tvseries or game",
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "self_note": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.MovieWatchList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "movie_id": {
+                    "type": "string"
+                },
+                "movie_tmdb_id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "requests.ChangeFCMToken": {
             "type": "object",
             "required": [

@@ -131,7 +131,7 @@ func (u *UserListController) CreateGameList(c *gin.Context) {
 // @Param createmoviewatchlist body requests.CreateMovieWatchList true "Create Movie Watch List"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 201 {string} string
+// @Success 201 {object} models.MovieWatchList
 // @Failure 500 {string} string
 // @Router /list/movie [post]
 func (u *UserListController) CreateMovieWatchList(c *gin.Context) {
@@ -139,6 +139,11 @@ func (u *UserListController) CreateMovieWatchList(c *gin.Context) {
 	if shouldReturn := bindJSONData(&data, c); shouldReturn {
 		return
 	}
+
+	var (
+		createdWatchList models.MovieWatchList
+		err              error
+	)
 
 	movieModel := models.NewMovieModel(u.Database)
 	movie, err := movieModel.GetMovieDetails(requests.ID{
@@ -161,7 +166,7 @@ func (u *UserListController) CreateMovieWatchList(c *gin.Context) {
 
 	userListModel := models.NewUserListModel(u.Database)
 
-	if err := userListModel.CreateMovieWatchList(uid, data); err != nil {
+	if createdWatchList, err = userListModel.CreateMovieWatchList(uid, data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -169,7 +174,7 @@ func (u *UserListController) CreateMovieWatchList(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created."})
+	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdWatchList})
 }
 
 // Create TVSeries Watch List

@@ -58,7 +58,7 @@ func createConsumeLaterObject(userID, contentID, contentType string, contentExte
 
 // TODO Get consume later list by x order
 
-func (userInteractionModel *UserInteractionModel) CreateConsumeLater(uid string, data requests.CreateConsumeLater) error {
+func (userInteractionModel *UserInteractionModel) CreateConsumeLater(uid string, data requests.CreateConsumeLater) (ConsumeLaterList, error) {
 	consumeLater := createConsumeLaterObject(
 		uid,
 		data.ContentID,
@@ -68,15 +68,22 @@ func (userInteractionModel *UserInteractionModel) CreateConsumeLater(uid string,
 		data.ContentExternalIntID,
 	)
 
-	if _, err := userInteractionModel.ConsumeLaterCollection.InsertOne(context.TODO(), consumeLater); err != nil {
+	var (
+		insertedID *mongo.InsertOneResult
+		err        error
+	)
+
+	if insertedID, err = userInteractionModel.ConsumeLaterCollection.InsertOne(context.TODO(), consumeLater); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"consume_later": consumeLater,
 		}).Error("failed to create new consume later: ", err)
 
-		return fmt.Errorf("Failed to create consume later.")
+		return ConsumeLaterList{}, fmt.Errorf("Failed to create consume later.")
 	}
 
-	return nil
+	consumeLater.ID = insertedID.InsertedID.(primitive.ObjectID)
+
+	return *consumeLater, nil
 }
 
 func (userInteractionModel *UserInteractionModel) UpdateConsumeLaterSelfNote(data requests.UpdateConsumeLater, consumeLater ConsumeLaterList) error {

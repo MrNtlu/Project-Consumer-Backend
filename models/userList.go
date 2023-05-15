@@ -228,19 +228,26 @@ func (userListModel *UserListModel) CreateGameList(uid string, data requests.Cre
 	return nil
 }
 
-func (userListModel *UserListModel) CreateMovieWatchList(uid string, data requests.CreateMovieWatchList) error {
+func (userListModel *UserListModel) CreateMovieWatchList(uid string, data requests.CreateMovieWatchList) (MovieWatchList, error) {
 	movieWatchList := createMovieWatchListObject(uid, data.MovieTmdbID, data.MovieID, data.Status, data.Score)
 
-	if _, err := userListModel.MovieWatchListCollection.InsertOne(context.TODO(), movieWatchList); err != nil {
+	var (
+		insertedID *mongo.InsertOneResult
+		err        error
+	)
+
+	if insertedID, err = userListModel.MovieWatchListCollection.InsertOne(context.TODO(), movieWatchList); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid":  uid,
 			"data": data,
 		}).Error("failed to create new movie watch list: ", err)
 
-		return fmt.Errorf("Failed to create new movie watch list.")
+		return MovieWatchList{}, fmt.Errorf("Failed to create new movie watch list.")
 	}
 
-	return nil
+	movieWatchList.ID = insertedID.InsertedID.(primitive.ObjectID)
+
+	return *movieWatchList, nil
 }
 
 func (userListModel *UserListModel) CreateTVSeriesWatchList(

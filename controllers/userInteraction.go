@@ -29,7 +29,7 @@ func NewUserInteractionController(mongoDB *db.MongoDB) UserInteractionController
 // @Param createconsumelater body requests.CreateConsumeLater true "Create Consume Later"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 201 {string} string
+// @Success 201 {object} models.ConsumeLaterList
 // @Failure 404 {string} string
 // @Failure 500 {string} string
 // @Router /consume [post]
@@ -118,7 +118,12 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 
 	userInteractionModel := models.NewUserInteractionModel(ui.Database)
 
-	if err := userInteractionModel.CreateConsumeLater(uid, data); err != nil {
+	var (
+		createdConsumeLater models.ConsumeLaterList
+		err                 error
+	)
+
+	if createdConsumeLater, err = userInteractionModel.CreateConsumeLater(uid, data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -126,7 +131,7 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created."})
+	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdConsumeLater})
 }
 
 // Delete Consume Later
