@@ -189,9 +189,18 @@ func (m *MovieController) GetMovieDetails(c *gin.Context) {
 
 	movieModel := models.NewMovieModel(m.Database)
 
+	movieDetails, err := movieModel.GetMovieDetails(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
 	uid, OK := c.Get("uuid")
-	if OK && uid != nil {
-		movieDetails, err := movieModel.GetMovieDetailsWithWatchList(data, uid.(string))
+	if OK && uid != nil && movieDetails.TitleOriginal != "" {
+		movieDetailsWithWatchList, err := movieModel.GetMovieDetailsWithWatchList(data, uid.(string))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -201,18 +210,9 @@ func (m *MovieController) GetMovieDetails(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"data": movieDetails,
+			"data": movieDetailsWithWatchList,
 		})
 	} else {
-		movieDetails, err := movieModel.GetMovieDetails(data)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-
 		c.JSON(http.StatusOK, gin.H{
 			"data": movieDetails,
 		})

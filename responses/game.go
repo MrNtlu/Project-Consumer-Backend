@@ -50,7 +50,7 @@ type GameDetails struct {
 	Publishers                []string                      `bson:"publishers" json:"publishers"`
 	Stores                    []GameStore                   `bson:"stores" json:"stores"`
 	HasReleaseDate            bool                          `bson:"has_release_date" json:"has_release_date"`
-	GameList                  GameDetailsList               `bson:"game_list" json:"game_list"`
+	GameList                  *GameDetailsList              `bson:"game_list" json:"game_list"`
 }
 
 type GameDetailsList struct {

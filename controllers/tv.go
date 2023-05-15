@@ -223,9 +223,18 @@ func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
 
 	tvModel := models.NewTVModel(tv.Database)
 
+	tvSeriesDetails, err := tvModel.GetTVSeriesDetails(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
 	uid, OK := c.Get("uuid")
-	if OK && uid != nil {
-		tvSeriesDetails, err := tvModel.GetTVSeriesDetailsWithWatchList(data, uid.(string))
+	if OK && uid != nil && tvSeriesDetails.TitleOriginal != "" {
+		tvSeriesDetailsWithWatchList, err := tvModel.GetTVSeriesDetailsWithWatchList(data, uid.(string))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -235,18 +244,9 @@ func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"data": tvSeriesDetails,
+			"data": tvSeriesDetailsWithWatchList,
 		})
 	} else {
-		tvSeriesDetails, err := tvModel.GetTVSeriesDetails(data)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-
 		c.JSON(http.StatusOK, gin.H{
 			"data": tvSeriesDetails,
 		})

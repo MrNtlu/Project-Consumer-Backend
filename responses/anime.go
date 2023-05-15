@@ -66,8 +66,8 @@ type AnimeDetails struct {
 	Themes        []AnimeGenre       `bson:"themes" json:"themes"`
 	Demographics  []AnimeGenre       `bson:"demographics" json:"demographics"`
 	Relations     []AnimeRelation    `bson:"relations" json:"relations"`
-	AnimeList     AnimeDetailsList   `bson:"anime_list" json:"anime_list"`
 	Characters    []AnimeCharacter   `bson:"characters" json:"characters"`
+	AnimeList     *AnimeDetailsList  `bson:"anime_list" json:"anime_list"`
 }
 
 type AnimeDetailsList struct {

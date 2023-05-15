@@ -48,7 +48,7 @@ type TVSeriesDetails struct {
 	Networks            []ProductionAndCompany `bson:"networks" json:"networks"`
 	Translations        []Translation          `bson:"translations" json:"translations"`
 	Actors              []Actor                `bson:"actors" json:"actors"`
-	TVList              TVDetailsList          `bson:"tv_list" json:"tv_list"`
+	TVList              *TVDetailsList         `bson:"tv_list" json:"tv_list"`
 }
 
 type TVDetailsList struct {

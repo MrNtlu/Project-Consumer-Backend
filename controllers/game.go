@@ -110,9 +110,18 @@ func (g *GameController) GetGameDetails(c *gin.Context) {
 
 	gameModel := models.NewGameModel(g.Database)
 
+	gameDetails, err := gameModel.GetGameDetails(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
 	uid, OK := c.Get("uuid")
-	if OK && uid != nil {
-		gameDetails, err := gameModel.GetGameDetailsWithPlayList(data, uid.(string))
+	if OK && uid != nil && gameDetails.TitleOriginal != "" {
+		gameDetailsWithPlayList, err := gameModel.GetGameDetailsWithPlayList(data, uid.(string))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -122,18 +131,9 @@ func (g *GameController) GetGameDetails(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"data": gameDetails,
+			"data": gameDetailsWithPlayList,
 		})
 	} else {
-		gameDetails, err := gameModel.GetGameDetails(data)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-
 		c.JSON(http.StatusOK, gin.H{
 			"data": gameDetails,
 		})
