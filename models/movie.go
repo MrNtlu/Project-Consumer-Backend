@@ -194,7 +194,7 @@ func (movieModel *MovieModel) GetMovieDetails(data requests.ID) (responses.Movie
 	return movie, nil
 }
 
-func (movieModel *MovieModel) GetMovieDetailsWithWatchList(data requests.ID, uuid string) (responses.MovieDetails, error) {
+func (movieModel *MovieModel) GetMovieDetailsWithWatchListAndWatchLater(data requests.ID, uuid string) (responses.MovieDetails, error) {
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 
 	match := bson.M{"$match": bson.M{
@@ -240,8 +240,41 @@ func (movieModel *MovieModel) GetMovieDetailsWithWatchList(data requests.ID, uui
 		"preserveNullAndEmptyArrays": true,
 	}}
 
+	lookupWatchLater := bson.M{"$lookup": bson.M{
+		"from": "consume-laters",
+		"let": bson.M{
+			"uuid":     uuid,
+			"movie_id": "$movie_id",
+			"tmdb_id":  "$tmdb_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$and": bson.A{
+							bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$content_id", "$$movie_id"}},
+									bson.M{"$eq": bson.A{"$content_external_id", "$$tmdb_id"}},
+								},
+							},
+							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "watch_later",
+	}}
+
+	unwindWatchLater := bson.M{"$unwind": bson.M{
+		"path":                       "$watch_later",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
 	cursor, err := movieModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, set, lookup, unwindWatchList,
+		match, set, lookup, unwindWatchList, lookupWatchLater, unwindWatchLater,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{

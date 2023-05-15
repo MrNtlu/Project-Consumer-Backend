@@ -34,38 +34,38 @@ func NewUserInteractionModel(mongoDB *db.MongoDB) *UserInteractionModel {
 **/
 
 type ConsumeLaterList struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
-	UserID      string             `bson:"user_id" json:"user_id"`
-	ContentID   string             `bson:"content_id" json:"content_id"`
-	ContentType string             `bson:"content_type" json:"content_type"` // anime, movie, tvseries or game
-	SelfNote    *string            `bson:"self_note" json:"self_note"`
-	CreatedAt   time.Time          `bson:"created_at" json:"created_at"`
+	ID                   primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	UserID               string             `bson:"user_id" json:"user_id"`
+	ContentID            string             `bson:"content_id" json:"content_id"`
+	ContentExternalID    *string            `bson:"content_external_id" json:"content_external_id"`
+	ContentExternalIntID *int64             `bson:"content_external_int_id" json:"content_external_int_id"`
+	ContentType          string             `bson:"content_type" json:"content_type"` // anime, movie, tvseries or game
+	SelfNote             *string            `bson:"self_note" json:"self_note"`
+	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
 }
 
-func createConsumeLaterObject(userID, contentID, contentType string, selfNote *string) *ConsumeLaterList {
+func createConsumeLaterObject(userID, contentID, contentType string, contentExternalID, selfNote *string, contentExternalIntID *int64) *ConsumeLaterList {
 	return &ConsumeLaterList{
-		UserID:      userID,
-		ContentID:   contentID,
-		ContentType: contentType,
-		SelfNote:    selfNote,
-		CreatedAt:   time.Now().UTC(),
+		UserID:               userID,
+		ContentID:            contentID,
+		ContentType:          contentType,
+		ContentExternalID:    contentExternalID,
+		ContentExternalIntID: contentExternalIntID,
+		SelfNote:             selfNote,
+		CreatedAt:            time.Now().UTC(),
 	}
 }
 
-/* TODO
-* [x] Add new consume later
-* [] Get consume later list by x order
-* [x] Update self note
-* [x] Delete consume later
-* [x] Erase all list
- */
+// TODO Get consume later list by x order
 
 func (userInteractionModel *UserInteractionModel) CreateConsumeLater(uid string, data requests.CreateConsumeLater) error {
 	consumeLater := createConsumeLaterObject(
 		uid,
 		data.ContentID,
 		data.ContentType,
+		data.ContentExternalID,
 		data.SelfNote,
+		data.ContentExternalIntID,
 	)
 
 	if _, err := userInteractionModel.ConsumeLaterCollection.InsertOne(context.TODO(), consumeLater); err != nil {
@@ -117,7 +117,7 @@ func (userInteractionModel *UserInteractionModel) DeleteConsumeLaterByID(uid, co
 	return count.DeletedCount > 0, nil
 }
 
-func (userInteractionModel *UserInteractionModel) DeleteAllConsumeLaterByUsserID(uid string) error {
+func (userInteractionModel *UserInteractionModel) DeleteAllConsumeLaterByUserID(uid string) error {
 	if _, err := userInteractionModel.ConsumeLaterCollection.DeleteMany(context.TODO(), bson.M{
 		"user_id": uid,
 	}); err != nil {

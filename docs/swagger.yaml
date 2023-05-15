@@ -60,6 +60,27 @@ definitions:
     - status
     - watched_episodes
     type: object
+  requests.CreateConsumeLater:
+    properties:
+      content_external_id:
+        type: string
+      content_external_int_id:
+        type: integer
+      content_id:
+        type: string
+      content_type:
+        enum:
+        - anime
+        - game
+        - movie
+        - tvseries
+        type: string
+      self_note:
+        type: string
+    required:
+    - content_id
+    - content_type
+    type: object
   requests.CreateGameList:
     properties:
       achievement_status:
@@ -1053,8 +1074,25 @@ definitions:
         items:
           $ref: '#/definitions/responses.Translation'
         type: array
+      watch_later:
+        $ref: '#/definitions/responses.MovieDetailsWatchLater'
       watch_list:
         $ref: '#/definitions/responses.MovieDetailsWatchList'
+    type: object
+  responses.MovieDetailsWatchLater:
+    properties:
+      _id:
+        type: string
+      content_external_id:
+        type: string
+      content_id:
+        type: string
+      content_type:
+        type: string
+      self_note:
+        type: string
+      user_id:
+        type: string
     type: object
   responses.MovieDetailsWatchList:
     properties:
@@ -1517,6 +1555,106 @@ paths:
       summary: User Registration
       tags:
       - auth
+  /consume:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes Consume Later
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ID'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete Consume Later
+      tags:
+      - consume_later
+    post:
+      consumes:
+      - application/json
+      description: Creates Consume Later
+      parameters:
+      - description: Create Consume Later
+        in: body
+        name: createconsumelater
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CreateConsumeLater'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create Consume Later
+      tags:
+      - consume_later
+  /consume/all:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes All Consume Later
+      parameters:
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete All Consume Later
+      tags:
+      - consume_later
   /game:
     get:
       consumes:

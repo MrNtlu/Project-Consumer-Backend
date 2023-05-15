@@ -14,5 +14,3 @@ type UpdateConsumeLater struct {
 	ID       string  `json:"id" binding:"required"`
 	SelfNote *string `json:"self_note"`
 }
-
-//TODO Implement add/delete for consume later
