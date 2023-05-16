@@ -392,7 +392,7 @@ func (u *UserListController) UpdateGameListByID(c *gin.Context) {
 // @Param updatemovielist body requests.UpdateMovieList true "Update Movie List"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 200 {string} string
+// @Success 200 {object} models.MovieWatchList
 // @Failure 403 {string} string "Unauthorized update"
 // @Failure 404 {string} string "Could not found"
 // @Failure 500 {string} string
@@ -403,8 +403,12 @@ func (u *UserListController) UpdateMovieListByID(c *gin.Context) {
 		return
 	}
 
-	userListModel := models.NewUserListModel(u.Database)
+	var (
+		updatedWatchList models.MovieWatchList
+		err              error
+	)
 
+	userListModel := models.NewUserListModel(u.Database)
 	movieList, err := userListModel.GetBaseMovieListByID(data.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -422,7 +426,7 @@ func (u *UserListController) UpdateMovieListByID(c *gin.Context) {
 		return
 	}
 
-	if err := userListModel.UpdateMovieListByID(movieList, data); err != nil {
+	if updatedWatchList, err = userListModel.UpdateMovieListByID(movieList, data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -430,7 +434,7 @@ func (u *UserListController) UpdateMovieListByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Movie list updated."})
+	c.JSON(http.StatusOK, gin.H{"message": "Movie list updated.", "data": updatedWatchList})
 }
 
 // Update TV Series List

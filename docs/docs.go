@@ -1169,7 +1169,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.MovieWatchList"
                         }
                     },
                     "403": {
@@ -2409,6 +2409,10 @@ const docTemplate = `{
                         "dropped",
                         "planto"
                     ]
+                },
+                "times_finished": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },

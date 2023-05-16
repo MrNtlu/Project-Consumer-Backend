@@ -163,6 +163,9 @@ definitions:
         - dropped
         - planto
         type: string
+      times_finished:
+        minimum: 0
+        type: integer
     required:
     - movie_id
     - movie_tmdb_id
@@ -2165,7 +2168,7 @@ paths:
         "200":
           description: OK
           schema:
-            type: string
+            $ref: '#/definitions/models.MovieWatchList'
         "403":
           description: Unauthorized update
           schema:

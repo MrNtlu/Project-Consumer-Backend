@@ -1166,7 +1166,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.MovieWatchList"
                         }
                     },
                     "403": {
@@ -2406,6 +2406,10 @@
                         "dropped",
                         "planto"
                     ]
+                },
+                "times_finished": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },

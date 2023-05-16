@@ -117,7 +117,7 @@ func createAnimeListObject(userID, animeID, status string, animeMALID, watchedEp
 		Status:          status,
 		WatchedEpisodes: watchedEpisodes,
 		Score:           score,
-		TimesFinished:   handleTimesFinished(status),
+		TimesFinished:   handleTimesFinishedToBeChanged(status),
 		CreatedAt:       time.Now().UTC(),
 		UpdatedAt:       time.Now().UTC(),
 	}
@@ -131,20 +131,20 @@ func createGameListObject(userID, gameID, status string, gameRAWGID int64, score
 		Status:            status,
 		Score:             score,
 		AchievementStatus: achievementStatus,
-		TimesFinished:     handleTimesFinished(status),
+		TimesFinished:     handleTimesFinishedToBeChanged(status),
 		CreatedAt:         time.Now().UTC(),
 		UpdatedAt:         time.Now().UTC(),
 	}
 }
 
-func createMovieWatchListObject(userID, movieTmdbID, movieID, status string, score *float32) *MovieWatchList {
+func createMovieWatchListObject(userID, movieTmdbID, movieID, status string, score *float32, timesFinished *int) *MovieWatchList {
 	return &MovieWatchList{
 		UserID:        userID,
 		MovieTmdbID:   movieTmdbID,
 		MovieID:       movieID,
 		Status:        status,
 		Score:         score,
-		TimesFinished: handleTimesFinished(status),
+		TimesFinished: handleTimesFinished(status, timesFinished),
 		CreatedAt:     time.Now().UTC(),
 		UpdatedAt:     time.Now().UTC(),
 	}
@@ -159,17 +159,27 @@ func createTVSeriesWatchListObject(userID, tvTmdbID, tvID, status string, watche
 		Score:           score,
 		WatchedEpisodes: watchedEpisodes,
 		WatchedSeasons:  watchedSeasons,
-		TimesFinished:   handleTimesFinished(status),
+		TimesFinished:   handleTimesFinishedToBeChanged(status),
 		CreatedAt:       time.Now().UTC(),
 		UpdatedAt:       time.Now().UTC(),
 	}
 }
 
-func handleTimesFinished(status string) int {
+//TODO Change
+func handleTimesFinishedToBeChanged(status string) int {
 	if status == "finished" {
 		return 1
 	}
 	return 0
+}
+
+func handleTimesFinished(status string, timesFinished *int) int {
+	if timesFinished == nil && status == "finished" {
+		return 1
+	} else if timesFinished == nil {
+		return 0
+	}
+	return *timesFinished
 }
 
 //! Create
@@ -229,7 +239,7 @@ func (userListModel *UserListModel) CreateGameList(uid string, data requests.Cre
 }
 
 func (userListModel *UserListModel) CreateMovieWatchList(uid string, data requests.CreateMovieWatchList) (MovieWatchList, error) {
-	movieWatchList := createMovieWatchListObject(uid, data.MovieTmdbID, data.MovieID, data.Status, data.Score)
+	movieWatchList := createMovieWatchListObject(uid, data.MovieTmdbID, data.MovieID, data.Status, data.Score, data.TimesFinished)
 
 	var (
 		insertedID *mongo.InsertOneResult
@@ -370,23 +380,26 @@ func (userListModel *UserListModel) UpdateGameListByID(gameList GameList, data r
 	return nil
 }
 
-func (userListModel *UserListModel) UpdateMovieListByID(movieList MovieWatchList, data requests.UpdateMovieList) error {
+func (userListModel *UserListModel) UpdateMovieListByID(movieList MovieWatchList, data requests.UpdateMovieList) (MovieWatchList, error) {
 	if data.IsUpdatingScore || data.TimesFinished != nil || data.Status != nil {
 		set := bson.M{}
 
 		if data.IsUpdatingScore && movieList.Score != data.Score {
 			set["score"] = data.Score
+			movieList.Score = data.Score
 		}
 
 		if data.TimesFinished != nil && movieList.TimesFinished != *data.TimesFinished {
-			set["times_finished"] = data.TimesFinished
+			set["times_finished"] = *data.TimesFinished
+			movieList.TimesFinished = *data.TimesFinished
 		}
 
 		if data.Status != nil && movieList.Status != *data.Status {
-			set["status"] = data.Status
+			set["status"] = *data.Status
+			movieList.Status = *data.Status
 		}
 
-		if _, err := userListModel.GameListCollection.UpdateOne(context.TODO(), bson.M{
+		if _, err := userListModel.MovieWatchListCollection.UpdateOne(context.TODO(), bson.M{
 			"_id": movieList.ID,
 		}, bson.M{"$set": set}); err != nil {
 			logrus.WithFields(logrus.Fields{
@@ -394,11 +407,11 @@ func (userListModel *UserListModel) UpdateMovieListByID(movieList MovieWatchList
 				"data":          data,
 			}).Error("failed to update movie list: ", err)
 
-			return fmt.Errorf("Failed to update movie watch list.")
+			return MovieWatchList{}, fmt.Errorf("Failed to update movie watch list.")
 		}
 	}
 
-	return nil
+	return movieList, nil
 }
 
 func (userListModel *UserListModel) UpdateTVSeriesListByID(tvList TVSeriesWatchList, data requests.UpdateTVSeriesList) error {
@@ -427,7 +440,7 @@ func (userListModel *UserListModel) UpdateTVSeriesListByID(tvList TVSeriesWatchL
 			set["watched_seasons"] = data.WatchedSeasons
 		}
 
-		if _, err := userListModel.GameListCollection.UpdateOne(context.TODO(), bson.M{
+		if _, err := userListModel.TVSeriesWatchListCollection.UpdateOne(context.TODO(), bson.M{
 			"_id": tvList.ID,
 		}, bson.M{"$set": set}); err != nil {
 			logrus.WithFields(logrus.Fields{

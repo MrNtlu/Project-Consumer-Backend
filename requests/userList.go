@@ -17,10 +17,11 @@ type CreateGameList struct {
 }
 
 type CreateMovieWatchList struct {
-	MovieID     string   `json:"movie_id" binding:"required"`
-	MovieTmdbID string   `json:"movie_tmdb_id" binding:"required"`
-	Status      string   `json:"status" binding:"required,oneof=active finished dropped planto"`
-	Score       *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
+	MovieID       string   `json:"movie_id" binding:"required"`
+	MovieTmdbID   string   `json:"movie_tmdb_id" binding:"required"`
+	Status        string   `json:"status" binding:"required,oneof=active finished dropped planto"`
+	TimesFinished *int     `json:"times_finished" binding:"omitempty,number,min=0"`
+	Score         *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
 }
 
 type CreateTVSeriesWatchList struct {
