@@ -27,8 +27,8 @@ func NewGameModel(mongoDB *db.MongoDB) *GameModel {
 }
 
 const (
-	gameUpcomingPaginationLimit = 20
-	gamePaginationLimit         = 20
+	gameUpcomingPaginationLimit = 30
+	gamePaginationLimit         = 30
 )
 
 /* TODO Endpoints

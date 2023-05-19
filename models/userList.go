@@ -109,7 +109,7 @@ func createUserListObject(userID, slug string) *UserList {
 	}
 }
 
-func createAnimeListObject(userID, animeID, status string, animeMALID, watchedEpisodes int64, score *float32) *AnimeList {
+func createAnimeListObject(userID, animeID, status string, animeMALID, watchedEpisodes int64, score *float32, timesFinished *int) *AnimeList {
 	return &AnimeList{
 		UserID:          userID,
 		AnimeID:         animeID,
@@ -117,13 +117,13 @@ func createAnimeListObject(userID, animeID, status string, animeMALID, watchedEp
 		Status:          status,
 		WatchedEpisodes: watchedEpisodes,
 		Score:           score,
-		TimesFinished:   handleTimesFinishedToBeChanged(status),
+		TimesFinished:   handleTimesFinished(status, timesFinished),
 		CreatedAt:       time.Now().UTC(),
 		UpdatedAt:       time.Now().UTC(),
 	}
 }
 
-func createGameListObject(userID, gameID, status string, gameRAWGID int64, score, achievementStatus *float32) *GameList {
+func createGameListObject(userID, gameID, status string, gameRAWGID int64, score, achievementStatus *float32, timesFinished *int) *GameList {
 	return &GameList{
 		UserID:            userID,
 		GameRAWGID:        gameRAWGID,
@@ -131,7 +131,7 @@ func createGameListObject(userID, gameID, status string, gameRAWGID int64, score
 		Status:            status,
 		Score:             score,
 		AchievementStatus: achievementStatus,
-		TimesFinished:     handleTimesFinishedToBeChanged(status),
+		TimesFinished:     handleTimesFinished(status, timesFinished),
 		CreatedAt:         time.Now().UTC(),
 		UpdatedAt:         time.Now().UTC(),
 	}
@@ -150,7 +150,7 @@ func createMovieWatchListObject(userID, movieTmdbID, movieID, status string, sco
 	}
 }
 
-func createTVSeriesWatchListObject(userID, tvTmdbID, tvID, status string, watchedEpisodes, watchedSeasons int, score *float32) *TVSeriesWatchList {
+func createTVSeriesWatchListObject(userID, tvTmdbID, tvID, status string, watchedEpisodes, watchedSeasons int, score *float32, timesFinished *int) *TVSeriesWatchList {
 	return &TVSeriesWatchList{
 		UserID:          userID,
 		TvTmdbID:        tvTmdbID,
@@ -159,18 +159,10 @@ func createTVSeriesWatchListObject(userID, tvTmdbID, tvID, status string, watche
 		Score:           score,
 		WatchedEpisodes: watchedEpisodes,
 		WatchedSeasons:  watchedSeasons,
-		TimesFinished:   handleTimesFinishedToBeChanged(status),
+		TimesFinished:   handleTimesFinished(status, timesFinished),
 		CreatedAt:       time.Now().UTC(),
 		UpdatedAt:       time.Now().UTC(),
 	}
-}
-
-//TODO Change
-func handleTimesFinishedToBeChanged(status string) int {
-	if status == "finished" {
-		return 1
-	}
-	return 0
 }
 
 func handleTimesFinished(status string, timesFinished *int) int {
@@ -194,10 +186,10 @@ func (userListModel *UserListModel) CreateUserList(uid, slug string) {
 	}
 }
 
-func (userListModel *UserListModel) CreateAnimeList(uid string, data requests.CreateAnimeList, anime responses.Anime) error {
+func (userListModel *UserListModel) CreateAnimeList(uid string, data requests.CreateAnimeList, anime responses.Anime) (AnimeList, error) {
 	animeList := createAnimeListObject(
-		uid, data.AnimeID, data.Status,
-		data.AnimeMALID, *data.WatchedEpisodes, data.Score,
+		uid, data.AnimeID, data.Status, data.AnimeMALID,
+		*data.WatchedEpisodes, data.Score, data.TimesFinished,
 	)
 
 	if anime.Episodes != nil {
@@ -208,34 +200,48 @@ func (userListModel *UserListModel) CreateAnimeList(uid string, data requests.Cr
 		}
 	}
 
-	if _, err := userListModel.AnimeListCollection.InsertOne(context.TODO(), animeList); err != nil {
+	var (
+		insertedID *mongo.InsertOneResult
+		err        error
+	)
+
+	if insertedID, err = userListModel.AnimeListCollection.InsertOne(context.TODO(), animeList); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid":  uid,
 			"data": data,
 		}).Error("failed to create new anime list: ", err)
 
-		return fmt.Errorf("Failed to create new anime list.")
+		return AnimeList{}, fmt.Errorf("Failed to create new anime list.")
 	}
 
-	return nil
+	animeList.ID = insertedID.InsertedID.(primitive.ObjectID)
+
+	return *animeList, nil
 }
 
-func (userListModel *UserListModel) CreateGameList(uid string, data requests.CreateGameList) error {
+func (userListModel *UserListModel) CreateGameList(uid string, data requests.CreateGameList) (GameList, error) {
 	gameList := createGameListObject(
-		uid, data.GameID, data.Status,
-		data.GameRAWGID, data.Score, data.AchievementStatus,
+		uid, data.GameID, data.Status, data.GameRAWGID,
+		data.Score, data.AchievementStatus, data.TimesFinished,
 	)
 
-	if _, err := userListModel.GameListCollection.InsertOne(context.TODO(), gameList); err != nil {
+	var (
+		insertedID *mongo.InsertOneResult
+		err        error
+	)
+
+	if insertedID, err = userListModel.GameListCollection.InsertOne(context.TODO(), gameList); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid":  uid,
 			"data": data,
 		}).Error("failed to create new game list: ", err)
 
-		return fmt.Errorf("Failed to create new game list.")
+		return GameList{}, fmt.Errorf("Failed to create new game list.")
 	}
 
-	return nil
+	gameList.ID = insertedID.InsertedID.(primitive.ObjectID)
+
+	return *gameList, nil
 }
 
 func (userListModel *UserListModel) CreateMovieWatchList(uid string, data requests.CreateMovieWatchList) (MovieWatchList, error) {
@@ -262,10 +268,11 @@ func (userListModel *UserListModel) CreateMovieWatchList(uid string, data reques
 
 func (userListModel *UserListModel) CreateTVSeriesWatchList(
 	uid string, data requests.CreateTVSeriesWatchList, tvSeries responses.TVSeries,
-) error {
+) (TVSeriesWatchList, error) {
 	tvSeriesWatchList := createTVSeriesWatchListObject(
 		uid, data.TvTmdbID, data.TvID, data.Status,
 		*data.WatchedEpisodes, *data.WatchedSeasons, data.Score,
+		data.TimesFinished,
 	)
 
 	if (*data.WatchedEpisodes > tvSeries.TotalEpisodes) || (data.Status == "finished" && *data.WatchedEpisodes < tvSeries.TotalEpisodes) {
@@ -276,16 +283,23 @@ func (userListModel *UserListModel) CreateTVSeriesWatchList(
 		tvSeriesWatchList.WatchedSeasons = tvSeries.TotalSeasons
 	}
 
-	if _, err := userListModel.TVSeriesWatchListCollection.InsertOne(context.TODO(), tvSeriesWatchList); err != nil {
+	var (
+		insertedID *mongo.InsertOneResult
+		err        error
+	)
+
+	if insertedID, err = userListModel.TVSeriesWatchListCollection.InsertOne(context.TODO(), tvSeriesWatchList); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid":  uid,
 			"data": data,
 		}).Error("failed to create new tv series watch list: ", err)
 
-		return fmt.Errorf("Failed to create new tv series watch list.")
+		return TVSeriesWatchList{}, fmt.Errorf("Failed to create new tv series watch list.")
 	}
 
-	return nil
+	tvSeriesWatchList.ID = insertedID.InsertedID.(primitive.ObjectID)
+
+	return *tvSeriesWatchList, nil
 }
 
 //! Update
@@ -308,25 +322,29 @@ func (userListModel *UserListModel) UpdateUserListPublicVisibility(userList User
 	return nil
 }
 
-func (userListModel *UserListModel) UpdateAnimeListByID(animeList AnimeList, data requests.UpdateAnimeList) error {
+func (userListModel *UserListModel) UpdateAnimeListByID(animeList AnimeList, data requests.UpdateAnimeList) (AnimeList, error) {
 	if data.IsUpdatingScore || data.TimesFinished != nil ||
 		data.Status != nil || data.WatchedEpisodes != nil {
 		set := bson.M{}
 
 		if data.IsUpdatingScore && animeList.Score != data.Score {
 			set["score"] = data.Score
+			animeList.Score = data.Score
 		}
 
 		if data.TimesFinished != nil && animeList.TimesFinished != *data.TimesFinished {
-			set["times_finished"] = data.TimesFinished
+			set["times_finished"] = *data.TimesFinished
+			animeList.TimesFinished = *data.TimesFinished
 		}
 
 		if data.Status != nil && animeList.Status != *data.Status {
-			set["status"] = data.Status
+			set["status"] = *data.Status
+			animeList.Status = *data.Status
 		}
 
 		if data.WatchedEpisodes != nil && animeList.WatchedEpisodes != *data.WatchedEpisodes {
-			set["watched_episodes"] = data.WatchedEpisodes
+			set["watched_episodes"] = *data.WatchedEpisodes
+			animeList.WatchedEpisodes = *data.WatchedEpisodes
 		}
 
 		if _, err := userListModel.AnimeListCollection.UpdateOne(context.TODO(), bson.M{
@@ -337,32 +355,36 @@ func (userListModel *UserListModel) UpdateAnimeListByID(animeList AnimeList, dat
 				"data":          data,
 			}).Error("failed to update anime list: ", err)
 
-			return fmt.Errorf("Failed to update anime list.")
+			return AnimeList{}, fmt.Errorf("Failed to update anime list.")
 		}
 	}
 
-	return nil
+	return animeList, nil
 }
 
-func (userListModel *UserListModel) UpdateGameListByID(gameList GameList, data requests.UpdateGameList) error {
+func (userListModel *UserListModel) UpdateGameListByID(gameList GameList, data requests.UpdateGameList) (GameList, error) {
 	if data.IsUpdatingScore || data.TimesFinished != nil ||
 		data.Status != nil || data.AchievementStatus != nil {
 		set := bson.M{}
 
 		if data.IsUpdatingScore && gameList.Score != data.Score {
 			set["score"] = data.Score
+			gameList.Score = data.Score
 		}
 
 		if data.TimesFinished != nil && gameList.TimesFinished != *data.TimesFinished {
-			set["times_finished"] = data.TimesFinished
+			set["times_finished"] = *data.TimesFinished
+			gameList.TimesFinished = *data.TimesFinished
 		}
 
 		if data.Status != nil && gameList.Status != *data.Status {
-			set["status"] = data.Status
+			set["status"] = *data.Status
+			gameList.Status = *data.Status
 		}
 
 		if data.AchievementStatus != nil && gameList.AchievementStatus != data.AchievementStatus {
 			set["achievement_status"] = data.AchievementStatus
+			gameList.AchievementStatus = data.AchievementStatus
 		}
 
 		if _, err := userListModel.GameListCollection.UpdateOne(context.TODO(), bson.M{
@@ -373,11 +395,11 @@ func (userListModel *UserListModel) UpdateGameListByID(gameList GameList, data r
 				"data":         data,
 			}).Error("failed to update game list: ", err)
 
-			return fmt.Errorf("Failed to update game list.")
+			return GameList{}, fmt.Errorf("Failed to update game list.")
 		}
 	}
 
-	return nil
+	return gameList, nil
 }
 
 func (userListModel *UserListModel) UpdateMovieListByID(movieList MovieWatchList, data requests.UpdateMovieList) (MovieWatchList, error) {
@@ -414,7 +436,7 @@ func (userListModel *UserListModel) UpdateMovieListByID(movieList MovieWatchList
 	return movieList, nil
 }
 
-func (userListModel *UserListModel) UpdateTVSeriesListByID(tvList TVSeriesWatchList, data requests.UpdateTVSeriesList) error {
+func (userListModel *UserListModel) UpdateTVSeriesListByID(tvList TVSeriesWatchList, data requests.UpdateTVSeriesList) (TVSeriesWatchList, error) {
 	if data.IsUpdatingScore || data.TimesFinished != nil ||
 		data.Status != nil || data.WatchedEpisodes != nil ||
 		data.WatchedSeasons != nil {
@@ -422,22 +444,27 @@ func (userListModel *UserListModel) UpdateTVSeriesListByID(tvList TVSeriesWatchL
 
 		if data.IsUpdatingScore && tvList.Score != data.Score {
 			set["score"] = data.Score
+			tvList.Score = data.Score
 		}
 
 		if data.TimesFinished != nil && tvList.TimesFinished != *data.TimesFinished {
-			set["times_finished"] = data.TimesFinished
+			set["times_finished"] = *data.TimesFinished
+			tvList.TimesFinished = *data.TimesFinished
 		}
 
 		if data.Status != nil && tvList.Status != *data.Status {
-			set["status"] = data.Status
+			set["status"] = *data.Status
+			tvList.Status = *data.Status
 		}
 
 		if data.WatchedEpisodes != nil && tvList.WatchedEpisodes != *data.WatchedEpisodes {
-			set["watched_episodes"] = data.WatchedEpisodes
+			set["watched_episodes"] = *data.WatchedEpisodes
+			tvList.WatchedEpisodes = *data.WatchedEpisodes
 		}
 
 		if data.WatchedSeasons != nil && tvList.WatchedSeasons != *data.WatchedSeasons {
-			set["watched_seasons"] = data.WatchedSeasons
+			set["watched_seasons"] = *data.WatchedSeasons
+			tvList.WatchedSeasons = *data.WatchedSeasons
 		}
 
 		if _, err := userListModel.TVSeriesWatchListCollection.UpdateOne(context.TODO(), bson.M{
@@ -448,11 +475,11 @@ func (userListModel *UserListModel) UpdateTVSeriesListByID(tvList TVSeriesWatchL
 				"data":       data,
 			}).Error("failed to update tv list: ", err)
 
-			return fmt.Errorf("Failed to update tv series watch list.")
+			return TVSeriesWatchList{}, fmt.Errorf("Failed to update tv series watch list.")
 		}
 	}
 
-	return nil
+	return tvList, nil
 }
 
 //! Get

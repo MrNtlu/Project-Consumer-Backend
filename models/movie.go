@@ -27,9 +27,9 @@ func NewMovieModel(mongoDB *db.MongoDB) *MovieModel {
 }
 
 const (
-	movieUpcomingPaginationLimit = 20
+	movieUpcomingPaginationLimit = 30
 	movieSearchLimit             = 50
-	moviePaginationLimit         = 20
+	moviePaginationLimit         = 30
 )
 
 /* TODO Endpoints

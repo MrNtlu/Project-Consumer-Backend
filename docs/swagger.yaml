@@ -1,5 +1,26 @@
 basePath: /api/v1
 definitions:
+  models.AnimeList:
+    properties:
+      _id:
+        type: string
+      anime_id:
+        type: string
+      anime_mal_id:
+        type: integer
+      created_at:
+        type: string
+      score:
+        type: number
+      status:
+        type: string
+      times_finished:
+        type: integer
+      user_id:
+        type: string
+      watched_episodes:
+        type: integer
+    type: object
   models.ConsumeLaterList:
     properties:
       _id:
@@ -17,6 +38,27 @@ definitions:
         type: string
       self_note:
         type: string
+      user_id:
+        type: string
+    type: object
+  models.GameList:
+    properties:
+      _id:
+        type: string
+      achievement_status:
+        type: number
+      created_at:
+        type: string
+      game_id:
+        type: string
+      game_rawg_id:
+        type: integer
+      score:
+        type: number
+      status:
+        type: string
+      times_finished:
+        type: integer
       user_id:
         type: string
     type: object
@@ -38,6 +80,29 @@ definitions:
         type: integer
       user_id:
         type: string
+    type: object
+  models.TVSeriesWatchList:
+    properties:
+      _id:
+        type: string
+      created_at:
+        type: string
+      score:
+        type: number
+      status:
+        type: string
+      times_finished:
+        type: integer
+      tv_id:
+        type: string
+      tv_tmdb_id:
+        type: string
+      user_id:
+        type: string
+      watched_episodes:
+        type: integer
+      watched_seasons:
+        type: integer
     type: object
   requests.ChangeFCMToken:
     properties:
@@ -90,6 +155,9 @@ definitions:
         - dropped
         - planto
         type: string
+      times_finished:
+        minimum: 0
+        type: integer
       watched_episodes:
         minimum: 0
         type: integer
@@ -141,6 +209,9 @@ definitions:
         - dropped
         - planto
         type: string
+      times_finished:
+        minimum: 0
+        type: integer
     required:
     - game_id
     - game_rawg_id
@@ -184,6 +255,9 @@ definitions:
         - dropped
         - planto
         type: string
+      times_finished:
+        minimum: 0
+        type: integer
       tv_id:
         type: string
       tv_tmdb_id:
@@ -1940,7 +2014,7 @@ paths:
         "200":
           description: OK
           schema:
-            type: string
+            $ref: '#/definitions/models.AnimeList'
         "403":
           description: Unauthorized update
           schema:
@@ -1980,7 +2054,7 @@ paths:
         "201":
           description: Created
           schema:
-            type: string
+            $ref: '#/definitions/models.AnimeList'
         "404":
           description: Not Found
           schema:
@@ -2054,7 +2128,7 @@ paths:
         "200":
           description: OK
           schema:
-            type: string
+            $ref: '#/definitions/models.GameList'
         "403":
           description: Unauthorized update
           schema:
@@ -2094,7 +2168,7 @@ paths:
         "201":
           description: Created
           schema:
-            type: string
+            $ref: '#/definitions/models.GameList'
         "404":
           description: Not Found
           schema:
@@ -2209,6 +2283,10 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/models.MovieWatchList'
+        "404":
+          description: Not Found
+          schema:
+            type: string
         "500":
           description: Internal Server Error
           schema:
@@ -2278,7 +2356,7 @@ paths:
         "200":
           description: OK
           schema:
-            type: string
+            $ref: '#/definitions/models.TVSeriesWatchList'
         "403":
           description: Unauthorized update
           schema:
@@ -2317,6 +2395,10 @@ paths:
       responses:
         "201":
           description: Created
+          schema:
+            $ref: '#/definitions/models.TVSeriesWatchList'
+        "404":
+          description: Not Found
           schema:
             type: string
         "500":

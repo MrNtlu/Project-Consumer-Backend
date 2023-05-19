@@ -767,7 +767,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.AnimeList"
                         }
                     },
                     "404": {
@@ -823,7 +823,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.AnimeList"
                         }
                     },
                     "403": {
@@ -943,7 +943,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.GameList"
                         }
                     },
                     "404": {
@@ -999,7 +999,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.GameList"
                         }
                     },
                     "403": {
@@ -1120,6 +1120,12 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/models.MovieWatchList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "500": {
@@ -1289,6 +1295,12 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
+                            "$ref": "#/definitions/models.TVSeriesWatchList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
                             "type": "string"
                         }
                     },
@@ -1339,7 +1351,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.TVSeriesWatchList"
                         }
                     },
                     "403": {
@@ -2172,6 +2184,38 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.AnimeList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "anime_id": {
+                    "type": "string"
+                },
+                "anime_mal_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "watched_episodes": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.ConsumeLaterList": {
             "type": "object",
             "properties": {
@@ -2196,6 +2240,38 @@ const docTemplate = `{
                 },
                 "self_note": {
                     "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.GameList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "achievement_status": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "game_id": {
+                    "type": "string"
+                },
+                "game_rawg_id": {
+                    "type": "integer"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
                 },
                 "user_id": {
                     "type": "string"
@@ -2228,6 +2304,41 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "string"
+                }
+            }
+        },
+        "models.TVSeriesWatchList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "tv_id": {
+                    "type": "string"
+                },
+                "tv_tmdb_id": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "watched_episodes": {
+                    "type": "integer"
+                },
+                "watched_seasons": {
+                    "type": "integer"
                 }
             }
         },
@@ -2311,6 +2422,10 @@ const docTemplate = `{
                         "planto"
                     ]
                 },
+                "times_finished": {
+                    "type": "integer",
+                    "minimum": 0
+                },
                 "watched_episodes": {
                     "type": "integer",
                     "minimum": 0
@@ -2379,6 +2494,10 @@ const docTemplate = `{
                         "dropped",
                         "planto"
                     ]
+                },
+                "times_finished": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
@@ -2439,6 +2558,10 @@ const docTemplate = `{
                         "dropped",
                         "planto"
                     ]
+                },
+                "times_finished": {
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "tv_id": {
                     "type": "string"

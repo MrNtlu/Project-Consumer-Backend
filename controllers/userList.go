@@ -29,7 +29,7 @@ func NewUserListController(mongoDB *db.MongoDB) UserListController {
 // @Param createanimelist body requests.CreateAnimeList true "Create Anime List"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 201 {string} string
+// @Success 201 {object} models.AnimeList
 // @Failure 404 {string} string
 // @Failure 500 {string} string
 // @Router /list/anime [post]
@@ -38,6 +38,11 @@ func (u *UserListController) CreateAnimeList(c *gin.Context) {
 	if shouldReturn := bindJSONData(&data, c); shouldReturn {
 		return
 	}
+
+	var (
+		createdAnimeList models.AnimeList
+		err              error
+	)
 
 	animeModel := models.NewAnimeModel(u.Database)
 	anime, err := animeModel.GetAnimeDetails(requests.ID{
@@ -60,7 +65,7 @@ func (u *UserListController) CreateAnimeList(c *gin.Context) {
 
 	userListModel := models.NewUserListModel(u.Database)
 
-	if err := userListModel.CreateAnimeList(uid, data, anime); err != nil {
+	if createdAnimeList, err = userListModel.CreateAnimeList(uid, data, anime); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -68,7 +73,7 @@ func (u *UserListController) CreateAnimeList(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created."})
+	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdAnimeList})
 }
 
 // Create Game List
@@ -80,7 +85,7 @@ func (u *UserListController) CreateAnimeList(c *gin.Context) {
 // @Param creategamelist body requests.CreateGameList true "Create Game List"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 201 {string} string
+// @Success 201 {object} models.GameList
 // @Failure 404 {string} string
 // @Failure 500 {string} string
 // @Router /list/game [post]
@@ -89,6 +94,11 @@ func (u *UserListController) CreateGameList(c *gin.Context) {
 	if shouldReturn := bindJSONData(&data, c); shouldReturn {
 		return
 	}
+
+	var (
+		createdGameList models.GameList
+		err             error
+	)
 
 	gameModel := models.NewGameModel(u.Database)
 	game, err := gameModel.GetGameDetails(requests.ID{
@@ -111,7 +121,7 @@ func (u *UserListController) CreateGameList(c *gin.Context) {
 
 	userListModel := models.NewUserListModel(u.Database)
 
-	if err := userListModel.CreateGameList(uid, data); err != nil {
+	if createdGameList, err = userListModel.CreateGameList(uid, data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -119,7 +129,7 @@ func (u *UserListController) CreateGameList(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created."})
+	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdGameList})
 }
 
 // Create Movie Watch List
@@ -132,6 +142,7 @@ func (u *UserListController) CreateGameList(c *gin.Context) {
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
 // @Success 201 {object} models.MovieWatchList
+// @Failure 404 {string} string
 // @Failure 500 {string} string
 // @Router /list/movie [post]
 func (u *UserListController) CreateMovieWatchList(c *gin.Context) {
@@ -186,7 +197,8 @@ func (u *UserListController) CreateMovieWatchList(c *gin.Context) {
 // @Param createtvserieswatchlist body requests.CreateTVSeriesWatchList true "Create TVSeries Watch List"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 201 {string} string
+// @Success 201 {object} models.TVSeriesWatchList
+// @Failure 404 {string} string
 // @Failure 500 {string} string
 // @Router /list/tv [post]
 func (u *UserListController) CreateTVSeriesWatchList(c *gin.Context) {
@@ -194,6 +206,11 @@ func (u *UserListController) CreateTVSeriesWatchList(c *gin.Context) {
 	if shouldReturn := bindJSONData(&data, c); shouldReturn {
 		return
 	}
+
+	var (
+		createdTVSeriesWatchList models.TVSeriesWatchList
+		err                      error
+	)
 
 	tvSeriesModel := models.NewTVModel(u.Database)
 	tvSeries, err := tvSeriesModel.GetTVSeriesDetails(requests.ID{
@@ -216,7 +233,7 @@ func (u *UserListController) CreateTVSeriesWatchList(c *gin.Context) {
 
 	userListModel := models.NewUserListModel(u.Database)
 
-	if err := userListModel.CreateTVSeriesWatchList(uid, data, tvSeries); err != nil {
+	if createdTVSeriesWatchList, err = userListModel.CreateTVSeriesWatchList(uid, data, tvSeries); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -224,7 +241,7 @@ func (u *UserListController) CreateTVSeriesWatchList(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created."})
+	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdTVSeriesWatchList})
 }
 
 // Update User List Visibility
@@ -281,7 +298,7 @@ func (u *UserListController) UpdateUserListPublicVisibility(c *gin.Context) {
 // @Param updateanimelist body requests.UpdateAnimeList true "Update Anime List"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 200 {string} string
+// @Success 200 {object} models.AnimeList
 // @Failure 403 {string} string "Unauthorized update"
 // @Failure 404 {string} string "Could not found"
 // @Failure 500 {string} string
@@ -292,8 +309,12 @@ func (u *UserListController) UpdateAnimeListByID(c *gin.Context) {
 		return
 	}
 
-	userListModel := models.NewUserListModel(u.Database)
+	var (
+		updatedAnimeList models.AnimeList
+		err              error
+	)
 
+	userListModel := models.NewUserListModel(u.Database)
 	animeList, err := userListModel.GetBaseAnimeListByID(data.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -322,7 +343,7 @@ func (u *UserListController) UpdateAnimeListByID(c *gin.Context) {
 		}
 	}
 
-	if err := userListModel.UpdateAnimeListByID(animeList, data); err != nil {
+	if updatedAnimeList, err = userListModel.UpdateAnimeListByID(animeList, data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -330,7 +351,7 @@ func (u *UserListController) UpdateAnimeListByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Anime list updated."})
+	c.JSON(http.StatusOK, gin.H{"message": "Anime list updated.", "data": updatedAnimeList})
 }
 
 // Update Game List
@@ -342,7 +363,7 @@ func (u *UserListController) UpdateAnimeListByID(c *gin.Context) {
 // @Param updategamelist body requests.UpdateGameList true "Update Game List"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 200 {string} string
+// @Success 200 {object} models.GameList
 // @Failure 403 {string} string "Unauthorized update"
 // @Failure 404 {string} string "Could not found"
 // @Failure 500 {string} string
@@ -353,8 +374,12 @@ func (u *UserListController) UpdateGameListByID(c *gin.Context) {
 		return
 	}
 
-	userListModel := models.NewUserListModel(u.Database)
+	var (
+		updatedGameList models.GameList
+		err             error
+	)
 
+	userListModel := models.NewUserListModel(u.Database)
 	gameList, err := userListModel.GetBaseGameListByID(data.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -372,7 +397,7 @@ func (u *UserListController) UpdateGameListByID(c *gin.Context) {
 		return
 	}
 
-	if err := userListModel.UpdateGameListByID(gameList, data); err != nil {
+	if updatedGameList, err = userListModel.UpdateGameListByID(gameList, data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -380,7 +405,7 @@ func (u *UserListController) UpdateGameListByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Game list updated."})
+	c.JSON(http.StatusOK, gin.H{"message": "Game list updated.", "data": updatedGameList})
 }
 
 // Update Movie List
@@ -446,7 +471,7 @@ func (u *UserListController) UpdateMovieListByID(c *gin.Context) {
 // @Param updatetvserieslist body requests.UpdateTVSeriesList true "Update TV Series List"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 200 {string} string
+// @Success 200 {object} models.TVSeriesWatchList
 // @Failure 403 {string} string "Unauthorized update"
 // @Failure 404 {string} string "Could not found"
 // @Failure 500 {string} string
@@ -457,8 +482,12 @@ func (u *UserListController) UpdateTVSeriesListByID(c *gin.Context) {
 		return
 	}
 
-	userListModel := models.NewUserListModel(u.Database)
+	var (
+		updatedTVList models.TVSeriesWatchList
+		err           error
+	)
 
+	userListModel := models.NewUserListModel(u.Database)
 	tvList, err := userListModel.GetBaseTVSeriesListByID(data.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -487,7 +516,7 @@ func (u *UserListController) UpdateTVSeriesListByID(c *gin.Context) {
 		}
 	}
 
-	if err := userListModel.UpdateTVSeriesListByID(tvList, data); err != nil {
+	if updatedTVList, err = userListModel.UpdateTVSeriesListByID(tvList, data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -495,7 +524,7 @@ func (u *UserListController) UpdateTVSeriesListByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "TV series watch list updated."})
+	c.JSON(http.StatusOK, gin.H{"message": "TV series watch list updated.", "data": updatedTVList})
 }
 
 // Get User List

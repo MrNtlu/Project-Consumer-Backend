@@ -5,6 +5,7 @@ type CreateAnimeList struct {
 	AnimeMALID      int64    `json:"anime_mal_id" binding:"required"`
 	Status          string   `json:"status" binding:"required,oneof=active finished dropped planto"`
 	WatchedEpisodes *int64   `json:"watched_episodes" binding:"required,number,min=0"`
+	TimesFinished   *int     `json:"times_finished" binding:"omitempty,number,min=0"`
 	Score           *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
 }
 
@@ -13,6 +14,7 @@ type CreateGameList struct {
 	GameRAWGID        int64    `json:"game_rawg_id" binding:"required"`
 	Status            string   `json:"status" binding:"required,oneof=active finished dropped planto"`
 	Score             *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
+	TimesFinished     *int     `json:"times_finished" binding:"omitempty,number,min=0"`
 	AchievementStatus *float32 `json:"achievement_status" binding:"omitempty,number,min=0,max=100"`
 }
 
@@ -30,6 +32,7 @@ type CreateTVSeriesWatchList struct {
 	Status          string   `json:"status" binding:"required,oneof=active finished dropped planto"`
 	WatchedEpisodes *int     `json:"watched_episodes" binding:"required,number,min=0"`
 	WatchedSeasons  *int     `json:"watched_seasons" binding:"required,number,min=0"`
+	TimesFinished   *int     `json:"times_finished" binding:"omitempty,number,min=0"`
 	Score           *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
 }
 
