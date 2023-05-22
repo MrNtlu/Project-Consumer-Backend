@@ -241,7 +241,7 @@ func (m *MovieController) SearchMovieByTitle(c *gin.Context) {
 
 	movieModel := models.NewMovieModel(m.Database)
 
-	movies, err := movieModel.SearchMovieByTitle(data)
+	movies, pagination, err := movieModel.SearchMovieByTitle(data)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -250,7 +250,5 @@ func (m *MovieController) SearchMovieByTitle(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data": movies,
-	})
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": movies})
 }

@@ -10,6 +10,7 @@ type ID struct {
 
 type Search struct {
 	Search string `json:"search" form:"search" binding:"required"`
+	Page   int64  `form:"page" binding:"required,number,min=1"`
 }
 
 type SortUpcoming struct {

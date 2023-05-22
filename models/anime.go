@@ -27,8 +27,8 @@ func NewAnimeModel(mongoDB *db.MongoDB) *AnimeModel {
 }
 
 const (
-	animeUpcomingPaginationLimit = 30
-	animePaginationLimit         = 30
+	animeUpcomingPaginationLimit = 40
+	animePaginationLimit         = 40
 )
 
 /* TODO Endpoints

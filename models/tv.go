@@ -27,8 +27,8 @@ func NewTVModel(mongoDB *db.MongoDB) *TVModel {
 }
 
 const (
-	tvSeriesUpcomingPaginationLimit = 30
-	tvSeriesPaginationLimit         = 30
+	tvSeriesUpcomingPaginationLimit = 40
+	tvSeriesPaginationLimit         = 40
 )
 
 /* TODO Endpoints

@@ -13,7 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type MovieModel struct {
@@ -27,9 +26,9 @@ func NewMovieModel(mongoDB *db.MongoDB) *MovieModel {
 }
 
 const (
-	movieUpcomingPaginationLimit = 30
+	movieUpcomingPaginationLimit = 40
 	movieSearchLimit             = 50
-	moviePaginationLimit         = 30
+	moviePaginationLimit         = 40
 )
 
 /* TODO Endpoints
@@ -39,6 +38,8 @@ const (
 * [x] Get top movies by every decade 1980's 1990's etc.
 * [ ] Get top movies by every genre (?)
  */
+
+//TODO Caching with Redis
 
 func (movieModel *MovieModel) GetUpcomingMoviesBySort(data requests.SortUpcoming) ([]responses.Movie, p.PaginationData, error) {
 	var (
@@ -302,28 +303,32 @@ func (movieModel *MovieModel) GetMovieDetailsWithWatchListAndWatchLater(data req
 	return responses.MovieDetails{}, nil
 }
 
-func (movieModel *MovieModel) SearchMovieByTitle(data requests.Search) ([]responses.Movie, error) {
-	opts := options.Find().SetLimit(movieSearchLimit)
-
-	cursor, err := movieModel.Collection.Find(context.TODO(), bson.M{
-		"$text": bson.M{
-			"$search": data.Search,
+func (movieModel *MovieModel) SearchMovieByTitle(data requests.Search) ([]responses.Movie, p.PaginationData, error) {
+	search := bson.M{"$search": bson.M{
+		"index": "movies_search",
+		"text": bson.M{
+			"query": data.Search,
+			"path":  bson.A{"title_en", "title_original", "translations.title"},
 		},
-	}, opts)
+	}}
+
+	paginatedData, err := p.New(movieModel.Collection).Context(context.TODO()).Limit(movieSearchLimit).
+		Page(data.Page).Aggregate(search)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"request": data,
-		}).Error("failed to search movies: ", err)
+			"data": data,
+		}).Error("failed to search movies by title: ", err)
 
-		return nil, fmt.Errorf("Failed to search movies.")
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to search movies by title.")
 	}
 
 	var movies []responses.Movie
-	if err = cursor.All(context.TODO(), &movies); err != nil {
-		logrus.Error("failed to decode searched movies: ", err)
-
-		return nil, err
+	for _, raw := range paginatedData.Data {
+		var movie *responses.Movie
+		if marshallErr := bson.Unmarshal(raw, &movie); marshallErr == nil {
+			movies = append(movies, *movie)
+		}
 	}
 
-	return movies, nil
+	return movies, paginatedData.Pagination, nil
 }

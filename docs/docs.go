@@ -2684,9 +2684,14 @@ const docTemplate = `{
         "requests.Search": {
             "type": "object",
             "required": [
+                "page",
                 "search"
             ],
             "properties": {
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
                 "search": {
                     "type": "string"
                 }
