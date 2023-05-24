@@ -2582,6 +2582,25 @@ paths:
       summary: Get Upcoming Movies by Sort
       tags:
       - movie
+  /oauth/google:
+    post:
+      consumes:
+      - application/json
+      description: Gets user info from google and creates/finds user and returns token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: OAuth2 Google Login
+      tags:
+      - oauth2
   /tv:
     get:
       consumes:
