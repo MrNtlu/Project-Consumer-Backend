@@ -38,6 +38,8 @@ const tokenExpiration = 259200
 // @Accept application/json
 // @Produce application/json
 // @Success 200 {string} string "Token"
+// @Failure 400 {string} string
+// @Failure 401 {string} string
 // @Failure 500 {string} string
 // @Router /oauth/google [post]
 func (o *OAuth2Controller) OAuth2GoogleLogin(jwt *jwt.GinJWTMiddleware) gin.HandlerFunc {
@@ -47,7 +49,8 @@ func (o *OAuth2Controller) OAuth2GoogleLogin(jwt *jwt.GinJWTMiddleware) gin.Hand
 			return
 		}
 
-		response, err := http.Get("https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=" + data.Token)
+		//Old https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=
+		response, err := http.Get("https://oauth2.googleapis.com/tokeninfo?id_token=" + data.Token)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": errFailedLogin,
