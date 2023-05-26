@@ -380,14 +380,14 @@ func (userListModel *UserListModel) UpdateGameListByID(gameList GameList, data r
 			gameList.TimesFinished = *data.TimesFinished
 		}
 
-		if data.HoursPlayed != nil && gameList.HoursPlayed != gameList.HoursPlayed {
-			set["hours_played"] = *data.HoursPlayed
-			gameList.HoursPlayed = data.HoursPlayed
-		}
-
 		if data.Status != nil && gameList.Status != *data.Status {
 			set["status"] = *data.Status
 			gameList.Status = *data.Status
+		}
+
+		if data.HoursPlayed != nil && gameList.HoursPlayed != data.HoursPlayed {
+			set["hours_played"] = data.HoursPlayed
+			gameList.HoursPlayed = data.HoursPlayed
 		}
 
 		if data.AchievementStatus != nil && gameList.AchievementStatus != data.AchievementStatus {
