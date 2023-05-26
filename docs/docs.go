@@ -2305,6 +2305,9 @@ const docTemplate = `{
                 "game_rawg_id": {
                     "type": "integer"
                 },
+                "hours_played": {
+                    "type": "integer"
+                },
                 "score": {
                     "type": "number"
                 },
@@ -2521,6 +2524,10 @@ const docTemplate = `{
                 },
                 "game_rawg_id": {
                     "type": "integer"
+                },
+                "hours_played": {
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "score": {
                     "type": "number",
@@ -3003,6 +3010,10 @@ const docTemplate = `{
             "properties": {
                 "achievement_status": {
                     "type": "number",
+                    "minimum": 0
+                },
+                "hours_played": {
+                    "type": "integer",
                     "minimum": 0
                 },
                 "id": {

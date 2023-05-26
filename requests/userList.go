@@ -15,6 +15,7 @@ type CreateGameList struct {
 	Status            string   `json:"status" binding:"required,oneof=active finished dropped planto"`
 	Score             *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
 	TimesFinished     *int     `json:"times_finished" binding:"omitempty,number,min=0"`
+	HoursPlayed       *int     `json:"hours_played" binding:"omitempty,number,min=0"`
 	AchievementStatus *float32 `json:"achievement_status" binding:"omitempty,number,min=0,max=100"`
 }
 
@@ -58,6 +59,7 @@ type UpdateGameList struct {
 	IsUpdatingScore   bool     `json:"is_updating_score"`
 	Score             *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
 	TimesFinished     *int     `json:"times_finished" binding:"omitempty,number,min=0"`
+	HoursPlayed       *int     `json:"hours_played" binding:"omitempty,number,min=0"`
 	Status            *string  `json:"status" binding:"omitempty,oneof=active finished dropped planto"`
 	AchievementStatus *float32 `json:"achievement_status" binding:"omitempty,number,min=0"`
 }

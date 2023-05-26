@@ -71,6 +71,7 @@ type GameList struct {
 	Score             *float32           `bson:"score" json:"score"`
 	AchievementStatus *float32           `bson:"achievement_status" json:"achievement_status"`
 	TimesFinished     int                `bson:"times_finished" json:"times_finished"`
+	HoursPlayed       *int               `bson:"hours_played" json:"hours_played"`
 	CreatedAt         time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt         time.Time          `bson:"updated_at" json:"-"`
 }
@@ -123,7 +124,7 @@ func createAnimeListObject(userID, animeID, status string, animeMALID, watchedEp
 	}
 }
 
-func createGameListObject(userID, gameID, status string, gameRAWGID int64, score, achievementStatus *float32, timesFinished *int) *GameList {
+func createGameListObject(userID, gameID, status string, gameRAWGID int64, score, achievementStatus *float32, timesFinished, hoursPlayed *int) *GameList {
 	return &GameList{
 		UserID:            userID,
 		GameRAWGID:        gameRAWGID,
@@ -132,6 +133,7 @@ func createGameListObject(userID, gameID, status string, gameRAWGID int64, score
 		Score:             score,
 		AchievementStatus: achievementStatus,
 		TimesFinished:     handleTimesFinished(status, timesFinished),
+		HoursPlayed:       hoursPlayed,
 		CreatedAt:         time.Now().UTC(),
 		UpdatedAt:         time.Now().UTC(),
 	}
@@ -222,7 +224,8 @@ func (userListModel *UserListModel) CreateAnimeList(uid string, data requests.Cr
 func (userListModel *UserListModel) CreateGameList(uid string, data requests.CreateGameList) (GameList, error) {
 	gameList := createGameListObject(
 		uid, data.GameID, data.Status, data.GameRAWGID,
-		data.Score, data.AchievementStatus, data.TimesFinished,
+		data.Score, data.AchievementStatus,
+		data.TimesFinished, data.HoursPlayed,
 	)
 
 	var (
@@ -375,6 +378,11 @@ func (userListModel *UserListModel) UpdateGameListByID(gameList GameList, data r
 		if data.TimesFinished != nil && gameList.TimesFinished != *data.TimesFinished {
 			set["times_finished"] = *data.TimesFinished
 			gameList.TimesFinished = *data.TimesFinished
+		}
+
+		if data.HoursPlayed != nil && gameList.HoursPlayed != gameList.HoursPlayed {
+			set["hours_played"] = *data.HoursPlayed
+			gameList.HoursPlayed = data.HoursPlayed
 		}
 
 		if data.Status != nil && gameList.Status != *data.Status {

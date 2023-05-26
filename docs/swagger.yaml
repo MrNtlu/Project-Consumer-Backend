@@ -53,6 +53,8 @@ definitions:
         type: string
       game_rawg_id:
         type: integer
+      hours_played:
+        type: integer
       score:
         type: number
       status:
@@ -197,6 +199,9 @@ definitions:
       game_id:
         type: string
       game_rawg_id:
+        type: integer
+      hours_played:
+        minimum: 0
         type: integer
       score:
         maximum: 10
@@ -547,6 +552,9 @@ definitions:
       achievement_status:
         minimum: 0
         type: number
+      hours_played:
+        minimum: 0
+        type: integer
       id:
         type: string
       is_updating_score:
