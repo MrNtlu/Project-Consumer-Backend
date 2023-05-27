@@ -80,7 +80,7 @@ func (o *OAuth2Controller) OAuth2GoogleLogin(jwt *jwt.GinJWTMiddleware) gin.Hand
 		user, _ = userModel.FindUserByEmail(googleToken.Email)
 
 		if user.EmailAddress == "" {
-			oAuthUser, err := userModel.CreateOAuthUser(googleToken.Email, googleToken.Email, data.FCMToken, nil, 0)
+			oAuthUser, err := userModel.CreateOAuthUser(googleToken.Email, googleToken.Email, data.FCMToken, data.Image, nil, 0)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return

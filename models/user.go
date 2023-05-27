@@ -29,7 +29,7 @@ type User struct {
 	ID                 primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	Username           string             `bson:"username" json:"username"`
 	EmailAddress       string             `bson:"email" json:"email"`
-	Image              *string            `bson:"image" json:"image"`
+	Image              string             `bson:"image" json:"image"`
 	Password           string             `bson:"password" json:"-"`
 	PasswordResetToken string             `bson:"reset_token" json:"-"`
 	CreatedAt          time.Time          `bson:"created_at" json:"-"`
@@ -44,7 +44,7 @@ type User struct {
 }
 
 // Create
-func createUserObject(emailAddress, username, password, fcmToken string, image *string) *User {
+func createUserObject(emailAddress, username, password, fcmToken, image string) *User {
 	return &User{
 		Username:         username,
 		EmailAddress:     emailAddress,
@@ -60,10 +60,11 @@ func createUserObject(emailAddress, username, password, fcmToken string, image *
 	}
 }
 
-func createOAuthUserObject(emailAddress, username, fcmToken string, refreshToken *string, oAuthType int) *User {
+func createOAuthUserObject(emailAddress, username, fcmToken, image string, refreshToken *string, oAuthType int) *User {
 	return &User{
 		EmailAddress:     emailAddress,
 		Username:         username,
+		Image:            image,
 		CreatedAt:        time.Now().UTC(),
 		UpdatedAt:        time.Now().UTC(),
 		IsPremium:        false,
@@ -93,8 +94,8 @@ func (userModel *UserModel) CreateUser(data requests.Register) (*User, error) {
 	return user, nil
 }
 
-func (userModel *UserModel) CreateOAuthUser(emailAddress, username, fcmToken string, refreshToken *string, oAuthType int) (*User, error) {
-	user := createOAuthUserObject(emailAddress, username, fcmToken, refreshToken, oAuthType)
+func (userModel *UserModel) CreateOAuthUser(emailAddress, username, fcmToken, image string, refreshToken *string, oAuthType int) (*User, error) {
+	user := createOAuthUserObject(emailAddress, username, fcmToken, image, refreshToken, oAuthType)
 
 	result, err := userModel.Collection.InsertOne(context.TODO(), user)
 	if err != nil {

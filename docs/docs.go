@@ -4420,6 +4420,9 @@ const docTemplate = `{
                 "fcm_token": {
                     "type": "string"
                 },
+                "image": {
+                    "type": "string"
+                },
                 "is_oauth": {
                     "type": "boolean"
                 },

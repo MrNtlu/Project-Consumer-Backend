@@ -6,11 +6,11 @@ type Login struct {
 }
 
 type Register struct {
-	EmailAddress string  `json:"email_address" binding:"required,email"`
-	Username     string  `json:"username" binding:"required"`
-	Password     string  `json:"password" binding:"required,min=6"`
-	Image        *string `json:"image"`
-	FCMToken     string  `json:"fcm_token"`
+	EmailAddress string `json:"email_address" binding:"required,email"`
+	Username     string `json:"username" binding:"required"`
+	Password     string `json:"password" binding:"required,min=6"`
+	Image        string `json:"image"`
+	FCMToken     string `json:"fcm_token"`
 }
 
 type ChangePassword struct {
