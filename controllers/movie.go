@@ -198,9 +198,9 @@ func (m *MovieController) GetMovieDetails(c *gin.Context) {
 		return
 	}
 
-	uid, OK := c.Get("uuid")
-	if OK && uid != nil && movieDetails.TitleOriginal != "" {
-		movieDetailsWithWatchList, err := movieModel.GetMovieDetailsWithWatchListAndWatchLater(data, uid.(string))
+	uuid, OK := c.Get("uuid")
+	if OK && uuid != nil && movieDetails.TitleOriginal != "" {
+		movieDetailsWithWatchList, err := movieModel.GetMovieDetailsWithWatchListAndWatchLater(data, uuid.(string))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),

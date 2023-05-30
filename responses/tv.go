@@ -10,7 +10,7 @@ type TVSeries struct {
 	ImageURL            string                 `bson:"image_url" json:"image_url"`
 	SmallImageURL       string                 `bson:"small_image_url" json:"small_image_url"`
 	Status              string                 `bson:"status" json:"status"`
-	TmdbID              int                    `bson:"tmdb_id" json:"tmdb_id"`
+	TmdbID              string                 `bson:"tmdb_id" json:"tmdb_id"`
 	TmdbPopularity      float64                `bson:"tmdb_popularity" json:"tmdb_popularity"`
 	TmdbVote            float64                `bson:"tmdb_vote" json:"tmdb_vote"`
 	TmdbVoteCount       int64                  `bson:"tmdb_vote_count" json:"tmdb_vote_count"`
@@ -49,6 +49,7 @@ type TVSeriesDetails struct {
 	Translations        []Translation          `bson:"translations" json:"translations"`
 	Actors              []Actor                `bson:"actors" json:"actors"`
 	TVList              *TVDetailsList         `bson:"tv_list" json:"tv_list"`
+	WatchLater          *ConsumeLater          `bson:"watch_later" json:"watch_later"`
 }
 
 type TVDetailsList struct {

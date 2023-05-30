@@ -28,6 +28,7 @@ func NewTVModel(mongoDB *db.MongoDB) *TVModel {
 
 const (
 	tvSeriesUpcomingPaginationLimit = 40
+	tvSeriesSearchLimit             = 50
 	tvSeriesPaginationLimit         = 40
 )
 
@@ -69,10 +70,10 @@ func (tvModel *TVModel) GetUpcomingTVSeries(data requests.SortUpcoming) ([]respo
 		"has_air_date": bson.M{
 			"$or": bson.A{
 				bson.M{
-					"$ne": bson.A{"$release_date", ""},
+					"$ne": bson.A{"$first_air_date", ""},
 				},
 				bson.M{
-					"$ne": bson.A{"$release_date", nil},
+					"$ne": bson.A{"$first_air_date", nil},
 				},
 			},
 		},
@@ -263,7 +264,7 @@ func (tvModel *TVModel) GetTVSeriesDetails(data requests.ID) (responses.TVSeries
 	return tvSeries, nil
 }
 
-func (tvModel *TVModel) GetTVSeriesDetailsWithWatchList(data requests.ID, uuid string) (responses.TVSeriesDetails, error) {
+func (tvModel *TVModel) GetTVSeriesDetailsWithWatchListAndWatchLater(data requests.ID, uuid string) (responses.TVSeriesDetails, error) {
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 
 	match := bson.M{"$match": bson.M{
@@ -277,7 +278,7 @@ func (tvModel *TVModel) GetTVSeriesDetailsWithWatchList(data requests.ID, uuid s
 	}}
 
 	lookup := bson.M{"$lookup": bson.M{
-		"from": "movie-watch-lists",
+		"from": "tvseries-watch-lists",
 		"let": bson.M{
 			"uuid":    uuid,
 			"tv_id":   "$tv_id",
@@ -309,8 +310,41 @@ func (tvModel *TVModel) GetTVSeriesDetailsWithWatchList(data requests.ID, uuid s
 		"preserveNullAndEmptyArrays": true,
 	}}
 
+	lookupWatchLater := bson.M{"$lookup": bson.M{
+		"from": "consume-laters",
+		"let": bson.M{
+			"uuid":    uuid,
+			"tv_id":   "$tv_id",
+			"tmdb_id": "$tmdb_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$and": bson.A{
+							bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$content_id", "$$tv_id"}},
+									bson.M{"$eq": bson.A{"$content_external_id", "$$tmdb_id"}},
+								},
+							},
+							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "watch_later",
+	}}
+
+	unwindWatchLater := bson.M{"$unwind": bson.M{
+		"path":                       "$watch_later",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
 	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, set, lookup, unwindWatchList,
+		match, set, lookup, unwindWatchList, lookupWatchLater, unwindWatchLater,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -336,4 +370,34 @@ func (tvModel *TVModel) GetTVSeriesDetailsWithWatchList(data requests.ID, uuid s
 	}
 
 	return responses.TVSeriesDetails{}, nil
+}
+
+func (tvModel *TVModel) SearchTVSeriesByTitle(data requests.Search) ([]responses.TVSeries, p.PaginationData, error) {
+	search := bson.M{"$search": bson.M{
+		"index": "tv_series_search",
+		"text": bson.M{
+			"query": data.Search,
+			"path":  bson.A{"title_en", "title_original", "translations.title"},
+		},
+	}}
+
+	paginatedData, err := p.New(tvModel.Collection).Context(context.TODO()).Limit(tvSeriesSearchLimit).
+		Page(data.Page).Aggregate(search)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"data": data,
+		}).Error("failed to search tv series by title: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to search tv series by title.")
+	}
+
+	var tvSeries []responses.TVSeries
+	for _, raw := range paginatedData.Data {
+		var tv *responses.TVSeries
+		if marshallErr := bson.Unmarshal(raw, &tv); marshallErr == nil {
+			tvSeries = append(tvSeries, *tv)
+		}
+	}
+
+	return tvSeries, paginatedData.Pagination, nil
 }

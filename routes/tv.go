@@ -19,5 +19,6 @@ func tvRouter(router *gin.RouterGroup, mongoDB *db.MongoDB) {
 		tv.GET("/decade", tvController.GetPopularTVSeriesByDecade)
 		tv.GET("/genre", tvController.GetPopularTVSeriesByGenre)
 		tv.Use(helpers.OptionalTokenCheck).GET("/details", tvController.GetTVSeriesDetails)
+		tv.GET("/search", tvController.SearchTVSeriesByTitle)
 	}
 }

@@ -1803,6 +1803,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/tv/search": {
+            "get": {
+                "description": "Search tv series",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tv"
+                ],
+                "summary": "Search TV Series",
+                "parameters": [
+                    {
+                        "description": "Search",
+                        "name": "search",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.Search"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.TVSeries"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/tv/upcoming": {
             "get": {
                 "description": "Returns upcoming tv series by sort with pagination",
@@ -3525,6 +3568,29 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.ConsumeLater": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "content_external_id": {
+                    "type": "string"
+                },
+                "content_id": {
+                    "type": "string"
+                },
+                "content_type": {
+                    "type": "string"
+                },
+                "self_note": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "responses.Game": {
             "type": "object",
             "properties": {
@@ -3987,33 +4053,10 @@ const docTemplate = `{
                     }
                 },
                 "watch_later": {
-                    "$ref": "#/definitions/responses.MovieDetailsWatchLater"
+                    "$ref": "#/definitions/responses.ConsumeLater"
                 },
                 "watch_list": {
                     "$ref": "#/definitions/responses.MovieDetailsWatchList"
-                }
-            }
-        },
-        "responses.MovieDetailsWatchLater": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "type": "string"
-                },
-                "content_external_id": {
-                    "type": "string"
-                },
-                "content_id": {
-                    "type": "string"
-                },
-                "content_type": {
-                    "type": "string"
-                },
-                "self_note": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
                 }
             }
         },
@@ -4236,7 +4279,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tmdb_id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "tmdb_popularity": {
                     "type": "number"
@@ -4350,6 +4393,9 @@ const docTemplate = `{
                 },
                 "tv_list": {
                     "$ref": "#/definitions/responses.TVDetailsList"
+                },
+                "watch_later": {
+                    "$ref": "#/definitions/responses.ConsumeLater"
                 }
             }
         },

@@ -232,9 +232,9 @@ func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
 		return
 	}
 
-	uid, OK := c.Get("uuid")
-	if OK && uid != nil && tvSeriesDetails.TitleOriginal != "" {
-		tvSeriesDetailsWithWatchList, err := tvModel.GetTVSeriesDetailsWithWatchList(data, uid.(string))
+	uuid, OK := c.Get("uuid")
+	if OK && uuid != nil && tvSeriesDetails.TitleOriginal != "" {
+		tvSeriesDetailsWithWatchList, err := tvModel.GetTVSeriesDetailsWithWatchListAndWatchLater(data, uuid.(string))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -251,4 +251,38 @@ func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
 			"data": tvSeriesDetails,
 		})
 	}
+}
+
+// Search TV Series
+// @Summary Search TV Series
+// @Description Search tv series
+// @Tags tv
+// @Accept application/json
+// @Produce application/json
+// @Param search body requests.Search true "Search"
+// @Success 200 {array} responses.TVSeries
+// @Failure 500 {string} string
+// @Router /tv/search [get]
+func (tv *TVController) SearchTVSeriesByTitle(c *gin.Context) {
+	var data requests.Search
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	tvModel := models.NewTVModel(tv.Database)
+
+	tvSeries, pagination, err := tvModel.SearchTVSeriesByTitle(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": tvSeries})
 }
