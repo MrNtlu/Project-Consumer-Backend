@@ -3912,6 +3912,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/responses.Actor"
                     }
                 },
+                "backdrop": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -3988,6 +3991,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/responses.Actor"
                     }
+                },
+                "backdrop": {
+                    "type": "string"
                 },
                 "description": {
                     "type": "string"
@@ -4227,6 +4233,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/responses.Actor"
                     }
                 },
+                "backdrop": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -4315,6 +4324,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/responses.Actor"
                     }
+                },
+                "backdrop": {
+                    "type": "string"
                 },
                 "description": {
                     "type": "string"

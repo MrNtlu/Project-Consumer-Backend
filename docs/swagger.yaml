@@ -1124,6 +1124,8 @@ definitions:
         items:
           $ref: '#/definitions/responses.Actor'
         type: array
+      backdrop:
+        type: string
       description:
         type: string
       genres:
@@ -1175,6 +1177,8 @@ definitions:
         items:
           $ref: '#/definitions/responses.Actor'
         type: array
+      backdrop:
+        type: string
       description:
         type: string
       genres:
@@ -1331,6 +1335,8 @@ definitions:
         items:
           $ref: '#/definitions/responses.Actor'
         type: array
+      backdrop:
+        type: string
       description:
         type: string
       first_air_date:
@@ -1390,6 +1396,8 @@ definitions:
         items:
           $ref: '#/definitions/responses.Actor'
         type: array
+      backdrop:
+        type: string
       description:
         type: string
       first_air_date:

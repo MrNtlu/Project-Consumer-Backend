@@ -17,6 +17,7 @@ type Movie struct {
 	TmdbVote            float64                `bson:"tmdb_vote" json:"tmdb_vote"`
 	TmdbVoteCount       int64                  `bson:"tmdb_vote_count" json:"tmdb_vote_count"`
 	ReleaseDate         string                 `bson:"release_date" json:"release_date"`
+	Backdrop            *string                `bson:"backdrop" json:"backdrop"`
 	ProductionCompanies []ProductionAndCompany `bson:"production_companies" json:"production_companies"`
 	Genres              []Genre                `bson:"genres" json:"genres"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
@@ -39,6 +40,7 @@ type MovieDetails struct {
 	TmdbVote            float64                `bson:"tmdb_vote" json:"tmdb_vote"`
 	TmdbVoteCount       int64                  `bson:"tmdb_vote_count" json:"tmdb_vote_count"`
 	ReleaseDate         string                 `bson:"release_date" json:"release_date"`
+	Backdrop            *string                `bson:"backdrop" json:"backdrop"`
 	ProductionCompanies []ProductionAndCompany `bson:"production_companies" json:"production_companies"`
 	Genres              []Genre                `bson:"genres" json:"genres"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`

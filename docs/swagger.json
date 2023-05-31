@@ -3909,6 +3909,9 @@
                         "$ref": "#/definitions/responses.Actor"
                     }
                 },
+                "backdrop": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -3985,6 +3988,9 @@
                     "items": {
                         "$ref": "#/definitions/responses.Actor"
                     }
+                },
+                "backdrop": {
+                    "type": "string"
                 },
                 "description": {
                     "type": "string"
@@ -4224,6 +4230,9 @@
                         "$ref": "#/definitions/responses.Actor"
                     }
                 },
+                "backdrop": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -4312,6 +4321,9 @@
                     "items": {
                         "$ref": "#/definitions/responses.Actor"
                     }
+                },
+                "backdrop": {
+                    "type": "string"
                 },
                 "description": {
                     "type": "string"

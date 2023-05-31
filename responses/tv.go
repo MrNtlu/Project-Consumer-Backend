@@ -18,6 +18,7 @@ type TVSeries struct {
 	TotalSeasons        int                    `bson:"total_seasons" json:"total_seasons"`
 	TotalEpisodes       int                    `bson:"total_episodes" json:"total_episodes"`
 	FirstAirDate        string                 `bson:"first_air_date" json:"first_air_date"`
+	Backdrop            *string                `bson:"backdrop" json:"backdrop"`
 	Genres              []Genre                `bson:"genres" json:"genres"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
 	Seasons             []Season               `bson:"seasons" json:"seasons"`
@@ -42,6 +43,7 @@ type TVSeriesDetails struct {
 	TotalSeasons        int                    `bson:"total_seasons" json:"total_seasons"`
 	TotalEpisodes       int                    `bson:"total_episodes" json:"total_episodes"`
 	FirstAirDate        string                 `bson:"first_air_date" json:"first_air_date"`
+	Backdrop            *string                `bson:"backdrop" json:"backdrop"`
 	Genres              []Genre                `bson:"genres" json:"genres"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
 	Seasons             []Season               `bson:"seasons" json:"seasons"`
