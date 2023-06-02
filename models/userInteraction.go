@@ -56,7 +56,7 @@ func createConsumeLaterObject(userID, contentID, contentType string, contentExte
 	}
 }
 
-// TODO Get consume later list by x order
+//TODO Get consume later list by x order
 
 func (userInteractionModel *UserInteractionModel) CreateConsumeLater(uid string, data requests.CreateConsumeLater) (ConsumeLaterList, error) {
 	consumeLater := createConsumeLaterObject(

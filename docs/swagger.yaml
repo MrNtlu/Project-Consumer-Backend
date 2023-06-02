@@ -1433,7 +1433,7 @@ definitions:
       title_original:
         type: string
       tmdb_id:
-        type: integer
+        type: string
       tmdb_popularity:
         type: number
       tmdb_vote:

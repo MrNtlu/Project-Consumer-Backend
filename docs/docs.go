@@ -4380,7 +4380,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tmdb_id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "tmdb_popularity": {
                     "type": "number"
