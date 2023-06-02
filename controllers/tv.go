@@ -53,6 +53,40 @@ func (tv *TVController) GetUpcomingTVSeries(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": upcomingTVSeries})
 }
 
+// Get Popular TV Series
+// @Summary Get Popular TV Series by Sort
+// @Description Returns popular tv series
+// @Tags tv
+// @Accept application/json
+// @Produce application/json
+// @Param pagination body requests.Pagination true "Pagination"
+// @Success 200 {array} responses.TVSeries
+// @Failure 500 {string} string
+// @Router /tv/popular [get]
+func (tv *TVController) GetPopularTVSeries(c *gin.Context) {
+	var data requests.Pagination
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	tvModel := models.NewTVModel(tv.Database)
+
+	popularTVSeries, pagination, err := tvModel.GetPopularTVSeries(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": popularTVSeries})
+}
+
 // Get Upcoming Seasons for TV Series
 // @Summary Get Upcoming Seasons for TV Series by Sort
 // @Description Returns upcoming tv series by sort with pagination

@@ -1803,6 +1803,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/tv/popular": {
+            "get": {
+                "description": "Returns popular tv series",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tv"
+                ],
+                "summary": "Get Popular TV Series by Sort",
+                "parameters": [
+                    {
+                        "description": "Pagination",
+                        "name": "pagination",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.Pagination"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.TVSeries"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/tv/search": {
             "get": {
                 "description": "Search tv series",
@@ -2743,6 +2786,18 @@ const docTemplate = `{
             "properties": {
                 "id": {
                     "type": "string"
+                }
+            }
+        },
+        "requests.Pagination": {
+            "type": "object",
+            "required": [
+                "page"
+            ],
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         },

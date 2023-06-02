@@ -332,6 +332,14 @@ definitions:
     required:
     - id
     type: object
+  requests.Pagination:
+    properties:
+      page:
+        minimum: 1
+        type: integer
+    required:
+    - page
+    type: object
   requests.Register:
     properties:
       email_address:
@@ -2711,6 +2719,34 @@ paths:
           schema:
             type: string
       summary: Get TV Series Details
+      tags:
+      - tv
+  /tv/popular:
+    get:
+      consumes:
+      - application/json
+      description: Returns popular tv series
+      parameters:
+      - description: Pagination
+        in: body
+        name: pagination
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Pagination'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.TVSeries'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Popular TV Series by Sort
       tags:
       - tv
   /tv/search:

@@ -100,6 +100,45 @@ func (tvModel *TVModel) GetUpcomingTVSeries(data requests.SortUpcoming) ([]respo
 	return upcomingTVSeries, paginatedData.Pagination, nil
 }
 
+func (tvModel *TVModel) GetPopularTVSeries(data requests.Pagination) ([]responses.TVSeries, p.PaginationData, error) {
+	addFields := bson.M{"$addFields": bson.M{
+		"popularity": bson.M{
+			"$multiply": bson.A{
+				bson.M{
+					"$multiply": bson.A{
+						"$tmdb_vote", "$tmdb_vote_count",
+					},
+				},
+				bson.M{
+					"$multiply": bson.A{
+						"$tmdb_popularity", 0.25,
+					},
+				},
+			},
+		},
+	}}
+
+	paginatedData, err := p.New(tvModel.Collection).Context(context.TODO()).Limit(tvSeriesPaginationLimit).
+		Page(data.Page).Sort("popularity", -1).Aggregate(addFields)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate upcoming tv series: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get upcoming tv series.")
+	}
+
+	var popularTVSeries []responses.TVSeries
+	for _, raw := range paginatedData.Data {
+		var tvSeries *responses.TVSeries
+		if marshalErr := bson.Unmarshal(raw, &tvSeries); marshalErr == nil {
+			popularTVSeries = append(popularTVSeries, *tvSeries)
+		}
+	}
+
+	return popularTVSeries, paginatedData.Pagination, nil
+}
+
 //TODO Get the latest season and sort by that.
 func (tvModel *TVModel) GetUpcomingSeasonTVSeries(data requests.SortUpcoming) ([]responses.TVSeries, p.PaginationData, error) {
 	var (
