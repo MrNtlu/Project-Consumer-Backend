@@ -105,15 +105,13 @@ func (tvModel *TVModel) GetPopularTVSeries(data requests.Pagination) ([]response
 		"popularity": bson.M{
 			"$multiply": bson.A{
 				bson.M{
-					"$multiply": bson.A{
-						"$tmdb_vote", "$tmdb_vote_count",
+					"$sqrt": bson.M{
+						"$multiply": bson.A{
+							"$tmdb_vote", "$tmdb_vote_count",
+						},
 					},
 				},
-				bson.M{
-					"$multiply": bson.A{
-						"$tmdb_popularity", 0.25,
-					},
-				},
+				"$tmdb_popularity",
 			},
 		},
 	}}
@@ -123,9 +121,9 @@ func (tvModel *TVModel) GetPopularTVSeries(data requests.Pagination) ([]response
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
-		}).Error("failed to aggregate upcoming tv series: ", err)
+		}).Error("failed to aggregate popular tv series: ", err)
 
-		return nil, p.PaginationData{}, fmt.Errorf("Failed to get upcoming tv series.")
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get popular tv series.")
 	}
 
 	var popularTVSeries []responses.TVSeries
@@ -137,6 +135,36 @@ func (tvModel *TVModel) GetPopularTVSeries(data requests.Pagination) ([]response
 	}
 
 	return popularTVSeries, paginatedData.Pagination, nil
+}
+
+func (tvModel *TVModel) GetTopRatedTVSeries(data requests.Pagination) ([]responses.TVSeries, p.PaginationData, error) {
+	addFields := bson.M{"$addFields": bson.M{
+		"top_rated": bson.M{
+			"$multiply": bson.A{
+				"$tmdb_vote", "$tmdb_vote_count",
+			},
+		},
+	}}
+
+	paginatedData, err := p.New(tvModel.Collection).Context(context.TODO()).Limit(tvSeriesPaginationLimit).
+		Page(data.Page).Sort("top_rated", -1).Aggregate(addFields)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate top rated tv series: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get top rated tv series.")
+	}
+
+	var topRatedTVSeries []responses.TVSeries
+	for _, raw := range paginatedData.Data {
+		var tvSeries *responses.TVSeries
+		if marshalErr := bson.Unmarshal(raw, &tvSeries); marshalErr == nil {
+			topRatedTVSeries = append(topRatedTVSeries, *tvSeries)
+		}
+	}
+
+	return topRatedTVSeries, paginatedData.Pagination, nil
 }
 
 //TODO Get the latest season and sort by that.

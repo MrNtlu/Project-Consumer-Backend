@@ -19,6 +19,55 @@ func NewTVController(mongoDB *db.MongoDB) TVController {
 	}
 }
 
+// Get Preview TV Series
+// @Summary Get Preview TV Series
+// @Description Returns preview tv series
+// @Tags tv
+// @Accept application/json
+// @Produce application/json
+// @Success 200 {array} responses.TVSeries
+// @Failure 500 {string} string
+// @Router /tv/preview [get]
+func (tv *TVController) GetPreviewTVSeries(c *gin.Context) {
+	tvModel := models.NewTVModel(tv.Database)
+
+	upcomingTVSeries, _, err := tvModel.GetUpcomingTVSeries(requests.SortUpcoming{
+		Sort: "popularity",
+		Page: 1,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	popularTVSeries, _, err := tvModel.GetPopularTVSeries(requests.Pagination{
+		Page: 1,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	topTVSeries, _, err := tvModel.GetTopRatedTVSeries(requests.Pagination{
+		Page: 1,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"upcoming": upcomingTVSeries, "popular": popularTVSeries, "top": topTVSeries})
+}
+
 // Get Upcoming TV Series
 // @Summary Get Upcoming TV Series by Sort
 // @Description Returns upcoming tv series by sort with pagination
@@ -85,6 +134,40 @@ func (tv *TVController) GetPopularTVSeries(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": popularTVSeries})
+}
+
+// Get Top Rated TV Series
+// @Summary Get Top Rated TV Series by Sort
+// @Description Returns top rated tv series
+// @Tags tv
+// @Accept application/json
+// @Produce application/json
+// @Param pagination body requests.Pagination true "Pagination"
+// @Success 200 {array} responses.TVSeries
+// @Failure 500 {string} string
+// @Router /tv/top [get]
+func (tv *TVController) GetTopRatedTVSeries(c *gin.Context) {
+	var data requests.Pagination
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	tvModel := models.NewTVModel(tv.Database)
+
+	topRatedTVSeries, pagination, err := tvModel.GetTopRatedTVSeries(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": topRatedTVSeries})
 }
 
 // Get Upcoming Seasons for TV Series

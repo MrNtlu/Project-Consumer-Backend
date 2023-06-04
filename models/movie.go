@@ -41,6 +41,36 @@ const (
 
 //TODO Caching with Redis
 
+func (movieModel *MovieModel) GetTopRatedMoviesBySort(data requests.Pagination) ([]responses.Movie, p.PaginationData, error) {
+	addFields := bson.M{"$addFields": bson.M{
+		"top_rated": bson.M{
+			"$multiply": bson.A{
+				"$tmdb_vote", "$tmdb_vote_count",
+			},
+		},
+	}}
+
+	paginatedData, err := p.New(movieModel.Collection).Context(context.TODO()).Limit(tvSeriesPaginationLimit).
+		Page(data.Page).Sort("top_rated", -1).Aggregate(addFields)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate top rated movies: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get top rated movies.")
+	}
+
+	var topRatedMovies []responses.Movie
+	for _, raw := range paginatedData.Data {
+		var movie *responses.Movie
+		if marshalErr := bson.Unmarshal(raw, &movie); marshalErr == nil {
+			topRatedMovies = append(topRatedMovies, *movie)
+		}
+	}
+
+	return topRatedMovies, paginatedData.Pagination, nil
+}
+
 func (movieModel *MovieModel) GetUpcomingMoviesBySort(data requests.SortUpcoming) ([]responses.Movie, p.PaginationData, error) {
 	var (
 		sortType            string

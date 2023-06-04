@@ -2554,6 +2554,27 @@ paths:
       summary: Get Popular Movies by genre
       tags:
       - movie
+  /movie/preview:
+    get:
+      consumes:
+      - application/json
+      description: Returns preview movies
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Movie'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Preview Movies
+      tags:
+      - movie
   /movie/search:
     get:
       consumes:
@@ -2580,6 +2601,34 @@ paths:
           schema:
             type: string
       summary: Search Movie
+      tags:
+      - movie
+  /movie/top:
+    get:
+      consumes:
+      - application/json
+      description: Returns top rated movies with pagination
+      parameters:
+      - description: Pagination
+        in: body
+        name: pagination
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Pagination'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Movie'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Top Rated Movies
       tags:
       - movie
   /movie/upcoming:
@@ -2749,6 +2798,27 @@ paths:
       summary: Get Popular TV Series by Sort
       tags:
       - tv
+  /tv/preview:
+    get:
+      consumes:
+      - application/json
+      description: Returns preview tv series
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.TVSeries'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Preview TV Series
+      tags:
+      - tv
   /tv/search:
     get:
       consumes:
@@ -2775,6 +2845,34 @@ paths:
           schema:
             type: string
       summary: Search TV Series
+      tags:
+      - tv
+  /tv/top:
+    get:
+      consumes:
+      - application/json
+      description: Returns top rated tv series
+      parameters:
+      - description: Pagination
+        in: body
+        name: pagination
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Pagination'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.TVSeries'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Top Rated TV Series by Sort
       tags:
       - tv
   /tv/upcoming:
