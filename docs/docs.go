@@ -2509,7 +2509,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "content_type": {
-                    "description": "anime, movie, tvseries or game",
+                    "description": "anime, movie, tv or game",
                     "type": "string"
                 },
                 "created_at": {
@@ -2734,7 +2734,7 @@ const docTemplate = `{
                         "anime",
                         "game",
                         "movie",
-                        "tvseries"
+                        "tv"
                     ]
                 },
                 "self_note": {

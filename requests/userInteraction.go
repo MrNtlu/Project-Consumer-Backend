@@ -6,7 +6,7 @@ type CreateConsumeLater struct {
 	ContentID            string  `json:"content_id" binding:"required"`
 	ContentExternalID    *string `json:"content_external_id"`
 	ContentExternalIntID *int64  `json:"content_external_int_id"`
-	ContentType          string  `json:"content_type" binding:"required,oneof=anime game movie tvseries"`
+	ContentType          string  `json:"content_type" binding:"required,oneof=anime game movie tv"`
 	SelfNote             *string `json:"self_note"`
 }
 

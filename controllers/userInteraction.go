@@ -94,7 +94,7 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
 			return
 		}
-	case "tvseries":
+	case "tv":
 		tvSeriesModel := models.NewTVModel(ui.Database)
 
 		tvSeries, err := tvSeriesModel.GetTVSeriesDetails(requests.ID{
