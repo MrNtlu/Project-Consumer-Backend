@@ -134,6 +134,45 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdConsumeLater})
 }
 
+// Get Consume Later List
+// @Summary Get Consume Later
+// @Description Returns Consume Later by optional filter
+// @Tags consume_later
+// @Accept application/json
+// @Produce application/json
+// @Param filterconsumelater body requests.FilterConsumeLater true "Filter Consume Later"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} models.ConsumeLaterList
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /consume [get]
+func (ui *UserInteractionController) GetConsumeLater(c *gin.Context) {
+	var data requests.FilterConsumeLater
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	userInteractionModel := models.NewUserInteractionModel(ui.Database)
+
+	consumeLaterList, err := userInteractionModel.GetConsumeLater(uid, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": consumeLaterList})
+}
+
 // Delete Consume Later
 // @Summary Delete Consume Later
 // @Description Deletes Consume Later

@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type UserInteractionModel struct {
@@ -56,8 +57,6 @@ func createConsumeLaterObject(userID, contentID, contentType string, contentExte
 	}
 }
 
-//TODO Get consume later list by x order
-
 func (userInteractionModel *UserInteractionModel) CreateConsumeLater(uid string, data requests.CreateConsumeLater) (ConsumeLaterList, error) {
 	consumeLater := createConsumeLaterObject(
 		uid,
@@ -84,6 +83,43 @@ func (userInteractionModel *UserInteractionModel) CreateConsumeLater(uid string,
 	consumeLater.ID = insertedID.InsertedID.(primitive.ObjectID)
 
 	return *consumeLater, nil
+}
+
+func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, data requests.FilterConsumeLater) ([]ConsumeLaterList, error) {
+	match := bson.M{
+		"user_id": uid,
+	}
+
+	sort := bson.M{
+		"created_at": -1,
+	}
+	options := options.Find().SetSort(sort)
+
+	if data.ContentType != nil {
+		match["content_type"] = data.ContentType
+	}
+
+	cursor, err := userInteractionModel.ConsumeLaterCollection.Find(context.TODO(), match, options)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to find consume later by user id: ", err)
+
+		return nil, fmt.Errorf("Failed to find consume later by user id.")
+	}
+
+	var consumeLaterList []ConsumeLaterList
+	if err := cursor.All(context.TODO(), &consumeLaterList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to decode consume later by user id: ", err)
+
+		return nil, fmt.Errorf("Failed to decode consume later by user id.")
+	}
+
+	return consumeLaterList, nil
 }
 
 func (userInteractionModel *UserInteractionModel) UpdateConsumeLaterSelfNote(data requests.UpdateConsumeLater, consumeLater ConsumeLaterList) error {

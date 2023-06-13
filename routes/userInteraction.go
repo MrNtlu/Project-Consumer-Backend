@@ -14,8 +14,8 @@ func userInteractionRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddlewa
 	consume := router.Group("/consume").Use(jwtToken.MiddlewareFunc())
 	{
 		consume.POST("", userInteractionController.CreateConsumeLater)
+		consume.GET("", userInteractionController.GetConsumeLater)
 		consume.DELETE("", userInteractionController.DeleteConsumeLaterById)
 		consume.DELETE("/all", userInteractionController.DeleteAllConsumeLaterByUserID)
 	}
-
 }

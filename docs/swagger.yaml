@@ -318,6 +318,16 @@ definitions:
     required:
     - page
     type: object
+  requests.FilterConsumeLater:
+    properties:
+      type:
+        enum:
+        - anime
+        - game
+        - movie
+        - tv
+        type: string
+    type: object
   requests.ForgotPassword:
     properties:
       email_address:
@@ -1748,6 +1758,44 @@ paths:
       security:
       - BearerAuth: []
       summary: Delete Consume Later
+      tags:
+      - consume_later
+    get:
+      consumes:
+      - application/json
+      description: Returns Consume Later by optional filter
+      parameters:
+      - description: Filter Consume Later
+        in: body
+        name: filterconsumelater
+        required: true
+        schema:
+          $ref: '#/definitions/requests.FilterConsumeLater'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.ConsumeLaterList'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Consume Later
       tags:
       - consume_later
     post:
