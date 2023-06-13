@@ -57,9 +57,9 @@ type AnimeDetails struct {
 	Year          *int               `bson:"year" json:"year"`
 	Status        string             `bson:"status" json:"status"`
 	IsAiring      bool               `bson:"is_airing" json:"is_airing"`
-	Streaming     []AnimeNameURL     `bson:"streaming" json:"streaming"`
-	Aired         AnimeAirDate       `bson:"aired" json:"aired"`
 	AgeRating     *string            `bson:"age_rating" json:"age_rating"`
+	Aired         AnimeAirDate       `bson:"aired" json:"aired"`
+	Streaming     []AnimeNameURL     `bson:"streaming" json:"streaming"`
 	Producers     []AnimeNameURL     `bson:"producers" json:"producers"`
 	Studios       []AnimeNameURL     `bson:"studios" json:"studios"`
 	Genres        []AnimeGenre       `bson:"genres" json:"genres"`
@@ -67,13 +67,15 @@ type AnimeDetails struct {
 	Demographics  []AnimeGenre       `bson:"demographics" json:"demographics"`
 	Relations     []AnimeRelation    `bson:"relations" json:"relations"`
 	Characters    []AnimeCharacter   `bson:"characters" json:"characters"`
-	AnimeList     *AnimeDetailsList  `bson:"anime_list" json:"anime_list"`
+	AnimeList     *AnimeWatchList    `bson:"anime_list" json:"anime_list"`
+	WatchLater    *ConsumeLater      `bson:"watch_later" json:"watch_later"`
 }
 
-type AnimeDetailsList struct {
+type AnimeWatchList struct {
 	ID              primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	UserID          string             `bson:"user_id" json:"user_id"`
 	AnimeID         string             `bson:"anime_id" json:"anime_id"`
+	AnimeMALID      int64              `bson:"anime_mal_id" json:"anime_mal_id"`
 	Status          string             `bson:"status" json:"status"`
 	WatchedEpisodes int                `bson:"watched_episodes" json:"watched_episodes"`
 	Score           *float32           `bson:"score" json:"score"`

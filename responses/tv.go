@@ -58,6 +58,7 @@ type TVDetailsList struct {
 	ID              primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	UserID          string             `bson:"user_id" json:"user_id"`
 	TvID            string             `bson:"tv_id" json:"tv_id"`
+	TvTmdbID        string             `bson:"tv_tmdb_id" json:"tv_tmdb_id"`
 	Status          string             `bson:"status" json:"status"`
 	Score           *float32           `bson:"score" json:"score"`
 	WatchedEpisodes int                `bson:"watched_episodes" json:"watched_episodes"`

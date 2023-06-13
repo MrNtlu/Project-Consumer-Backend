@@ -355,8 +355,41 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 		"preserveNullAndEmptyArrays": true,
 	}}
 
+	lookupWatchLater := bson.M{"$lookup": bson.M{
+		"from": "consume-laters",
+		"let": bson.M{
+			"uuid":     uuid,
+			"anime_id": "$anime_id",
+			"mal_id":   "$mal_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$and": bson.A{
+							bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$content_id", "$$anime_id"}},
+									bson.M{"$eq": bson.A{"$content_external_id", "$$mal_id"}},
+								},
+							},
+							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "watch_later",
+	}}
+
+	unwindWatchLater := bson.M{"$unwind": bson.M{
+		"path":                       "$watch_later",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
 	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, set, lookup, unwindWatchList,
+		match, set, lookup, unwindWatchList, lookupWatchLater, unwindWatchLater,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{

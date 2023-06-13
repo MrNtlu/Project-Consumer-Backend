@@ -54,6 +54,7 @@ type MovieDetailsWatchList struct {
 	ID            primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	UserID        string             `bson:"user_id" json:"user_id"`
 	MovieID       string             `bson:"movie_id" json:"movie_id"`
+	MovieTmdbID   string             `bson:"movie_tmdb_id" json:"movie_tmdb_id"`
 	Status        string             `bson:"status" json:"status"`
 	Score         *float32           `bson:"score" json:"score"`
 	TimesFinished int                `bson:"times_finished" json:"times_finished"`

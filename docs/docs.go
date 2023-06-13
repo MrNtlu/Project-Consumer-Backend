@@ -3556,7 +3556,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/responses.AnimeAirDate"
                 },
                 "anime_list": {
-                    "$ref": "#/definitions/responses.AnimeDetailsList"
+                    "$ref": "#/definitions/responses.AnimeWatchList"
                 },
                 "characters": {
                     "type": "array",
@@ -3654,33 +3654,10 @@ const docTemplate = `{
                 "type": {
                     "type": "string"
                 },
+                "watch_later": {
+                    "$ref": "#/definitions/responses.ConsumeLater"
+                },
                 "year": {
-                    "type": "integer"
-                }
-            }
-        },
-        "responses.AnimeDetailsList": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "type": "string"
-                },
-                "anime_id": {
-                    "type": "string"
-                },
-                "score": {
-                    "type": "number"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "times_finished": {
-                    "type": "integer"
-                },
-                "user_id": {
-                    "type": "string"
-                },
-                "watched_episodes": {
                     "type": "integer"
                 }
             }
@@ -3770,6 +3747,35 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "string"
+                }
+            }
+        },
+        "responses.AnimeWatchList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "anime_id": {
+                    "type": "string"
+                },
+                "anime_mal_id": {
+                    "type": "integer"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "watched_episodes": {
+                    "type": "integer"
                 }
             }
         },
@@ -3913,7 +3919,7 @@ const docTemplate = `{
                     }
                 },
                 "game_list": {
-                    "$ref": "#/definitions/responses.GameDetailsList"
+                    "$ref": "#/definitions/responses.GamePlayList"
                 },
                 "genres": {
                     "type": "array",
@@ -3989,32 +3995,6 @@ const docTemplate = `{
                 }
             }
         },
-        "responses.GameDetailsList": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "type": "string"
-                },
-                "achievement_status": {
-                    "type": "number"
-                },
-                "game_id": {
-                    "type": "string"
-                },
-                "score": {
-                    "type": "number"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "times_finished": {
-                    "type": "integer"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
         "responses.GameGenre": {
             "type": "object",
             "properties": {
@@ -4066,6 +4046,35 @@ const docTemplate = `{
                 },
                 "score": {
                     "type": "number"
+                }
+            }
+        },
+        "responses.GamePlayList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "achievement_status": {
+                    "type": "number"
+                },
+                "game_id": {
+                    "type": "string"
+                },
+                "game_rawg_id": {
+                    "type": "integer"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
                 }
             }
         },
@@ -4280,6 +4289,9 @@ const docTemplate = `{
                 "movie_id": {
                     "type": "string"
                 },
+                "movie_tmdb_id": {
+                    "type": "string"
+                },
                 "score": {
                     "type": "number"
                 },
@@ -4413,6 +4425,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "tv_id": {
+                    "type": "string"
+                },
+                "tv_tmdb_id": {
                     "type": "string"
                 },
                 "user_id": {

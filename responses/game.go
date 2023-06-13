@@ -50,13 +50,14 @@ type GameDetails struct {
 	Publishers                []string                      `bson:"publishers" json:"publishers"`
 	Stores                    []GameStore                   `bson:"stores" json:"stores"`
 	HasReleaseDate            bool                          `bson:"has_release_date" json:"has_release_date"`
-	GameList                  *GameDetailsList              `bson:"game_list" json:"game_list"`
+	GameList                  *GamePlayList                 `bson:"game_list" json:"game_list"`
 }
 
-type GameDetailsList struct {
+type GamePlayList struct {
 	ID                primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	UserID            string             `bson:"user_id" json:"user_id"`
 	GameID            string             `bson:"game_id" json:"game_id"`
+	GameRAWGID        int64              `bson:"game_rawg_id" json:"game_rawg_id"`
 	Status            string             `bson:"status" json:"status"`
 	Score             *float32           `bson:"score" json:"score"`
 	AchievementStatus *float32           `bson:"achievement_status" json:"achievement_status"`

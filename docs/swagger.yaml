@@ -764,7 +764,7 @@ definitions:
       aired:
         $ref: '#/definitions/responses.AnimeAirDate'
       anime_list:
-        $ref: '#/definitions/responses.AnimeDetailsList'
+        $ref: '#/definitions/responses.AnimeWatchList'
       characters:
         items:
           $ref: '#/definitions/responses.AnimeCharacter'
@@ -829,24 +829,9 @@ definitions:
         type: string
       type:
         type: string
+      watch_later:
+        $ref: '#/definitions/responses.ConsumeLater'
       year:
-        type: integer
-    type: object
-  responses.AnimeDetailsList:
-    properties:
-      _id:
-        type: string
-      anime_id:
-        type: string
-      score:
-        type: number
-      status:
-        type: string
-      times_finished:
-        type: integer
-      user_id:
-        type: string
-      watched_episodes:
         type: integer
     type: object
   responses.AnimeGenre:
@@ -905,6 +890,25 @@ definitions:
         type: string
       type:
         type: string
+    type: object
+  responses.AnimeWatchList:
+    properties:
+      _id:
+        type: string
+      anime_id:
+        type: string
+      anime_mal_id:
+        type: integer
+      score:
+        type: number
+      status:
+        type: string
+      times_finished:
+        type: integer
+      user_id:
+        type: string
+      watched_episodes:
+        type: integer
     type: object
   responses.ConsumeLater:
     properties:
@@ -999,7 +1003,7 @@ definitions:
           type: string
         type: array
       game_list:
-        $ref: '#/definitions/responses.GameDetailsList'
+        $ref: '#/definitions/responses.GamePlayList'
       genres:
         items:
           $ref: '#/definitions/responses.GameGenre'
@@ -1049,23 +1053,6 @@ definitions:
       title_original:
         type: string
     type: object
-  responses.GameDetailsList:
-    properties:
-      _id:
-        type: string
-      achievement_status:
-        type: number
-      game_id:
-        type: string
-      score:
-        type: number
-      status:
-        type: string
-      times_finished:
-        type: integer
-      user_id:
-        type: string
-    type: object
   responses.GameGenre:
     properties:
       name:
@@ -1100,6 +1087,25 @@ definitions:
         type: string
       score:
         type: number
+    type: object
+  responses.GamePlayList:
+    properties:
+      _id:
+        type: string
+      achievement_status:
+        type: number
+      game_id:
+        type: string
+      game_rawg_id:
+        type: integer
+      score:
+        type: number
+      status:
+        type: string
+      times_finished:
+        type: integer
+      user_id:
+        type: string
     type: object
   responses.GameRelation:
     properties:
@@ -1240,6 +1246,8 @@ definitions:
         type: string
       movie_id:
         type: string
+      movie_tmdb_id:
+        type: string
       score:
         type: number
       status:
@@ -1327,6 +1335,8 @@ definitions:
       times_finished:
         type: integer
       tv_id:
+        type: string
+      tv_tmdb_id:
         type: string
       user_id:
         type: string
