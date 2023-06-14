@@ -10,8 +10,9 @@ type CreateConsumeLater struct {
 	SelfNote             *string `json:"self_note"`
 }
 
-type FilterConsumeLater struct {
+type SortFilterConsumeLater struct {
 	ContentType *string `form:"type" binding:"omitempty,oneof=anime game movie tv"`
+	Sort        string  `form:"sort" binding:"required,oneof=new old alphabetical unalphabetical"`
 }
 
 type UpdateConsumeLater struct {

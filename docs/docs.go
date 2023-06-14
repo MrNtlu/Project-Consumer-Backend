@@ -250,12 +250,12 @@ const docTemplate = `{
                 "summary": "Get Consume Later",
                 "parameters": [
                     {
-                        "description": "Filter Consume Later",
-                        "name": "filterconsumelater",
+                        "description": "Sort Filter Consume Later",
+                        "name": "sortfilterconsumelater",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/requests.FilterConsumeLater"
+                            "$ref": "#/definitions/requests.SortFilterConsumeLater"
                         }
                     },
                     {
@@ -272,7 +272,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.ConsumeLaterList"
+                                "$ref": "#/definitions/responses.ConsumeLater"
                             }
                         }
                     },
@@ -2976,20 +2976,6 @@ const docTemplate = `{
                 }
             }
         },
-        "requests.FilterConsumeLater": {
-            "type": "object",
-            "properties": {
-                "type": {
-                    "type": "string",
-                    "enum": [
-                        "anime",
-                        "game",
-                        "movie",
-                        "tv"
-                    ]
-                }
-            }
-        },
         "requests.ForgotPassword": {
             "type": "object",
             "required": [
@@ -3139,6 +3125,32 @@ const docTemplate = `{
                 },
                 "themes": {
                     "type": "string"
+                }
+            }
+        },
+        "requests.SortFilterConsumeLater": {
+            "type": "object",
+            "required": [
+                "sort"
+            ],
+            "properties": {
+                "contentType": {
+                    "type": "string",
+                    "enum": [
+                        "anime",
+                        "game",
+                        "movie",
+                        "tv"
+                    ]
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "new",
+                        "old",
+                        "alphabetical",
+                        "unalphabetical"
+                    ]
                 }
             }
         },
@@ -3858,8 +3870,14 @@ const docTemplate = `{
                 "_id": {
                     "type": "string"
                 },
+                "content": {
+                    "$ref": "#/definitions/responses.ConsumeLaterContent"
+                },
                 "content_external_id": {
                     "type": "string"
+                },
+                "content_external_int_id": {
+                    "type": "integer"
                 },
                 "content_id": {
                     "type": "string"
@@ -3867,10 +3885,27 @@ const docTemplate = `{
                 "content_type": {
                     "type": "string"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "self_note": {
                     "type": "string"
                 },
                 "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.ConsumeLaterContent": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "title_original": {
                     "type": "string"
                 }
             }

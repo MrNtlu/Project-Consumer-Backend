@@ -3,6 +3,7 @@ package models
 import (
 	"app/db"
 	"app/requests"
+	"app/responses"
 	"context"
 	"fmt"
 	"time"
@@ -11,7 +12,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type UserInteractionModel struct {
@@ -85,21 +85,185 @@ func (userInteractionModel *UserInteractionModel) CreateConsumeLater(uid string,
 	return *consumeLater, nil
 }
 
-func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, data requests.FilterConsumeLater) ([]ConsumeLaterList, error) {
-	match := bson.M{
-		"user_id": uid,
+func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, data requests.SortFilterConsumeLater) ([]responses.ConsumeLater, error) {
+	var (
+		match     bson.M
+		sortType  string
+		sortOrder int8
+	)
+
+	switch data.Sort {
+	case "new":
+		sortType = "created_at"
+		sortOrder = -1
+	case "old":
+		sortType = "created_at"
+		sortOrder = 1
+	case "alphabetical":
+		sortType = "content.title_original"
+		sortOrder = -1
+	case "unalphabetical":
+		sortType = "content.title_original"
+		sortOrder = 1
 	}
 
-	sort := bson.M{
-		"created_at": -1,
-	}
-	options := options.Find().SetSort(sort)
+	sort := bson.M{"$sort": bson.M{
+		sortType: sortOrder,
+	}}
 
 	if data.ContentType != nil {
-		match["content_type"] = data.ContentType
+		match = bson.M{"$match": bson.M{
+			"user_id":      uid,
+			"content_type": data.ContentType,
+		}}
+	} else {
+		match = bson.M{"$match": bson.M{
+			"user_id": uid,
+		}}
 	}
 
-	cursor, err := userInteractionModel.ConsumeLaterCollection.Find(context.TODO(), match, options)
+	set := bson.M{"$set": bson.M{
+		"content_id": bson.M{
+			"$toObjectId": "$content_id",
+		},
+	}}
+
+	facet := bson.M{"$facet": bson.M{
+		"movies": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "movie"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "movies",
+					"let": bson.M{
+						"content_id":  "$content_id",
+						"external_id": "$content_external_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$tmdb_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"tv": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "tv"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "tv-series",
+					"let": bson.M{
+						"content_id":  "$content_id",
+						"external_id": "$content_external_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$tmdb_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"anime": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "anime"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "animes",
+					"let": bson.M{
+						"content_id":  "$content_id",
+						"external_id": "$content_external_int_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$mal_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"games": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "game"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "games",
+					"let": bson.M{
+						"content_id":  "$content_id",
+						"external_id": "$content_external_int_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$rawg_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"consume-laters": bson.M{
+			"$concatArrays": bson.A{"$movies", "$tv", "$anime", "$games"},
+		},
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$consume-laters",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	replaceRoot := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$consume-laters",
+	}}
+
+	unwindContent := bson.M{"$unwind": bson.M{
+		"path":                       "$content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	cursor, err := userInteractionModel.ConsumeLaterCollection.Aggregate(context.TODO(), bson.A{
+		match, set, facet, project, unwind, replaceRoot, unwindContent, sort,
+	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid":  uid,
@@ -109,7 +273,7 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 		return nil, fmt.Errorf("Failed to find consume later by user id.")
 	}
 
-	var consumeLaterList []ConsumeLaterList
+	var consumeLaterList []responses.ConsumeLater
 	if err := cursor.All(context.TODO(), &consumeLaterList); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid":  uid,

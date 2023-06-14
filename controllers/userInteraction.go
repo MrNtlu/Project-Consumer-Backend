@@ -140,15 +140,15 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 // @Tags consume_later
 // @Accept application/json
 // @Produce application/json
-// @Param filterconsumelater body requests.FilterConsumeLater true "Filter Consume Later"
+// @Param sortfilterconsumelater body requests.SortFilterConsumeLater true "Sort Filter Consume Later"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 200 {array} models.ConsumeLaterList
+// @Success 200 {array} responses.ConsumeLater
 // @Failure 404 {string} string
 // @Failure 500 {string} string
 // @Router /consume [get]
 func (ui *UserInteractionController) GetConsumeLater(c *gin.Context) {
-	var data requests.FilterConsumeLater
+	var data requests.SortFilterConsumeLater
 	if err := c.ShouldBindQuery(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": validatorErrorHandler(err),

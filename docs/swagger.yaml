@@ -318,16 +318,6 @@ definitions:
     required:
     - page
     type: object
-  requests.FilterConsumeLater:
-    properties:
-      type:
-        enum:
-        - anime
-        - game
-        - movie
-        - tv
-        type: string
-    type: object
   requests.ForgotPassword:
     properties:
       email_address:
@@ -432,6 +422,25 @@ definitions:
         type: string
     required:
     - page
+    - sort
+    type: object
+  requests.SortFilterConsumeLater:
+    properties:
+      contentType:
+        enum:
+        - anime
+        - game
+        - movie
+        - tv
+        type: string
+      sort:
+        enum:
+        - new
+        - old
+        - alphabetical
+        - unalphabetical
+        type: string
+    required:
     - sort
     type: object
   requests.SortFilterGame:
@@ -924,15 +933,30 @@ definitions:
     properties:
       _id:
         type: string
+      content:
+        $ref: '#/definitions/responses.ConsumeLaterContent'
       content_external_id:
         type: string
+      content_external_int_id:
+        type: integer
       content_id:
         type: string
       content_type:
         type: string
+      created_at:
+        type: string
       self_note:
         type: string
       user_id:
+        type: string
+    type: object
+  responses.ConsumeLaterContent:
+    properties:
+      description:
+        type: string
+      image_url:
+        type: string
+      title_original:
         type: string
     type: object
   responses.Game:
@@ -1765,12 +1789,12 @@ paths:
       - application/json
       description: Returns Consume Later by optional filter
       parameters:
-      - description: Filter Consume Later
+      - description: Sort Filter Consume Later
         in: body
-        name: filterconsumelater
+        name: sortfilterconsumelater
         required: true
         schema:
-          $ref: '#/definitions/requests.FilterConsumeLater'
+          $ref: '#/definitions/requests.SortFilterConsumeLater'
       - description: Authentication header
         in: header
         name: Authorization
@@ -1783,7 +1807,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.ConsumeLaterList'
+              $ref: '#/definitions/responses.ConsumeLater'
             type: array
         "404":
           description: Not Found
