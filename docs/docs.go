@@ -4797,28 +4797,138 @@ const docTemplate = `{
         "responses.UserInfo": {
             "type": "object",
             "properties": {
-                "app_notification": {
-                    "type": "boolean"
+                "anime_count": {
+                    "type": "integer"
                 },
                 "email": {
                     "type": "string"
                 },
-                "fcm_token": {
-                    "type": "string"
+                "game_count": {
+                    "type": "integer"
                 },
                 "image": {
                     "type": "string"
                 },
-                "is_oauth": {
-                    "type": "boolean"
-                },
                 "is_premium": {
                     "type": "boolean"
                 },
-                "mail_notification": {
-                    "type": "boolean"
+                "legend_anime_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.UserInfoAnime"
+                    }
+                },
+                "legend_game_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.UserInfoGame"
+                    }
+                },
+                "legend_movie_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.UserInfoMovie"
+                    }
+                },
+                "legend_tv_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.UserInfoTV"
+                    }
+                },
+                "movie_count": {
+                    "type": "integer"
+                },
+                "tv_count": {
+                    "type": "integer"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.UserInfoAnime": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_jp": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.UserInfoGame": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "background_image": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.UserInfoMovie": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.UserInfoTV": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
                     "type": "string"
                 }
             }

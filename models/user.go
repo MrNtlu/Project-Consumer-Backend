@@ -25,6 +25,8 @@ func NewUserModel(mongoDB *db.MongoDB) *UserModel {
 	}
 }
 
+const legendContentThreshold = 3
+
 type User struct {
 	ID                 primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	Username           string             `bson:"username" json:"username"`
@@ -251,4 +253,375 @@ func (userModel *UserModel) FindUserByResetTokenAndEmail(token, email string) (U
 	}
 
 	return user, nil
+}
+
+func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) {
+	objectID, _ := primitive.ObjectIDFromHex(uid)
+
+	match := bson.M{"$match": bson.M{
+		"_id": objectID,
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"user_id": bson.M{
+			"$toString": "$_id",
+		},
+	}}
+
+	facet := bson.M{"$facet": bson.M{
+		"lookups": bson.A{
+			bson.M{
+				"$lookup": bson.M{
+					"from":         "anime-lists",
+					"localField":   "user_id",
+					"foreignField": "user_id",
+					"as":           "anime_list",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from":         "game-lists",
+					"localField":   "user_id",
+					"foreignField": "user_id",
+					"as":           "game_list",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from":         "movie-watch-lists",
+					"localField":   "user_id",
+					"foreignField": "user_id",
+					"as":           "movie_list",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from":         "tvseries-watch-lists",
+					"localField":   "user_id",
+					"foreignField": "user_id",
+					"as":           "tv_list",
+				},
+			},
+		},
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$lookups",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	replaceRoot := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$lookups",
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"anime_count": bson.M{
+			"$size": "$anime_list",
+		},
+		"movie_count": bson.M{
+			"$size": "$movie_list",
+		},
+		"tv_count": bson.M{
+			"$size": "$tv_list",
+		},
+		"game_count": bson.M{
+			"$size": "$game_list",
+		},
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"username":    "$username",
+		"email":       "$email",
+		"is_premium":  "$is_premium",
+		"image":       "$image",
+		"anime_count": "$anime_count",
+		"movie_count": "$movie_count",
+		"tv_count":    "$tv_count",
+		"game_count":  "$game_count",
+		"legend_anime_list": bson.M{
+			"$map": bson.M{
+				"input": bson.M{
+					"$filter": bson.M{
+						"input": "$anime_list",
+						"as":    "animes",
+						"cond": bson.M{
+							"$gte": bson.A{"$$animes.times_finished", legendContentThreshold},
+						},
+					},
+				},
+				"as": "anime",
+				"in": bson.M{
+					"times_finished": "$$anime.times_finished",
+					"anime_obj_id": bson.M{
+						"$toObjectId": "$$anime.anime_id",
+					},
+				},
+			},
+		},
+		"legend_movie_list": bson.M{
+			"$map": bson.M{
+				"input": bson.M{
+					"$filter": bson.M{
+						"input": "$movie_list",
+						"as":    "movies",
+						"cond": bson.M{
+							"$gte": bson.A{"$$movies.times_finished", legendContentThreshold},
+						},
+					},
+				},
+				"as": "movie",
+				"in": bson.M{
+					"times_finished": "$$movie.times_finished",
+					"movie_obj_id": bson.M{
+						"$toObjectId": "$$movie.movie_id",
+					},
+				},
+			},
+		},
+		"legend_tv_list": bson.M{
+			"$map": bson.M{
+				"input": bson.M{
+					"$filter": bson.M{
+						"input": "$tv_list",
+						"as":    "tvs",
+						"cond": bson.M{
+							"$gte": bson.A{"$$tvs.times_finished", legendContentThreshold},
+						},
+					},
+				},
+				"as": "tv",
+				"in": bson.M{
+					"times_finished": "$$tv.times_finished",
+					"tv_obj_id": bson.M{
+						"$toObjectId": "$$tv.tv_id",
+					},
+				},
+			},
+		},
+		"legend_game_list": bson.M{
+			"$map": bson.M{
+				"input": bson.M{
+					"$filter": bson.M{
+						"input": "$game_list",
+						"as":    "games",
+						"cond": bson.M{
+							"$gte": bson.A{"$$games.times_finished", legendContentThreshold},
+						},
+					},
+				},
+				"as": "game",
+				"in": bson.M{
+					"times_finished": "$$game.times_finished",
+					"game_obj_id": bson.M{
+						"$toObjectId": "$$game.game_id",
+					},
+				},
+			},
+		},
+	}}
+
+	contentFacet := bson.M{"$facet": bson.M{
+		"lookups": bson.A{
+			bson.M{
+				"$lookup": bson.M{
+					"from": "movies",
+					"let": bson.M{
+						"obj_id":         "$legend_movie_list.movie_obj_id",
+						"times_finished": "$legend_movie_list.times_finished",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$in": bson.A{
+										"$_id",
+										"$$obj_id",
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"image_url":      1,
+								"title_original": 1,
+								"title_en":       1,
+								"times_finished": bson.M{
+									"$arrayElemAt": bson.A{
+										"$$times_finished",
+										bson.M{
+											"$indexOfArray": bson.A{
+												"$$obj_id",
+												"$_id",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					"as": "legend_movie_list",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "tv-series",
+					"let": bson.M{
+						"obj_id":         "$legend_tv_list.tv_obj_id",
+						"times_finished": "$legend_tv_list.times_finished",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$in": bson.A{
+										"$_id",
+										"$$obj_id",
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"image_url":      1,
+								"title_original": 1,
+								"title_en":       1,
+								"times_finished": bson.M{
+									"$arrayElemAt": bson.A{
+										"$$times_finished",
+										bson.M{
+											"$indexOfArray": bson.A{
+												"$$obj_id",
+												"$_id",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					"as": "legend_tv_list",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "animes",
+					"let": bson.M{
+						"obj_id":         "$legend_anime_list.anime_obj_id",
+						"times_finished": "$legend_anime_list.times_finished",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$in": bson.A{
+										"$_id",
+										"$$obj_id",
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"image_url":      1,
+								"title_original": 1,
+								"title_en":       1,
+								"title_jp":       1,
+								"times_finished": bson.M{
+									"$arrayElemAt": bson.A{
+										"$$times_finished",
+										bson.M{
+											"$indexOfArray": bson.A{
+												"$$obj_id",
+												"$_id",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					"as": "legend_anime_list",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "games",
+					"let": bson.M{
+						"obj_id":         "$legend_game_list.game_obj_id",
+						"times_finished": "$legend_game_list.times_finished",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$in": bson.A{
+										"$_id",
+										"$$obj_id",
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"background_image": 1,
+								"image_url":        1,
+								"title_original":   1,
+								"title":            1,
+								"times_finished": bson.M{
+									"$arrayElemAt": bson.A{
+										"$$times_finished",
+										bson.M{
+											"$indexOfArray": bson.A{
+												"$$obj_id",
+												"$_id",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					"as": "legend_game_list",
+				},
+			},
+		},
+	}}
+
+	unwindContentFacet := bson.M{"$unwind": bson.M{
+		"path":                       "$lookups",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	finalReplaceRoot := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$lookups",
+	}}
+
+	cursor, err := userModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, addFields, facet, unwind, replaceRoot,
+		set, project, contentFacet, unwindContentFacet, finalReplaceRoot,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to aggregate user info: ", err)
+
+		return responses.UserInfo{}, fmt.Errorf("Failed to aggregate user info.")
+	}
+
+	var userInfo []responses.UserInfo
+	if err = cursor.All(context.TODO(), &userInfo); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to decode user info: ", err)
+
+		return responses.UserInfo{}, fmt.Errorf("Failed to decode user info.")
+	}
+
+	if len(userInfo) > 0 {
+		return userInfo[0], nil
+	}
+
+	return responses.UserInfo{}, nil
 }

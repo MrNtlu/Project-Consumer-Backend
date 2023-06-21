@@ -87,14 +87,17 @@ func (u *UserController) Register(c *gin.Context) {
 // @Success 200 {object} responses.UserInfo "User Info"
 // @Router /user/info [get]
 func (u *UserController) GetUserInfo(c *gin.Context) {
-
-	//TODO: Change it to user profile
-	// Show legend content, user list if public etc.
-
 	uid := jwt.ExtractClaims(c)["id"].(string)
 
 	userModel := models.NewUserModel(u.Database)
-	userInfo, _ := userModel.FindUserByID(uid)
+	userInfo, err := userModel.GetUserInfo(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched user info.", "data": userInfo})
 }

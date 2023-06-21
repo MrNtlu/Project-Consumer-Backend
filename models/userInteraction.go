@@ -101,10 +101,10 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 		sortOrder = 1
 	case "alphabetical":
 		sortType = "content.title_original"
-		sortOrder = -1
+		sortOrder = 1
 	case "unalphabetical":
 		sortType = "content.title_original"
-		sortOrder = 1
+		sortOrder = -1
 	}
 
 	sort := bson.M{"$sort": bson.M{
