@@ -16,6 +16,7 @@ type UserInfo struct {
 	GameCount       int             `bson:"game_count" json:"game_count"`
 	MovieCount      int             `bson:"movie_count" json:"movie_count"`
 	TVCount         int             `bson:"tv_count" json:"tv_count"`
+	FCMToken        string          `bson:"fcm_token" json:"fcm_token"`
 	LegendAnimeList []UserInfoAnime `bson:"legend_anime_list" json:"legend_anime_list"`
 	LegendMovieList []UserInfoMovie `bson:"legend_movie_list" json:"legend_movie_list"`
 	LegendTVList    []UserInfoTV    `bson:"legend_tv_list" json:"legend_tv_list"`

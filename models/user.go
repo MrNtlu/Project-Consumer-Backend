@@ -339,6 +339,7 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 		"movie_count": "$movie_count",
 		"tv_count":    "$tv_count",
 		"game_count":  "$game_count",
+		"fcm_token":   "$fcm_token",
 		"legend_anime_list": bson.M{
 			"$map": bson.M{
 				"input": bson.M{
