@@ -77,8 +77,34 @@ func (u *UserController) Register(c *gin.Context) {
 }
 
 // User Info
+// @Summary User basic info
+// @Description Returns basic user information
+// @Tags user
+// @Accept application/json
+// @Produce application/json
+// @Security ApiKeyAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {object} models.User "User"
+// @Router /user/basic [get]
+func (u *UserController) GetBasicUserInfo(c *gin.Context) {
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	userModel := models.NewUserModel(u.Database)
+	userInfo, err := userModel.FindUserByID(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched basic user info.", "data": userInfo})
+}
+
+// User Info
 // @Summary User membership info
-// @Description Returns users membership & investing/subscription limits
+// @Description Returns users membership & stats
 // @Tags user
 // @Accept application/json
 // @Produce application/json
@@ -98,6 +124,9 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 
 		return
 	}
+
+	userLevel, _ := userModel.GetUserLevel(uid)
+	userInfo.Level = userLevel
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched user info.", "data": userInfo})
 }

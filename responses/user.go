@@ -7,6 +7,10 @@ type IsUserPremium struct {
 	IsLifetimePremium bool `bson:"is_lifetime_premium" json:"is_lifetime_premium"`
 }
 
+type UserLevel struct {
+	TotalScore int `bson:"total_score" json:"total_score"`
+}
+
 type UserInfo struct {
 	Username        string          `bson:"username" json:"username"`
 	EmailAddress    string          `bson:"email" json:"email"`
@@ -17,6 +21,7 @@ type UserInfo struct {
 	MovieCount      int             `bson:"movie_count" json:"movie_count"`
 	TVCount         int             `bson:"tv_count" json:"tv_count"`
 	FCMToken        string          `bson:"fcm_token" json:"fcm_token"`
+	Level           int             `bson:"level" json:"level"`
 	LegendAnimeList []UserInfoAnime `bson:"legend_anime_list" json:"legend_anime_list"`
 	LegendMovieList []UserInfoMovie `bson:"legend_movie_list" json:"legend_movie_list"`
 	LegendTVList    []UserInfoTV    `bson:"legend_tv_list" json:"legend_tv_list"`

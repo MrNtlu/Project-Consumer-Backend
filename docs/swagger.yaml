@@ -106,6 +106,29 @@ definitions:
       watched_seasons:
         type: integer
     type: object
+  models.User:
+    properties:
+      _id:
+        type: string
+      app_notification:
+        type: boolean
+      email:
+        type: string
+      fcm_token:
+        type: string
+      image:
+        type: string
+      is_oauth:
+        type: boolean
+      is_premium:
+        type: boolean
+      mail_notification:
+        type: boolean
+      oauth_type:
+        type: integer
+      username:
+        type: string
+    type: object
   requests.ChangeFCMToken:
     properties:
       fcm_token:
@@ -1547,6 +1570,8 @@ definitions:
         type: integer
       email:
         type: string
+      fcm_token:
+        type: string
       game_count:
         type: integer
       image:
@@ -1569,6 +1594,8 @@ definitions:
         items:
           $ref: '#/definitions/responses.UserInfoTV'
         type: array
+      level:
+        type: integer
       movie_count:
         type: integer
       tv_count:
@@ -3108,6 +3135,29 @@ paths:
       summary: Deletes user information
       tags:
       - user
+  /user/basic:
+    get:
+      consumes:
+      - application/json
+      description: Returns basic user information
+      parameters:
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User
+          schema:
+            $ref: '#/definitions/models.User'
+      security:
+      - ApiKeyAuth: []
+      summary: User basic info
+      tags:
+      - user
   /user/forgot-password:
     post:
       consumes:
@@ -3142,7 +3192,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns users membership & investing/subscription limits
+      description: Returns users membership & stats
       parameters:
       - description: Authentication header
         in: header

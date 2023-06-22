@@ -31,6 +31,7 @@ func userRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongoDB
 
 		user.Use(jwtToken.MiddlewareFunc())
 		{
+			user.GET("/basic", userController.GetBasicUserInfo)
 			user.GET("/info", userController.GetUserInfo)
 			user.DELETE("/delete", userController.DeleteUser)
 			user.PATCH("/password", userController.ChangePassword)

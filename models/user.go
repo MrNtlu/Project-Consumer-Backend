@@ -7,6 +7,7 @@ import (
 	"app/utils"
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -253,6 +254,315 @@ func (userModel *UserModel) FindUserByResetTokenAndEmail(token, email string) (U
 	}
 
 	return user, nil
+}
+
+func (userModel *UserModel) GetUserLevel(uid string) (int, error) {
+	objectID, _ := primitive.ObjectIDFromHex(uid)
+
+	match := bson.M{"$match": bson.M{
+		"_id": objectID,
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"user_id": bson.M{
+			"$toString": "$_id",
+		},
+	}}
+
+	facet := bson.M{"$facet": bson.M{
+		"lookups": bson.A{
+			bson.M{
+				"$lookup": bson.M{
+					"from": "anime-lists",
+					"let": bson.M{
+						"user_id": "$user_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{
+										"$user_id",
+										"$$user_id",
+									},
+								},
+							},
+						},
+						bson.M{
+							"$group": bson.M{
+								"_id": "$status",
+								"total": bson.M{
+									"$sum": bson.M{
+										"$add": bson.A{
+											bson.M{
+												"$cond": bson.M{
+													"if": bson.M{
+														"$eq": bson.A{"finished", "$status"},
+													},
+													"then": 100,
+													"else": 50,
+												},
+											},
+											bson.M{
+												"$cond": bson.M{
+													"if": bson.M{
+														"$gt": bson.A{"$score", 0},
+													},
+													"then": 25,
+													"else": 0,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					"as": "anime_list",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "game-lists",
+					"let": bson.M{
+						"user_id": "$user_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{
+										"$user_id",
+										"$$user_id",
+									},
+								},
+							},
+						},
+						bson.M{
+							"$group": bson.M{
+								"_id": "$status",
+								"total": bson.M{
+									"$sum": bson.M{
+										"$add": bson.A{
+											bson.M{
+												"$cond": bson.M{
+													"if": bson.M{
+														"$eq": bson.A{"finished", "$status"},
+													},
+													"then": 100,
+													"else": 50,
+												},
+											},
+											bson.M{
+												"$cond": bson.M{
+													"if": bson.M{
+														"$gt": bson.A{"$score", 0},
+													},
+													"then": 25,
+													"else": 0,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					"as": "game_list",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "movie-watch-lists",
+					"let": bson.M{
+						"user_id": "$user_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{
+										"$user_id",
+										"$$user_id",
+									},
+								},
+							},
+						},
+						bson.M{
+							"$group": bson.M{
+								"_id": "$status",
+								"total": bson.M{
+									"$sum": bson.M{
+										"$add": bson.A{
+											bson.M{
+												"$cond": bson.M{
+													"if": bson.M{
+														"$eq": bson.A{"finished", "$status"},
+													},
+													"then": 100,
+													"else": 50,
+												},
+											},
+											bson.M{
+												"$cond": bson.M{
+													"if": bson.M{
+														"$gt": bson.A{"$score", 0},
+													},
+													"then": 25,
+													"else": 0,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					"as": "movie_list",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "tvseries-watch-lists",
+					"let": bson.M{
+						"user_id": "$user_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{
+										"$user_id",
+										"$$user_id",
+									},
+								},
+							},
+						},
+						bson.M{
+							"$group": bson.M{
+								"_id": "$status",
+								"total": bson.M{
+									"$sum": bson.M{
+										"$add": bson.A{
+											bson.M{
+												"$cond": bson.M{
+													"if": bson.M{
+														"$eq": bson.A{"finished", "$status"},
+													},
+													"then": 100,
+													"else": 50,
+												},
+											},
+											bson.M{
+												"$cond": bson.M{
+													"if": bson.M{
+														"$gt": bson.A{"$score", 0},
+													},
+													"then": 25,
+													"else": 0,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					"as": "tv_list",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "consume-laters",
+					"let": bson.M{
+						"user_id": "$user_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{
+										"$user_id",
+										"$$user_id",
+									},
+								},
+							},
+						},
+						bson.M{
+							"$group": bson.M{
+								"_id": "$status",
+								"total": bson.M{
+									"$sum": 25,
+								},
+							},
+						},
+					},
+					"as": "later_list",
+				},
+			},
+		},
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$lookups",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	replaceRoot := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$lookups",
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": nil,
+		"total_score": bson.M{
+			"$sum": bson.M{
+				"$add": bson.A{
+					bson.M{
+						"$sum": "$anime_list.total",
+					},
+					bson.M{
+						"$sum": "$game_list.total",
+					},
+					bson.M{
+						"$sum": "$movie_list.total",
+					},
+					bson.M{
+						"$sum": "$tv_list.total",
+					},
+					bson.M{
+						"$sum": "$later_list.total",
+					},
+				},
+			},
+		},
+	}}
+
+	cursor, err := userModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, addFields, facet, unwind, replaceRoot, group,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to aggregate user level: ", err)
+
+		return 1, fmt.Errorf("Failed to aggregate user level.")
+	}
+
+	var userLevel []responses.UserLevel
+	if err = cursor.All(context.TODO(), &userLevel); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to decode user level: ", err)
+
+		return 1, fmt.Errorf("Failed to decode user level.")
+	}
+
+	if len(userLevel) > 0 {
+		return int(math.Sqrt(float64(userLevel[0].TotalScore)) * 0.2), nil
+	}
+
+	return 1, nil
 }
 
 func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) {

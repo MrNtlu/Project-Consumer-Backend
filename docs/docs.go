@@ -2221,6 +2221,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/basic": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns basic user information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "User basic info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            }
+        },
         "/user/forgot-password": {
             "post": {
                 "description": "Users can change their password when they forgot",
@@ -2274,7 +2311,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Returns users membership \u0026 investing/subscription limits",
+                "description": "Returns users membership \u0026 stats",
                 "consumes": [
                     "application/json"
                 ],
@@ -2678,6 +2715,41 @@ const docTemplate = `{
                 },
                 "watched_seasons": {
                     "type": "integer"
+                }
+            }
+        },
+        "models.User": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "app_notification": {
+                    "type": "boolean"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "fcm_token": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "is_oauth": {
+                    "type": "boolean"
+                },
+                "is_premium": {
+                    "type": "boolean"
+                },
+                "mail_notification": {
+                    "type": "boolean"
+                },
+                "oauth_type": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },
@@ -4803,6 +4875,9 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
+                "fcm_token": {
+                    "type": "string"
+                },
                 "game_count": {
                     "type": "integer"
                 },
@@ -4835,6 +4910,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/responses.UserInfoTV"
                     }
+                },
+                "level": {
+                    "type": "integer"
                 },
                 "movie_count": {
                     "type": "integer"
