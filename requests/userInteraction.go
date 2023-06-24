@@ -19,3 +19,8 @@ type UpdateConsumeLater struct {
 	ID       string  `json:"id" binding:"required"`
 	SelfNote *string `json:"self_note"`
 }
+
+type MarkConsumeLater struct {
+	ID    string   `json:"id" binding:"required"`
+	Score *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
+}

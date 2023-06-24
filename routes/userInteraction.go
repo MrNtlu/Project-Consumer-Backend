@@ -13,6 +13,7 @@ func userInteractionRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddlewa
 
 	consume := router.Group("/consume").Use(jwtToken.MiddlewareFunc())
 	{
+		consume.POST("/move", userInteractionController.MarkConsumeLaterAsUserList)
 		consume.POST("", userInteractionController.CreateConsumeLater)
 		consume.GET("", userInteractionController.GetConsumeLater)
 		consume.DELETE("", userInteractionController.DeleteConsumeLaterById)

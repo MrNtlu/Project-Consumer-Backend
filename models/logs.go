@@ -22,7 +22,7 @@ type Log struct {
 	UserID string             `bson:"user_id" json:"user_id"`
 }
 
-type Score struct {
+type Diary struct {
 	ID     primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	UserID string             `bson:"user_id" json:"user_id"`
 }

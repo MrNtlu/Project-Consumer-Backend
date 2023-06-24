@@ -85,6 +85,26 @@ func (userInteractionModel *UserInteractionModel) CreateConsumeLater(uid string,
 	return *consumeLater, nil
 }
 
+func (userInteractionModel *UserInteractionModel) GetBaseConsumeLater(uid, id string) (ConsumeLaterList, error) {
+	objectID, _ := primitive.ObjectIDFromHex(id)
+
+	result := userInteractionModel.ConsumeLaterCollection.FindOne(context.TODO(), bson.M{
+		"user_id": uid,
+		"_id":     objectID,
+	})
+
+	var consumeLater ConsumeLaterList
+	if err := result.Decode(&consumeLater); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"user_id": uid,
+		}).Error("failed to find consume later by user id: ", err)
+
+		return ConsumeLaterList{}, fmt.Errorf("Failed to find consume later by user id.")
+	}
+
+	return consumeLater, nil
+}
+
 func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, data requests.SortFilterConsumeLater) ([]responses.ConsumeLater, error) {
 	var (
 		match     bson.M

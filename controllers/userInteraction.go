@@ -134,6 +134,163 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdConsumeLater})
 }
 
+// Move Consume Later List as User List
+// @Summary Move consume later as user list
+// @Description Deletes consume later and creates user list
+// @Tags consume_later
+// @Accept application/json
+// @Produce application/json
+// @Param markconsumelater body requests.MarkConsumeLater true "Mark Consume Later"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {string} string
+// @Failure 400 {string} string
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /consume/move [post]
+func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) {
+	var data requests.MarkConsumeLater
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	userInteractionModel := models.NewUserInteractionModel(ui.Database)
+
+	consumeLater, err := userInteractionModel.GetBaseConsumeLater(uid, data.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	if consumeLater.ContentID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
+
+	userListModel := models.NewUserListModel(ui.Database)
+
+	var timesFinished = 1
+
+	switch consumeLater.ContentType {
+	case "anime":
+		animeModel := models.NewAnimeModel(ui.Database)
+		anime, err := animeModel.GetAnimeDetails(requests.ID{
+			ID: consumeLater.ContentID,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		if anime.TitleOriginal == "" {
+			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+			return
+		}
+
+		if _, err = userListModel.CreateAnimeList(uid, requests.CreateAnimeList{
+			AnimeID:       consumeLater.ContentID,
+			AnimeMALID:    anime.MalID,
+			Status:        "finished",
+			TimesFinished: &timesFinished,
+			Score:         data.Score,
+		}, anime); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
+
+		c.JSON(http.StatusCreated, gin.H{"message": "Successfully moved to user list."})
+		return
+	case "game":
+		if _, err = userListModel.CreateGameList(uid, requests.CreateGameList{
+			GameID:        consumeLater.ContentID,
+			GameRAWGID:    *consumeLater.ContentExternalIntID,
+			Status:        "finished",
+			Score:         data.Score,
+			TimesFinished: &timesFinished,
+		}); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
+
+		c.JSON(http.StatusCreated, gin.H{"message": "Successfully moved to user list."})
+		return
+	case "movie":
+		if _, err = userListModel.CreateMovieWatchList(uid, requests.CreateMovieWatchList{
+			MovieID:     consumeLater.ContentID,
+			MovieTmdbID: *consumeLater.ContentExternalID,
+			Status:      "finished",
+			Score:       data.Score,
+		}); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
+
+		c.JSON(http.StatusCreated, gin.H{"message": "Successfully moved to user list."})
+		return
+	case "tv":
+		tvSeriesModel := models.NewTVModel(ui.Database)
+		tvSeries, err := tvSeriesModel.GetTVSeriesDetails(requests.ID{
+			ID: consumeLater.ContentID,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		if tvSeries.TitleOriginal == "" {
+			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+			return
+		}
+
+		if _, err = userListModel.CreateTVSeriesWatchList(uid, requests.CreateTVSeriesWatchList{
+			TvID:          consumeLater.ContentID,
+			TvTmdbID:      tvSeries.TmdbID,
+			Status:        "finished",
+			TimesFinished: &timesFinished,
+			Score:         data.Score,
+		}, tvSeries); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
+
+		c.JSON(http.StatusCreated, gin.H{"message": "Successfully moved to user list."})
+		return
+	}
+
+	c.JSON(http.StatusBadRequest, gin.H{"error": "Unknown error!"})
+}
+
 // Get Consume Later List
 // @Summary Get Consume Later
 // @Description Returns Consume Later by optional filter

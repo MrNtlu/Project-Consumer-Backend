@@ -355,6 +355,17 @@ definitions:
     required:
     - id
     type: object
+  requests.MarkConsumeLater:
+    properties:
+      id:
+        type: string
+      score:
+        maximum: 10
+        minimum: 0
+        type: number
+    required:
+    - id
+    type: object
   requests.Pagination:
     properties:
       page:
@@ -1982,6 +1993,47 @@ paths:
       security:
       - BearerAuth: []
       summary: Delete All Consume Later
+      tags:
+      - consume_later
+  /consume/move:
+    post:
+      consumes:
+      - application/json
+      description: Deletes consume later and creates user list
+      parameters:
+      - description: Mark Consume Later
+        in: body
+        name: markconsumelater
+        required: true
+        schema:
+          $ref: '#/definitions/requests.MarkConsumeLater'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Move consume later as user list
       tags:
       - consume_later
   /game:
