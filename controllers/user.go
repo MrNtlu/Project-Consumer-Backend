@@ -175,6 +175,50 @@ func (u *UserController) UpdateFCMToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated FCM Token."})
 }
 
+// Update User Image
+// @Summary Updates user image
+// @Description User can update their image
+// @Tags user
+// @Accept application/json
+// @Produce application/json
+// @Param changeimage body requests.ChangeImage true "Change Image"
+// @Security ApiKeyAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {string} string
+// @Failure 500 {string} string
+// @Router /user/image [patch]
+func (u *UserController) UpdateUser(c *gin.Context) {
+	var data requests.ChangeImage
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	userModel := models.NewUserModel(u.Database)
+
+	user, err := userModel.FindUserByID(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	if user.Image != data.Image {
+		user.Image = data.Image
+		if err = userModel.UpdateUser(user); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated image."})
+}
+
 // Change User Membership
 // @Summary Change User Membership
 // @Description User membership status will be updated depending on subscription status

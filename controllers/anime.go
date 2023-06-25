@@ -19,6 +19,46 @@ func NewAnimeController(mongoDB *db.MongoDB) AnimeController {
 	}
 }
 
+// Get Preview Animes
+// @Summary Get Preview Animes
+// @Description Returns preview animes
+// @Tags movie
+// @Accept application/json
+// @Produce application/json
+// @Success 200 {array} responses.Anime
+// @Failure 500 {string} string
+// @Router /anime/preview [get]
+func (a *AnimeController) GetPreviewAnimes(c *gin.Context) {
+	animeModel := models.NewAnimeModel(a.Database)
+
+	upcomingAnimes, _, err := animeModel.GetUpcomingAnimesBySort(requests.SortUpcoming{
+		Sort: "popularity",
+		Page: 1,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	popularAnimes, _, err := animeModel.GetAnimesBySortAndFilter(requests.SortFilterAnime{
+		Sort: "popularity",
+		Page: 1,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	//TODO Add TopRated
+	c.JSON(http.StatusOK, gin.H{"upcoming": upcomingAnimes, "popular": popularAnimes}) //, "top": topMovies
+}
+
 // Get Upcoming Animes
 // @Summary Get Upcoming Animes by Sort
 // @Description Returns upcoming animes by sort with pagination

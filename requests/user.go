@@ -13,6 +13,10 @@ type Register struct {
 	FCMToken     string `json:"fcm_token"`
 }
 
+type ChangeImage struct {
+	Image string `json:"image" binding:"required"`
+}
+
 type ChangePassword struct {
 	OldPassword string `json:"old_password" binding:"required,min=6"`
 	NewPassword string `json:"new_password" binding:"required,min=6"`

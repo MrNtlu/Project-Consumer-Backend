@@ -109,6 +109,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/anime/preview": {
+            "get": {
+                "description": "Returns preview animes",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movie"
+                ],
+                "summary": "Get Preview Animes",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Anime"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/anime/season": {
             "get": {
                 "description": "Returns animes by year and season",
@@ -2368,6 +2400,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/image": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "User can update their image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Updates user image",
+                "parameters": [
+                    {
+                        "description": "Change Image",
+                        "name": "changeimage",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ChangeImage"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/user/info": {
             "get": {
                 "security": [
@@ -2824,6 +2908,17 @@ const docTemplate = `{
             ],
             "properties": {
                 "fcm_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "requests.ChangeImage": {
+            "type": "object",
+            "required": [
+                "image"
+            ],
+            "properties": {
+                "image": {
                     "type": "string"
                 }
             }

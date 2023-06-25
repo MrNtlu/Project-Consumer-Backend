@@ -136,6 +136,13 @@ definitions:
     required:
     - fcm_token
     type: object
+  requests.ChangeImage:
+    properties:
+      image:
+        type: string
+    required:
+    - image
+    type: object
   requests.ChangeMembership:
     properties:
       is_premium:
@@ -1778,6 +1785,27 @@ paths:
       summary: Get Anime Details
       tags:
       - anime
+  /anime/preview:
+    get:
+      consumes:
+      - application/json
+      description: Returns preview animes
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Anime'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Preview Animes
+      tags:
+      - movie
   /anime/season:
     get:
       consumes:
@@ -3238,6 +3266,39 @@ paths:
           schema:
             type: string
       summary: Will be used when user forgot password
+      tags:
+      - user
+  /user/image:
+    patch:
+      consumes:
+      - application/json
+      description: User can update their image
+      parameters:
+      - description: Change Image
+        in: body
+        name: changeimage
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ChangeImage'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Updates user image
       tags:
       - user
   /user/info:
