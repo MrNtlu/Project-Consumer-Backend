@@ -907,19 +907,29 @@ definitions:
     properties:
       _id:
         type: string
-      anime:
-        $ref: '#/definitions/responses.Anime'
       anime_id:
         type: string
-      anime_mal_id:
+      content_status:
         type: string
+      image_url:
+        type: string
+      is_airing:
+        type: boolean
+      mal_id:
+        type: integer
       score:
         type: number
       status:
         type: string
       times_finished:
         type: integer
-      user_id:
+      title_en:
+        type: string
+      title_original:
+        type: string
+      total_episodes:
+        type: integer
+      type:
         type: string
       watched_episodes:
         type: integer
@@ -1141,19 +1151,27 @@ definitions:
         type: string
       achievement_status:
         type: number
-      game:
-        $ref: '#/definitions/responses.Game'
+      content_status:
+        type: string
       game_id:
         type: string
-      game_rawg_id:
+      hours_played:
+        type: integer
+      image_url:
+        type: string
+      rawg_id:
         type: integer
       score:
         type: number
       status:
         type: string
+      tba:
+        type: boolean
       times_finished:
         type: integer
-      user_id:
+      title:
+        type: string
+      title_original:
         type: string
     type: object
   responses.GameMetacriticScorePlatform:
@@ -1336,11 +1354,11 @@ definitions:
     properties:
       _id:
         type: string
-      movie:
-        $ref: '#/definitions/responses.Movie'
-      movie_id:
+      content_status:
         type: string
-      movie_tmdb_id:
+      image_url:
+        type: string
+      movie_id:
         type: string
       score:
         type: number
@@ -1348,7 +1366,11 @@ definitions:
         type: string
       times_finished:
         type: integer
-      user_id:
+      title_en:
+        type: string
+      title_original:
+        type: string
+      tmdb_id:
         type: string
     type: object
   responses.ProductionAndCompany:
@@ -1550,19 +1572,27 @@ definitions:
     properties:
       _id:
         type: string
+      content_status:
+        type: string
+      image_url:
+        type: string
       score:
         type: number
       status:
         type: string
       times_finished:
         type: integer
+      title_en:
+        type: string
+      title_original:
+        type: string
+      tmdb_id:
+        type: string
+      total_episodes:
+        type: integer
+      total_seasons:
+        type: integer
       tv_id:
-        type: string
-      tv_series:
-        $ref: '#/definitions/responses.TVSeries'
-      tv_tmdb_id:
-        type: string
-      user_id:
         type: string
       watched_episodes:
         type: integer
@@ -1685,6 +1715,10 @@ definitions:
         type: number
       anime_count:
         type: integer
+      anime_list:
+        items:
+          $ref: '#/definitions/responses.AnimeList'
+        type: array
       anime_total_finished:
         type: integer
       anime_total_watched_episodes:
@@ -1693,6 +1727,10 @@ definitions:
         type: number
       game_count:
         type: integer
+      game_list:
+        items:
+          $ref: '#/definitions/responses.GameList'
+        type: array
       game_total_finished:
         type: integer
       is_public:
@@ -1703,6 +1741,10 @@ definitions:
         type: integer
       movie_total_finished:
         type: integer
+      movie_watch_list:
+        items:
+          $ref: '#/definitions/responses.MovieList'
+        type: array
       slug:
         type: string
       tv_avg_score:
@@ -1713,6 +1755,10 @@ definitions:
         type: integer
       tv_total_watched_episodes:
         type: integer
+      tv_watch_list:
+        items:
+          $ref: '#/definitions/responses.TVSeriesList'
+        type: array
       user_id:
         type: string
     type: object
@@ -2190,6 +2236,13 @@ paths:
       - application/json
       description: Returns user list by user id
       parameters:
+      - enum:
+        - score
+        - timeswatched
+        in: query
+        name: sort
+        required: true
+        type: string
       - description: Authentication header
         in: header
         name: Authorization
@@ -2248,43 +2301,6 @@ paths:
       tags:
       - user_list
   /list/anime:
-    get:
-      consumes:
-      - application/json
-      description: Returns anime list by user id
-      parameters:
-      - enum:
-        - popularity
-        - new
-        - old
-        - score
-        in: query
-        name: sort
-        required: true
-        type: string
-      - description: Authentication header
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.AnimeList'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      security:
-      - BearerAuth: []
-      summary: Get Anime List by User ID
-      tags:
-      - user_list
     patch:
       consumes:
       - application/json
@@ -2362,43 +2378,6 @@ paths:
       tags:
       - user_list
   /list/game:
-    get:
-      consumes:
-      - application/json
-      description: Returns game list by user id
-      parameters:
-      - enum:
-        - popularity
-        - new
-        - old
-        - score
-        in: query
-        name: sort
-        required: true
-        type: string
-      - description: Authentication header
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.GameList'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      security:
-      - BearerAuth: []
-      summary: Get Game List by User ID
-      tags:
-      - user_list
     patch:
       consumes:
       - application/json
@@ -2476,43 +2455,6 @@ paths:
       tags:
       - user_list
   /list/movie:
-    get:
-      consumes:
-      - application/json
-      description: Returns movie watch list by user id
-      parameters:
-      - enum:
-        - popularity
-        - new
-        - old
-        - score
-        in: query
-        name: sort
-        required: true
-        type: string
-      - description: Authentication header
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.MovieList'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      security:
-      - BearerAuth: []
-      summary: Get Movie Watch List by User ID
-      tags:
-      - user_list
     patch:
       consumes:
       - application/json
@@ -2590,43 +2532,6 @@ paths:
       tags:
       - user_list
   /list/tv:
-    get:
-      consumes:
-      - application/json
-      description: Returns tv series watch list by user id
-      parameters:
-      - enum:
-        - popularity
-        - new
-        - old
-        - score
-        in: query
-        name: sort
-        required: true
-        type: string
-      - description: Authentication header
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.TVSeriesList'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      security:
-      - BearerAuth: []
-      summary: Get TV Series Watch List by User ID
-      tags:
-      - user_list
     patch:
       consumes:
       - application/json

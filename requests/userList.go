@@ -38,7 +38,7 @@ type CreateTVSeriesWatchList struct {
 }
 
 type SortList struct {
-	Sort string `form:"sort" binding:"required,oneof=popularity new old score"`
+	Sort string `form:"sort" binding:"required,oneof=score timeswatched"`
 }
 
 type UpdateUserList struct {

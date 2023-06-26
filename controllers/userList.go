@@ -533,17 +533,27 @@ func (u *UserListController) UpdateTVSeriesListByID(c *gin.Context) {
 // @Tags user_list
 // @Accept application/json
 // @Produce application/json
+// @Param sortlist query requests.SortList true "Sort List"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
 // @Success 200 {object} responses.UserList
 // @Failure 500 {string} string
 // @Router /list [get]
 func (u *UserListController) GetUserListByUserID(c *gin.Context) {
+	var data requests.SortList
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
 	uid := jwt.ExtractClaims(c)["id"].(string)
 
 	userListModel := models.NewUserListModel(u.Database)
 
-	userList, err := userListModel.GetUserListByUserID(uid)
+	userList, err := userListModel.GetUserListByUserID(uid, data)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -553,158 +563,6 @@ func (u *UserListController) GetUserListByUserID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": userList})
-}
-
-// Get Anime List
-// @Summary Get Anime List by User ID
-// @Description Returns anime list by user id
-// @Tags user_list
-// @Accept application/json
-// @Produce application/json
-// @Param sortlist query requests.SortList true "Sort List"
-// @Security BearerAuth
-// @Param Authorization header string true "Authentication header"
-// @Success 200 {array} responses.AnimeList
-// @Failure 500 {string} string
-// @Router /list/anime [get]
-func (u *UserListController) GetAnimeListByUserID(c *gin.Context) {
-	var data requests.SortList
-	if err := c.ShouldBindQuery(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": validatorErrorHandler(err),
-		})
-
-		return
-	}
-
-	uid := jwt.ExtractClaims(c)["id"].(string)
-
-	userListModel := models.NewUserListModel(u.Database)
-
-	animeList, err := userListModel.GetAnimeListByUserID(uid, data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": animeList})
-}
-
-// Get Game List
-// @Summary Get Game List by User ID
-// @Description Returns game list by user id
-// @Tags user_list
-// @Accept application/json
-// @Produce application/json
-// @Param sortlist query requests.SortList true "Sort List"
-// @Security BearerAuth
-// @Param Authorization header string true "Authentication header"
-// @Success 200 {array} responses.GameList
-// @Failure 500 {string} string
-// @Router /list/game [get]
-func (u *UserListController) GetGameListByUserID(c *gin.Context) {
-	var data requests.SortList
-	if err := c.ShouldBindQuery(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": validatorErrorHandler(err),
-		})
-
-		return
-	}
-
-	uid := jwt.ExtractClaims(c)["id"].(string)
-
-	userListModel := models.NewUserListModel(u.Database)
-
-	gameList, err := userListModel.GetGameListByUserID(uid, data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": gameList})
-}
-
-// Get Movie Watch List
-// @Summary Get Movie Watch List by User ID
-// @Description Returns movie watch list by user id
-// @Tags user_list
-// @Accept application/json
-// @Produce application/json
-// @Param sortlist query requests.SortList true "Sort List"
-// @Security BearerAuth
-// @Param Authorization header string true "Authentication header"
-// @Success 200 {array} responses.MovieList
-// @Failure 500 {string} string
-// @Router /list/movie [get]
-func (u *UserListController) GetMovieListByUserID(c *gin.Context) {
-	var data requests.SortList
-	if err := c.ShouldBindQuery(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": validatorErrorHandler(err),
-		})
-
-		return
-	}
-
-	uid := jwt.ExtractClaims(c)["id"].(string)
-
-	userListModel := models.NewUserListModel(u.Database)
-
-	movieList, err := userListModel.GetMovieListByUserID(uid, data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": movieList})
-}
-
-// Get TV Series Watch List
-// @Summary Get TV Series Watch List by User ID
-// @Description Returns tv series watch list by user id
-// @Tags user_list
-// @Accept application/json
-// @Produce application/json
-// @Param sortlist query requests.SortList true "Sort List"
-// @Security BearerAuth
-// @Param Authorization header string true "Authentication header"
-// @Success 200 {array} responses.TVSeriesList
-// @Failure 500 {string} string
-// @Router /list/tv [get]
-func (u *UserListController) GetTVSeriesListByUserID(c *gin.Context) {
-	var data requests.SortList
-	if err := c.ShouldBindQuery(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": validatorErrorHandler(err),
-		})
-
-		return
-	}
-
-	uid := jwt.ExtractClaims(c)["id"].(string)
-
-	userListModel := models.NewUserListModel(u.Database)
-
-	tvSeriesList, err := userListModel.GetTVSeriesListByUserID(uid, data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": tvSeriesList})
 }
 
 // Delete List by Type

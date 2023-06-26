@@ -21,52 +21,71 @@ type UserList struct {
 	GameAvgScore              float64            `bson:"game_avg_score" json:"game_avg_score"`
 	MovieAvgScore             float64            `bson:"movie_avg_score" json:"movie_avg_score"`
 	TVAvgScore                float64            `bson:"tv_avg_score" json:"tv_avg_score"`
+	AnimeList                 []AnimeList        `bson:"anime_list" json:"anime_list"`
+	MovieList                 []MovieList        `bson:"movie_watch_list" json:"movie_watch_list"`
+	TVList                    []TVSeriesList     `bson:"tv_watch_list" json:"tv_watch_list"`
+	GameList                  []GameList         `bson:"game_list" json:"game_list"`
 }
 
 type AnimeList struct {
 	ID              primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
-	UserID          string             `bson:"user_id" json:"user_id"`
-	AnimeID         string             `bson:"anime_id" json:"anime_id"`
-	AnimeMALID      string             `bson:"anime_mal_id" json:"anime_mal_id"`
-	Status          string             `bson:"status" json:"status"`
-	WatchedEpisodes int                `bson:"watched_episodes" json:"watched_episodes"`
+	ContentStatus   string             `bson:"content_status" json:"content_status"`
 	Score           *float32           `bson:"score" json:"score"`
 	TimesFinished   int                `bson:"times_finished" json:"times_finished"`
-	Anime           Anime              `bson:"anime" json:"anime"`
+	WatchedEpisodes int                `bson:"watched_episodes" json:"watched_episodes"`
+	AnimeID         string             `bson:"anime_id" json:"anime_id"`
+	AnimeMALID      int64              `bson:"mal_id" json:"mal_id"`
+	Status          string             `bson:"status" json:"status"`
+	TitleEn         string             `bson:"title_en" json:"title_en"`
+	TitleOriginal   string             `bson:"title_original" json:"title_original"`
+	ImageURL        *string            `bson:"image_url" json:"image_url"`
+	TotalEpisodes   *int64             `bson:"total_episodes" json:"total_episodes"`
+	Type            string             `bson:"type" json:"type"`
+	IsAiring        bool               `bson:"is_airing" json:"is_airing"`
 }
 
 type GameList struct {
 	ID                primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
-	UserID            string             `bson:"user_id" json:"user_id"`
-	GameID            string             `bson:"game_id" json:"game_id"`
-	GameRAWGID        int64              `bson:"game_rawg_id" json:"game_rawg_id"`
-	Status            string             `bson:"status" json:"status"`
+	ContentStatus     string             `bson:"content_status" json:"content_status"`
 	Score             *float32           `bson:"score" json:"score"`
 	AchievementStatus *float32           `bson:"achievement_status" json:"achievement_status"`
+	HoursPlayed       *int               `bson:"hours_played" json:"hours_played"`
 	TimesFinished     int                `bson:"times_finished" json:"times_finished"`
-	Game              Game               `bson:"game" json:"game"`
+	GameID            string             `bson:"game_id" json:"game_id"`
+	GameRAWGID        int64              `bson:"rawg_id" json:"rawg_id"`
+	Status            string             `bson:"status" json:"status"`
+	Title             string             `bson:"title" json:"title"`
+	TitleOriginal     string             `bson:"title_original" json:"title_original"`
+	ImageURL          *string            `bson:"image_url" json:"image_url"`
+	TBA               bool               `bson:"tba" json:"tba"`
 }
 
 type MovieList struct {
 	ID            primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
-	UserID        string             `bson:"user_id" json:"user_id"`
-	MovieID       string             `bson:"movie_id" json:"movie_id"`
-	MovieTmdbID   string             `bson:"movie_tmdb_id" json:"movie_tmdb_id"`
-	Status        string             `bson:"status" json:"status"`
+	ContentStatus string             `bson:"content_status" json:"content_status"`
 	Score         *float32           `bson:"score" json:"score"`
 	TimesFinished int                `bson:"times_finished" json:"times_finished"`
-	Movie         Movie              `bson:"movie" json:"movie"`
+	MovieID       string             `bson:"movie_id" json:"movie_id"`
+	MovieTmdbID   string             `bson:"tmdb_id" json:"tmdb_id"`
+	Status        string             `bson:"status" json:"status"`
+	TitleEn       string             `bson:"title_en" json:"title_en"`
+	TitleOriginal string             `bson:"title_original" json:"title_original"`
+	ImageURL      *string            `bson:"image_url" json:"image_url"`
 }
 
 type TVSeriesList struct {
 	ID              primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
-	UserID          string             `bson:"user_id" json:"user_id"`
-	TvID            string             `bson:"tv_id" json:"tv_id"`
-	TvTmdbID        string             `bson:"tv_tmdb_id" json:"tv_tmdb_id"`
-	Status          string             `bson:"status" json:"status"`
+	ContentStatus   string             `bson:"content_status" json:"content_status"`
 	Score           *float32           `bson:"score" json:"score"`
 	WatchedEpisodes int                `bson:"watched_episodes" json:"watched_episodes"`
 	WatchedSeasons  int                `bson:"watched_seasons" json:"watched_seasons"`
 	TimesFinished   int                `bson:"times_finished" json:"times_finished"`
-	TVSeries        TVSeries           `bson:"tv_series" json:"tv_series"`
+	TvID            string             `bson:"tv_id" json:"tv_id"`
+	TvTmdbID        string             `bson:"tmdb_id" json:"tmdb_id"`
+	Status          string             `bson:"status" json:"status"`
+	TitleEn         string             `bson:"title_en" json:"title_en"`
+	TitleOriginal   string             `bson:"title_original" json:"title_original"`
+	ImageURL        *string            `bson:"image_url" json:"image_url"`
+	TotalEpisodes   *int64             `bson:"total_episodes" json:"total_episodes"`
+	TotalSeasons    *int64             `bson:"total_seasons" json:"total_seasons"`
 }

@@ -691,6 +691,16 @@ const docTemplate = `{
                 "summary": "Get User List by User ID",
                 "parameters": [
                     {
+                        "enum": [
+                            "score",
+                            "timeswatched"
+                        ],
+                        "type": "string",
+                        "name": "sort",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
                         "type": "string",
                         "description": "Authentication header",
                         "name": "Authorization",
@@ -827,62 +837,6 @@ const docTemplate = `{
             }
         },
         "/list/anime": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns anime list by user id",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user_list"
-                ],
-                "summary": "Get Anime List by User ID",
-                "parameters": [
-                    {
-                        "enum": [
-                            "popularity",
-                            "new",
-                            "old",
-                            "score"
-                        ],
-                        "type": "string",
-                        "name": "sort",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Authentication header",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.AnimeList"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
@@ -1003,62 +957,6 @@ const docTemplate = `{
             }
         },
         "/list/game": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns game list by user id",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user_list"
-                ],
-                "summary": "Get Game List by User ID",
-                "parameters": [
-                    {
-                        "enum": [
-                            "popularity",
-                            "new",
-                            "old",
-                            "score"
-                        ],
-                        "type": "string",
-                        "name": "sort",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Authentication header",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.GameList"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
@@ -1179,62 +1077,6 @@ const docTemplate = `{
             }
         },
         "/list/movie": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns movie watch list by user id",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user_list"
-                ],
-                "summary": "Get Movie Watch List by User ID",
-                "parameters": [
-                    {
-                        "enum": [
-                            "popularity",
-                            "new",
-                            "old",
-                            "score"
-                        ],
-                        "type": "string",
-                        "name": "sort",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Authentication header",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.MovieList"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
@@ -1355,62 +1197,6 @@ const docTemplate = `{
             }
         },
         "/list/tv": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns tv series watch list by user id",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user_list"
-                ],
-                "summary": "Get TV Series Watch List by User ID",
-                "parameters": [
-                    {
-                        "enum": [
-                            "popularity",
-                            "new",
-                            "old",
-                            "score"
-                        ],
-                        "type": "string",
-                        "name": "sort",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Authentication header",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.TVSeriesList"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
@@ -4014,14 +3800,20 @@ const docTemplate = `{
                 "_id": {
                     "type": "string"
                 },
-                "anime": {
-                    "$ref": "#/definitions/responses.Anime"
-                },
                 "anime_id": {
                     "type": "string"
                 },
-                "anime_mal_id": {
+                "content_status": {
                     "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "is_airing": {
+                    "type": "boolean"
+                },
+                "mal_id": {
+                    "type": "integer"
                 },
                 "score": {
                     "type": "number"
@@ -4032,7 +3824,16 @@ const docTemplate = `{
                 "times_finished": {
                     "type": "integer"
                 },
-                "user_id": {
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "total_episodes": {
+                    "type": "integer"
+                },
+                "type": {
                     "type": "string"
                 },
                 "watched_episodes": {
@@ -4370,13 +4171,19 @@ const docTemplate = `{
                 "achievement_status": {
                     "type": "number"
                 },
-                "game": {
-                    "$ref": "#/definitions/responses.Game"
+                "content_status": {
+                    "type": "string"
                 },
                 "game_id": {
                     "type": "string"
                 },
-                "game_rawg_id": {
+                "hours_played": {
+                    "type": "integer"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "rawg_id": {
                     "type": "integer"
                 },
                 "score": {
@@ -4385,10 +4192,16 @@ const docTemplate = `{
                 "status": {
                     "type": "string"
                 },
+                "tba": {
+                    "type": "boolean"
+                },
                 "times_finished": {
                     "type": "integer"
                 },
-                "user_id": {
+                "title": {
+                    "type": "string"
+                },
+                "title_original": {
                     "type": "string"
                 }
             }
@@ -4667,13 +4480,13 @@ const docTemplate = `{
                 "_id": {
                     "type": "string"
                 },
-                "movie": {
-                    "$ref": "#/definitions/responses.Movie"
-                },
-                "movie_id": {
+                "content_status": {
                     "type": "string"
                 },
-                "movie_tmdb_id": {
+                "image_url": {
+                    "type": "string"
+                },
+                "movie_id": {
                     "type": "string"
                 },
                 "score": {
@@ -4685,7 +4498,13 @@ const docTemplate = `{
                 "times_finished": {
                     "type": "integer"
                 },
-                "user_id": {
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "tmdb_id": {
                     "type": "string"
                 }
             }
@@ -4992,6 +4811,12 @@ const docTemplate = `{
                 "_id": {
                     "type": "string"
                 },
+                "content_status": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
                 "score": {
                     "type": "number"
                 },
@@ -5001,16 +4826,22 @@ const docTemplate = `{
                 "times_finished": {
                     "type": "integer"
                 },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "tmdb_id": {
+                    "type": "string"
+                },
+                "total_episodes": {
+                    "type": "integer"
+                },
+                "total_seasons": {
+                    "type": "integer"
+                },
                 "tv_id": {
-                    "type": "string"
-                },
-                "tv_series": {
-                    "$ref": "#/definitions/responses.TVSeries"
-                },
-                "tv_tmdb_id": {
-                    "type": "string"
-                },
-                "user_id": {
                     "type": "string"
                 },
                 "watched_episodes": {
@@ -5198,6 +5029,12 @@ const docTemplate = `{
                 "anime_count": {
                     "type": "integer"
                 },
+                "anime_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeList"
+                    }
+                },
                 "anime_total_finished": {
                     "type": "integer"
                 },
@@ -5209,6 +5046,12 @@ const docTemplate = `{
                 },
                 "game_count": {
                     "type": "integer"
+                },
+                "game_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.GameList"
+                    }
                 },
                 "game_total_finished": {
                     "type": "integer"
@@ -5225,6 +5068,12 @@ const docTemplate = `{
                 "movie_total_finished": {
                     "type": "integer"
                 },
+                "movie_watch_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.MovieList"
+                    }
+                },
                 "slug": {
                     "type": "string"
                 },
@@ -5239,6 +5088,12 @@ const docTemplate = `{
                 },
                 "tv_total_watched_episodes": {
                     "type": "integer"
+                },
+                "tv_watch_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.TVSeriesList"
+                    }
                 },
                 "user_id": {
                     "type": "string"
