@@ -6,6 +6,7 @@ import (
 	"app/responses"
 	"context"
 	"fmt"
+	srt "sort"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -1349,62 +1350,63 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 		"newRoot": "$lookups",
 	}}
 
-	var (
-		sortType  string
-		sortOrder int8
-	)
+	/*
+		var (
+			sortType  string
+			sortOrder int8
+		)
 
-	switch data.Sort {
-	case "score":
-		sortType = "score"
-		sortOrder = -1
-	case "timeswatched":
-		sortType = "times_finished"
-		sortOrder = -1
-	}
+		switch data.Sort {
+		case "score":
+			sortType = "score"
+			sortOrder = -1
+		case "timeswatched":
+			sortType = "times_finished"
+			sortOrder = -1
+		}
 
-	sort := bson.M{"$set": bson.M{
-		"movie_watch_list": bson.M{
-			"$sortArray": bson.M{
-				"input": "$movie_watch_list",
-				"sortBy": bson.M{
-					"status_sort": 1,
-					sortType:      sortOrder,
+		sort := bson.M{"$set": bson.M{
+			"movie_watch_list": bson.M{
+				"$sortArray": bson.M{
+					"input": "$movie_watch_list",
+					"sortBy": bson.M{
+						"status_sort": 1,
+						sortType:      sortOrder,
+					},
 				},
 			},
-		},
-		"anime_list": bson.M{
-			"$sortArray": bson.M{
-				"input": "$anime_list",
-				"sortBy": bson.M{
-					"status_sort": 1,
-					sortType:      sortOrder,
+			"anime_list": bson.M{
+				"$sortArray": bson.M{
+					"input": "$anime_list",
+					"sortBy": bson.M{
+						"status_sort": 1,
+						sortType:      sortOrder,
+					},
 				},
 			},
-		},
-		"game_list": bson.M{
-			"$sortArray": bson.M{
-				"input": "$game_list",
-				"sortBy": bson.M{
-					"status_sort": 1,
-					sortType:      sortOrder,
+			"game_list": bson.M{
+				"$sortArray": bson.M{
+					"input": "$game_list",
+					"sortBy": bson.M{
+						"status_sort": 1,
+						sortType:      sortOrder,
+					},
 				},
 			},
-		},
-		"tv_watch_list": bson.M{
-			"$sortArray": bson.M{
-				"input": "$tv_watch_list",
-				"sortBy": bson.M{
-					"status_sort": 1,
-					sortType:      sortOrder,
+			"tv_watch_list": bson.M{
+				"$sortArray": bson.M{
+					"input": "$tv_watch_list",
+					"sortBy": bson.M{
+						"status_sort": 1,
+						sortType:      sortOrder,
+					},
 				},
 			},
-		},
-	}}
-
+		}}
+	*/
 	cursor, err := userListModel.UserListCollection.Aggregate(context.TODO(), bson.A{
 		match, animeListLookup, gameListLookup, movieListLookup,
-		tvListLookup, addFields, facet, unwind, replaceRoot, sort,
+		tvListLookup, addFields, facet, unwind, replaceRoot,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -1424,6 +1426,156 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 	}
 
 	if len(userList) > 0 {
+		if data.Sort == "score" {
+			srt.Slice(userList[0].AnimeList, func(i, j int) bool {
+				var (
+					firstScore  float32
+					secondScore float32
+				)
+
+				if userList[0].AnimeList[i].Score == nil {
+					firstScore = -1
+				} else {
+					firstScore = *userList[0].AnimeList[i].Score
+				}
+
+				if userList[0].AnimeList[j].Score == nil {
+					secondScore = -1
+				} else {
+					secondScore = *userList[0].AnimeList[j].Score
+				}
+
+				if userList[0].AnimeList[i].StatusSort < userList[0].AnimeList[j].StatusSort {
+					return true
+				} else if userList[0].AnimeList[i].StatusSort > userList[0].AnimeList[j].StatusSort {
+					return false
+				}
+
+				return secondScore < firstScore
+			})
+
+			srt.Slice(userList[0].MovieList, func(i, j int) bool {
+				var (
+					firstScore  float32
+					secondScore float32
+				)
+
+				if userList[0].MovieList[i].Score == nil {
+					firstScore = -1
+				} else {
+					firstScore = *userList[0].MovieList[i].Score
+				}
+
+				if userList[0].MovieList[j].Score == nil {
+					secondScore = -1
+				} else {
+					secondScore = *userList[0].MovieList[j].Score
+				}
+
+				if userList[0].MovieList[i].StatusSort < userList[0].MovieList[j].StatusSort {
+					return true
+				} else if userList[0].MovieList[i].StatusSort > userList[0].MovieList[j].StatusSort {
+					return false
+				}
+
+				return secondScore < firstScore
+			})
+
+			srt.Slice(userList[0].TVList, func(i, j int) bool {
+				var (
+					firstScore  float32
+					secondScore float32
+				)
+
+				if userList[0].TVList[i].Score == nil {
+					firstScore = -1
+				} else {
+					firstScore = *userList[0].TVList[i].Score
+				}
+
+				if userList[0].TVList[j].Score == nil {
+					secondScore = -1
+				} else {
+					secondScore = *userList[0].TVList[j].Score
+				}
+
+				if userList[0].TVList[i].StatusSort < userList[0].TVList[j].StatusSort {
+					return true
+				} else if userList[0].TVList[i].StatusSort > userList[0].TVList[j].StatusSort {
+					return false
+				}
+
+				return secondScore < firstScore
+			})
+
+			srt.Slice(userList[0].GameList, func(i, j int) bool {
+				var (
+					firstScore  float32
+					secondScore float32
+				)
+
+				if userList[0].GameList[i].Score == nil {
+					firstScore = -1
+				} else {
+					firstScore = *userList[0].GameList[i].Score
+				}
+
+				if userList[0].GameList[j].Score == nil {
+					secondScore = -1
+				} else {
+					secondScore = *userList[0].GameList[j].Score
+				}
+
+				if userList[0].GameList[i].StatusSort < userList[0].GameList[j].StatusSort {
+					return true
+				} else if userList[0].GameList[i].StatusSort > userList[0].GameList[j].StatusSort {
+					return false
+				}
+
+				return secondScore < firstScore
+			})
+		} else {
+			srt.Slice(userList[0].AnimeList, func(i, j int) bool {
+				if userList[0].AnimeList[i].StatusSort < userList[0].AnimeList[j].StatusSort {
+					return true
+				} else if userList[0].AnimeList[i].StatusSort > userList[0].AnimeList[j].StatusSort {
+					return false
+				}
+
+				return userList[0].AnimeList[j].TimesFinished < userList[0].AnimeList[i].TimesFinished
+			})
+
+			srt.Slice(userList[0].MovieList, func(i, j int) bool {
+				if userList[0].MovieList[i].StatusSort < userList[0].MovieList[j].StatusSort {
+					return true
+				} else if userList[0].MovieList[i].StatusSort > userList[0].MovieList[j].StatusSort {
+					return false
+				}
+
+				return userList[0].MovieList[j].TimesFinished < userList[0].MovieList[i].TimesFinished
+			})
+
+			srt.Slice(userList[0].TVList, func(i, j int) bool {
+				if userList[0].TVList[i].StatusSort < userList[0].TVList[j].StatusSort {
+					return true
+				} else if userList[0].TVList[i].StatusSort > userList[0].TVList[j].StatusSort {
+					return false
+				}
+
+				return userList[0].TVList[j].TimesFinished < userList[0].TVList[i].TimesFinished
+			})
+
+			srt.Slice(userList[0].GameList, func(i, j int) bool {
+				if userList[0].GameList[i].StatusSort < userList[0].GameList[j].StatusSort {
+					return true
+				} else if userList[0].GameList[i].StatusSort > userList[0].GameList[j].StatusSort {
+					return false
+				}
+
+				return userList[0].GameList[j].TimesFinished < userList[0].GameList[i].TimesFinished
+			})
+		}
+
 		return userList[0], nil
 	}
 

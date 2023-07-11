@@ -36,6 +36,7 @@ type AnimeList struct {
 	AnimeID         string             `bson:"anime_id" json:"anime_id"`
 	AnimeMALID      int64              `bson:"mal_id" json:"mal_id"`
 	Status          string             `bson:"status" json:"status"`
+	StatusSort      int                `bson:"status_sort" json:"status_sort"`
 	TitleEn         string             `bson:"title_en" json:"title_en"`
 	TitleOriginal   string             `bson:"title_original" json:"title_original"`
 	ImageURL        *string            `bson:"image_url" json:"image_url"`
@@ -54,6 +55,7 @@ type GameList struct {
 	GameID            string             `bson:"game_id" json:"game_id"`
 	GameRAWGID        int64              `bson:"rawg_id" json:"rawg_id"`
 	Status            string             `bson:"status" json:"status"`
+	StatusSort        int                `bson:"status_sort" json:"status_sort"`
 	Title             string             `bson:"title" json:"title"`
 	TitleOriginal     string             `bson:"title_original" json:"title_original"`
 	ImageURL          *string            `bson:"image_url" json:"image_url"`
@@ -68,6 +70,7 @@ type MovieList struct {
 	MovieID       string             `bson:"movie_id" json:"movie_id"`
 	MovieTmdbID   string             `bson:"tmdb_id" json:"tmdb_id"`
 	Status        string             `bson:"status" json:"status"`
+	StatusSort    int                `bson:"status_sort" json:"status_sort"`
 	TitleEn       string             `bson:"title_en" json:"title_en"`
 	TitleOriginal string             `bson:"title_original" json:"title_original"`
 	ImageURL      *string            `bson:"image_url" json:"image_url"`
@@ -83,6 +86,7 @@ type TVSeriesList struct {
 	TvID            string             `bson:"tv_id" json:"tv_id"`
 	TvTmdbID        string             `bson:"tmdb_id" json:"tmdb_id"`
 	Status          string             `bson:"status" json:"status"`
+	StatusSort      int                `bson:"status_sort" json:"status_sort"`
 	TitleEn         string             `bson:"title_en" json:"title_en"`
 	TitleOriginal   string             `bson:"title_original" json:"title_original"`
 	ImageURL        *string            `bson:"image_url" json:"image_url"`
