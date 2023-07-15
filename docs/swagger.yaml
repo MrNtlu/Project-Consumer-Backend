@@ -921,6 +921,8 @@ definitions:
         type: number
       status:
         type: string
+      status_sort:
+        type: integer
       times_finished:
         type: integer
       title_en:
@@ -1165,6 +1167,8 @@ definitions:
         type: number
       status:
         type: string
+      status_sort:
+        type: integer
       tba:
         type: boolean
       times_finished:
@@ -1364,6 +1368,8 @@ definitions:
         type: number
       status:
         type: string
+      status_sort:
+        type: integer
       times_finished:
         type: integer
       title_en:
@@ -1580,6 +1586,8 @@ definitions:
         type: number
       status:
         type: string
+      status_sort:
+        type: integer
       times_finished:
         type: integer
       title_en:

@@ -73,6 +73,18 @@ func (u *UserListController) CreateAnimeList(c *gin.Context) {
 		return
 	}
 
+	logModel := models.NewLogsModel(u.Database)
+
+	go logModel.CreateLog(uid, requests.CreateLog{
+		LogType:          models.UserListLogType,
+		LogAction:        models.AddLogAction,
+		LogActionDetails: createdAnimeList.Status,
+		ContentTitle:     anime.TitleOriginal,
+		ContentImage:     anime.ImageURL,
+		ContentType:      "anime",
+		ContentID:        createdAnimeList.AnimeID,
+	})
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdAnimeList})
 }
 
@@ -128,6 +140,18 @@ func (u *UserListController) CreateGameList(c *gin.Context) {
 
 		return
 	}
+
+	logModel := models.NewLogsModel(u.Database)
+
+	go logModel.CreateLog(uid, requests.CreateLog{
+		LogType:          models.UserListLogType,
+		LogAction:        models.AddLogAction,
+		LogActionDetails: createdGameList.Status,
+		ContentTitle:     game.TitleOriginal,
+		ContentImage:     game.BackgroundImage,
+		ContentType:      "game",
+		ContentID:        createdGameList.GameID,
+	})
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdGameList})
 }
@@ -185,6 +209,18 @@ func (u *UserListController) CreateMovieWatchList(c *gin.Context) {
 		return
 	}
 
+	logModel := models.NewLogsModel(u.Database)
+
+	go logModel.CreateLog(uid, requests.CreateLog{
+		LogType:          models.UserListLogType,
+		LogAction:        models.AddLogAction,
+		LogActionDetails: createdWatchList.Status,
+		ContentTitle:     movie.TitleOriginal,
+		ContentImage:     movie.ImageURL,
+		ContentType:      "movie",
+		ContentID:        createdWatchList.MovieID,
+	})
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdWatchList})
 }
 
@@ -240,6 +276,18 @@ func (u *UserListController) CreateTVSeriesWatchList(c *gin.Context) {
 
 		return
 	}
+
+	logModel := models.NewLogsModel(u.Database)
+
+	go logModel.CreateLog(uid, requests.CreateLog{
+		LogType:          models.UserListLogType,
+		LogAction:        models.AddLogAction,
+		LogActionDetails: createdTVSeriesWatchList.Status,
+		ContentTitle:     tvSeries.TitleOriginal,
+		ContentImage:     tvSeries.ImageURL,
+		ContentType:      "tv",
+		ContentID:        createdTVSeriesWatchList.TvID,
+	})
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdTVSeriesWatchList})
 }
@@ -332,15 +380,13 @@ func (u *UserListController) UpdateAnimeListByID(c *gin.Context) {
 		return
 	}
 
-	if data.WatchedEpisodes != nil {
-		animeModel := models.NewAnimeModel(u.Database)
-		anime, _ := animeModel.GetAnimeDetails(requests.ID{
-			ID: animeList.AnimeID,
-		})
+	animeModel := models.NewAnimeModel(u.Database)
+	anime, _ := animeModel.GetAnimeDetails(requests.ID{
+		ID: animeList.AnimeID,
+	})
 
-		if anime.Episodes != nil && *data.WatchedEpisodes > *anime.Episodes {
-			data.WatchedEpisodes = anime.Episodes
-		}
+	if data.WatchedEpisodes != nil && (anime.Episodes != nil && *data.WatchedEpisodes > *anime.Episodes) {
+		data.WatchedEpisodes = anime.Episodes
 	}
 
 	if updatedAnimeList, err = userListModel.UpdateAnimeListByID(animeList, data); err != nil {
@@ -350,6 +396,18 @@ func (u *UserListController) UpdateAnimeListByID(c *gin.Context) {
 
 		return
 	}
+
+	logModel := models.NewLogsModel(u.Database)
+
+	go logModel.CreateLog(uid, requests.CreateLog{
+		LogType:          models.UserListLogType,
+		LogAction:        models.UpdateLogAction,
+		LogActionDetails: updatedAnimeList.Status,
+		ContentTitle:     anime.TitleOriginal,
+		ContentImage:     anime.ImageURL,
+		ContentType:      "anime",
+		ContentID:        updatedAnimeList.AnimeID,
+	})
 
 	c.JSON(http.StatusOK, gin.H{"message": "Anime list updated.", "data": updatedAnimeList})
 }
@@ -405,6 +463,23 @@ func (u *UserListController) UpdateGameListByID(c *gin.Context) {
 		return
 	}
 
+	gameModel := models.NewGameModel(u.Database)
+	game, _ := gameModel.GetGameDetails(requests.ID{
+		ID: gameList.GameID,
+	})
+
+	logModel := models.NewLogsModel(u.Database)
+
+	go logModel.CreateLog(uid, requests.CreateLog{
+		LogType:          models.UserListLogType,
+		LogAction:        models.UpdateLogAction,
+		LogActionDetails: updatedGameList.Status,
+		ContentTitle:     game.TitleOriginal,
+		ContentImage:     game.BackgroundImage,
+		ContentType:      "game",
+		ContentID:        updatedGameList.GameID,
+	})
+
 	c.JSON(http.StatusOK, gin.H{"message": "Game list updated.", "data": updatedGameList})
 }
 
@@ -459,6 +534,23 @@ func (u *UserListController) UpdateMovieListByID(c *gin.Context) {
 		return
 	}
 
+	movieModel := models.NewMovieModel(u.Database)
+	movie, _ := movieModel.GetMovieDetails(requests.ID{
+		ID: movieList.MovieID,
+	})
+
+	logModel := models.NewLogsModel(u.Database)
+
+	go logModel.CreateLog(uid, requests.CreateLog{
+		LogType:          models.UserListLogType,
+		LogAction:        models.UpdateLogAction,
+		LogActionDetails: updatedWatchList.Status,
+		ContentTitle:     movie.TitleOriginal,
+		ContentImage:     movie.ImageURL,
+		ContentType:      "movie",
+		ContentID:        updatedWatchList.MovieID,
+	})
+
 	c.JSON(http.StatusOK, gin.H{"message": "Movie list updated.", "data": updatedWatchList})
 }
 
@@ -505,15 +597,13 @@ func (u *UserListController) UpdateTVSeriesListByID(c *gin.Context) {
 		return
 	}
 
-	if data.WatchedEpisodes != nil {
-		tvSeriesModel := models.NewTVModel(u.Database)
-		tvSeries, _ := tvSeriesModel.GetTVSeriesDetails(requests.ID{
-			ID: tvList.TvID,
-		})
+	tvSeriesModel := models.NewTVModel(u.Database)
+	tvSeries, _ := tvSeriesModel.GetTVSeriesDetails(requests.ID{
+		ID: tvList.TvID,
+	})
 
-		if tvSeries.TotalEpisodes != 0 && *data.WatchedEpisodes > tvSeries.TotalEpisodes {
-			data.WatchedEpisodes = &tvSeries.TotalEpisodes
-		}
+	if data.WatchedEpisodes != nil && (tvSeries.TotalEpisodes != 0 && *data.WatchedEpisodes > tvSeries.TotalEpisodes) {
+		data.WatchedEpisodes = &tvSeries.TotalEpisodes
 	}
 
 	if updatedTVList, err = userListModel.UpdateTVSeriesListByID(tvList, data); err != nil {
@@ -523,6 +613,18 @@ func (u *UserListController) UpdateTVSeriesListByID(c *gin.Context) {
 
 		return
 	}
+
+	logModel := models.NewLogsModel(u.Database)
+
+	go logModel.CreateLog(uid, requests.CreateLog{
+		LogType:          models.UserListLogType,
+		LogAction:        models.UpdateLogAction,
+		LogActionDetails: updatedTVList.Status,
+		ContentTitle:     tvSeries.TitleOriginal,
+		ContentImage:     tvSeries.ImageURL,
+		ContentType:      "tv",
+		ContentID:        updatedTVList.TvID,
+	})
 
 	c.JSON(http.StatusOK, gin.H{"message": "TV series watch list updated.", "data": updatedTVList})
 }
@@ -588,6 +690,59 @@ func (u *UserListController) DeleteListByUserIDAndType(c *gin.Context) {
 
 	userListModel := models.NewUserListModel(u.Database)
 
+	var (
+		contentTitle string
+		contentImage string
+		contentID    string
+	)
+
+	switch data.Type {
+	case "anime":
+		animeModel := models.NewAnimeModel(u.Database)
+
+		animeList, _ := userListModel.GetBaseAnimeListByID(data.ID)
+		anime, _ := animeModel.GetAnimeDetails(requests.ID{
+			ID: animeList.AnimeID,
+		})
+
+		contentTitle = anime.TitleOriginal
+		contentImage = anime.ImageURL
+		contentID = animeList.AnimeID
+	case "game":
+		gameModel := models.NewGameModel(u.Database)
+
+		gameList, _ := userListModel.GetBaseGameListByID(data.ID)
+		game, _ := gameModel.GetGameDetails(requests.ID{
+			ID: gameList.GameID,
+		})
+
+		contentTitle = game.TitleOriginal
+		contentImage = game.BackgroundImage
+		contentID = gameList.GameID
+	case "movie":
+		movieModel := models.NewMovieModel(u.Database)
+
+		movieList, _ := userListModel.GetBaseMovieListByID(data.ID)
+		movie, _ := movieModel.GetMovieDetails(requests.ID{
+			ID: movieList.MovieID,
+		})
+
+		contentTitle = movie.TitleOriginal
+		contentImage = movie.ImageURL
+		contentID = movieList.MovieID
+	case "tv":
+		tvSeriesModel := models.NewTVModel(u.Database)
+
+		tvList, _ := userListModel.GetBaseTVSeriesListByID(data.ID)
+		tvSeries, _ := tvSeriesModel.GetTVSeriesDetails(requests.ID{
+			ID: tvList.TvID,
+		})
+
+		contentTitle = tvSeries.TitleOriginal
+		contentImage = tvSeries.ImageURL
+		contentID = tvList.TvID
+	}
+
 	isDeleted, err := userListModel.DeleteListByUserIDAndType(uid, data)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -598,6 +753,18 @@ func (u *UserListController) DeleteListByUserIDAndType(c *gin.Context) {
 	}
 
 	if isDeleted {
+		logModel := models.NewLogsModel(u.Database)
+
+		go logModel.CreateLog(uid, requests.CreateLog{
+			LogType:          models.UserListLogType,
+			LogAction:        models.DeleteLogAction,
+			LogActionDetails: "",
+			ContentTitle:     contentTitle,
+			ContentImage:     contentImage,
+			ContentType:      data.Type,
+			ContentID:        contentID,
+		})
+
 		c.JSON(http.StatusOK, gin.H{"message": "List deleted successfully."})
 		return
 	}

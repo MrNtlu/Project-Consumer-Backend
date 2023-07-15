@@ -3818,6 +3818,9 @@
                 "status": {
                     "type": "string"
                 },
+                "status_sort": {
+                    "type": "integer"
+                },
                 "times_finished": {
                     "type": "integer"
                 },
@@ -4189,6 +4192,9 @@
                 "status": {
                     "type": "string"
                 },
+                "status_sort": {
+                    "type": "integer"
+                },
                 "tba": {
                     "type": "boolean"
                 },
@@ -4491,6 +4497,9 @@
                 },
                 "status": {
                     "type": "string"
+                },
+                "status_sort": {
+                    "type": "integer"
                 },
                 "times_finished": {
                     "type": "integer"
@@ -4819,6 +4828,9 @@
                 },
                 "status": {
                     "type": "string"
+                },
+                "status_sort": {
+                    "type": "integer"
                 },
                 "times_finished": {
                     "type": "integer"

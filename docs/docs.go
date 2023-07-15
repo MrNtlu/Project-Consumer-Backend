@@ -3821,6 +3821,9 @@ const docTemplate = `{
                 "status": {
                     "type": "string"
                 },
+                "status_sort": {
+                    "type": "integer"
+                },
                 "times_finished": {
                     "type": "integer"
                 },
@@ -4192,6 +4195,9 @@ const docTemplate = `{
                 "status": {
                     "type": "string"
                 },
+                "status_sort": {
+                    "type": "integer"
+                },
                 "tba": {
                     "type": "boolean"
                 },
@@ -4494,6 +4500,9 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                },
+                "status_sort": {
+                    "type": "integer"
                 },
                 "times_finished": {
                     "type": "integer"
@@ -4822,6 +4831,9 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                },
+                "status_sort": {
+                    "type": "integer"
                 },
                 "times_finished": {
                     "type": "integer"

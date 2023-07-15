@@ -39,6 +39,11 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 		return
 	}
 
+	var (
+		contentTitle string
+		contentImage string
+	)
+
 	switch data.ContentType {
 	case "anime":
 		animeModel := models.NewAnimeModel(ui.Database)
@@ -58,6 +63,9 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
 			return
 		}
+
+		contentTitle = anime.TitleOriginal
+		contentImage = anime.ImageURL
 	case "game":
 		gameModel := models.NewGameModel(ui.Database)
 
@@ -76,6 +84,9 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
 			return
 		}
+
+		contentTitle = game.TitleOriginal
+		contentImage = game.BackgroundImage
 	case "movie":
 		movieModel := models.NewMovieModel(ui.Database)
 
@@ -94,6 +105,9 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
 			return
 		}
+
+		contentTitle = movie.TitleOriginal
+		contentImage = movie.ImageURL
 	case "tv":
 		tvSeriesModel := models.NewTVModel(ui.Database)
 
@@ -112,6 +126,9 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
 			return
 		}
+
+		contentTitle = tvSeries.TitleOriginal
+		contentImage = tvSeries.ImageURL
 	}
 
 	uid := jwt.ExtractClaims(c)["id"].(string)
@@ -130,6 +147,18 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 
 		return
 	}
+
+	logModel := models.NewLogsModel(ui.Database)
+
+	go logModel.CreateLog(uid, requests.CreateLog{
+		LogType:          models.ConsumeLaterLogType,
+		LogAction:        models.AddLogAction,
+		LogActionDetails: "",
+		ContentTitle:     contentTitle,
+		ContentImage:     contentImage,
+		ContentType:      data.ContentType,
+		ContentID:        data.ContentID,
+	})
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdConsumeLater})
 }
@@ -154,8 +183,13 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 		return
 	}
 
-	uid := jwt.ExtractClaims(c)["id"].(string)
+	var (
+		contentTitle string
+		contentImage string
+	)
 
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	logModel := models.NewLogsModel(ui.Database)
 	userInteractionModel := models.NewUserInteractionModel(ui.Database)
 
 	consumeLater, err := userInteractionModel.GetBaseConsumeLater(uid, data.ID)
@@ -211,9 +245,48 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 
 		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
 
+		contentTitle = anime.TitleOriginal
+		contentImage = anime.ImageURL
+
+		go logModel.CreateLog(uid, requests.CreateLog{
+			LogType:          models.ConsumeLaterLogType,
+			LogAction:        models.DeleteLogAction,
+			LogActionDetails: "",
+			ContentTitle:     contentTitle,
+			ContentImage:     contentImage,
+			ContentType:      consumeLater.ContentType,
+			ContentID:        consumeLater.ContentID,
+		})
+		go logModel.CreateLog(uid, requests.CreateLog{
+			LogType:          models.UserListLogType,
+			LogAction:        models.AddLogAction,
+			LogActionDetails: models.FinishedActionDetails,
+			ContentTitle:     contentTitle,
+			ContentImage:     contentImage,
+			ContentType:      consumeLater.ContentType,
+			ContentID:        consumeLater.ContentID,
+		})
+
 		c.JSON(http.StatusCreated, gin.H{"message": "Successfully moved to user list."})
 		return
 	case "game":
+		gameModel := models.NewGameModel(ui.Database)
+		game, err := gameModel.GetGameDetails(requests.ID{
+			ID: consumeLater.ContentID,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		if game.TitleOriginal == "" {
+			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+			return
+		}
+
 		if _, err = userListModel.CreateGameList(uid, requests.CreateGameList{
 			GameID:        consumeLater.ContentID,
 			GameRAWGID:    *consumeLater.ContentExternalIntID,
@@ -230,9 +303,49 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 
 		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
 
+		contentTitle = game.TitleOriginal
+		contentImage = game.BackgroundImage
+
+		go logModel.CreateLog(uid, requests.CreateLog{
+			LogType:          models.ConsumeLaterLogType,
+			LogAction:        models.DeleteLogAction,
+			LogActionDetails: "",
+			ContentTitle:     contentTitle,
+			ContentImage:     contentImage,
+			ContentType:      consumeLater.ContentType,
+			ContentID:        consumeLater.ContentID,
+		})
+		go logModel.CreateLog(uid, requests.CreateLog{
+			LogType:          models.UserListLogType,
+			LogAction:        models.AddLogAction,
+			LogActionDetails: models.FinishedActionDetails,
+			ContentTitle:     contentTitle,
+			ContentImage:     contentImage,
+			ContentType:      consumeLater.ContentType,
+			ContentID:        consumeLater.ContentID,
+		})
+
 		c.JSON(http.StatusCreated, gin.H{"message": "Successfully moved to user list."})
 		return
 	case "movie":
+		movieModel := models.NewMovieModel(ui.Database)
+
+		movie, err := movieModel.GetMovieDetails(requests.ID{
+			ID: consumeLater.ContentID,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		if movie.TitleOriginal == "" {
+			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+			return
+		}
+
 		if _, err = userListModel.CreateMovieWatchList(uid, requests.CreateMovieWatchList{
 			MovieID:     consumeLater.ContentID,
 			MovieTmdbID: *consumeLater.ContentExternalID,
@@ -247,6 +360,28 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 		}
 
 		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
+
+		contentTitle = movie.TitleOriginal
+		contentImage = movie.ImageURL
+
+		go logModel.CreateLog(uid, requests.CreateLog{
+			LogType:          models.ConsumeLaterLogType,
+			LogAction:        models.DeleteLogAction,
+			LogActionDetails: "",
+			ContentTitle:     contentTitle,
+			ContentImage:     contentImage,
+			ContentType:      consumeLater.ContentType,
+			ContentID:        consumeLater.ContentID,
+		})
+		go logModel.CreateLog(uid, requests.CreateLog{
+			LogType:          models.UserListLogType,
+			LogAction:        models.AddLogAction,
+			LogActionDetails: models.FinishedActionDetails,
+			ContentTitle:     contentTitle,
+			ContentImage:     contentImage,
+			ContentType:      consumeLater.ContentType,
+			ContentID:        consumeLater.ContentID,
+		})
 
 		c.JSON(http.StatusCreated, gin.H{"message": "Successfully moved to user list."})
 		return
@@ -283,6 +418,28 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 		}
 
 		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
+
+		contentTitle = tvSeries.TitleOriginal
+		contentImage = tvSeries.ImageURL
+
+		go logModel.CreateLog(uid, requests.CreateLog{
+			LogType:          models.ConsumeLaterLogType,
+			LogAction:        models.DeleteLogAction,
+			LogActionDetails: "",
+			ContentTitle:     contentTitle,
+			ContentImage:     contentImage,
+			ContentType:      consumeLater.ContentType,
+			ContentID:        consumeLater.ContentID,
+		})
+		go logModel.CreateLog(uid, requests.CreateLog{
+			LogType:          models.UserListLogType,
+			LogAction:        models.AddLogAction,
+			LogActionDetails: models.FinishedActionDetails,
+			ContentTitle:     contentTitle,
+			ContentImage:     contentImage,
+			ContentType:      consumeLater.ContentType,
+			ContentID:        consumeLater.ContentID,
+		})
 
 		c.JSON(http.StatusCreated, gin.H{"message": "Successfully moved to user list."})
 		return
@@ -353,6 +510,7 @@ func (ui *UserInteractionController) DeleteConsumeLaterById(c *gin.Context) {
 
 	userInteractionModel := models.NewUserInteractionModel(ui.Database)
 
+	consumeLater, _ := userInteractionModel.GetBaseConsumeLater(uid, data.ID)
 	isDeleted, err := userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -363,6 +521,62 @@ func (ui *UserInteractionController) DeleteConsumeLaterById(c *gin.Context) {
 	}
 
 	if isDeleted {
+		var (
+			contentTitle string
+			contentImage string
+		)
+
+		switch consumeLater.ContentType {
+		case "anime":
+			animeModel := models.NewAnimeModel(ui.Database)
+
+			anime, _ := animeModel.GetAnimeDetails(requests.ID{
+				ID: consumeLater.ContentID,
+			})
+
+			contentTitle = anime.TitleOriginal
+			contentImage = anime.ImageURL
+		case "game":
+			gameModel := models.NewGameModel(ui.Database)
+
+			game, _ := gameModel.GetGameDetails(requests.ID{
+				ID: consumeLater.ContentID,
+			})
+
+			contentTitle = game.TitleOriginal
+			contentImage = game.BackgroundImage
+		case "movie":
+			movieModel := models.NewMovieModel(ui.Database)
+
+			movie, _ := movieModel.GetMovieDetails(requests.ID{
+				ID: consumeLater.ContentID,
+			})
+
+			contentTitle = movie.TitleOriginal
+			contentImage = movie.ImageURL
+		case "tv":
+			tvSeriesModel := models.NewTVModel(ui.Database)
+
+			tvSeries, _ := tvSeriesModel.GetTVSeriesDetails(requests.ID{
+				ID: consumeLater.ContentID,
+			})
+
+			contentTitle = tvSeries.TitleOriginal
+			contentImage = tvSeries.ImageURL
+		}
+
+		logModel := models.NewLogsModel(ui.Database)
+
+		go logModel.CreateLog(uid, requests.CreateLog{
+			LogType:          models.ConsumeLaterLogType,
+			LogAction:        models.DeleteLogAction,
+			LogActionDetails: "",
+			ContentTitle:     contentTitle,
+			ContentImage:     contentImage,
+			ContentType:      consumeLater.ContentType,
+			ContentID:        consumeLater.ContentID,
+		})
+
 		c.JSON(http.StatusOK, gin.H{"message": "Deleted successfully."})
 		return
 	}
