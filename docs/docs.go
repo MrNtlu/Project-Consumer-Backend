@@ -1076,6 +1076,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/list/logs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns logs by user id and date range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_list"
+                ],
+                "summary": "Get Logs by User ID and date range",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "to",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.LogsByRange"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/list/movie": {
             "post": {
                 "security": [
@@ -4285,6 +4343,52 @@ const docTemplate = `{
                 },
                 "tmdb_id": {
                     "type": "integer"
+                }
+            }
+        },
+        "responses.Log": {
+            "type": "object",
+            "properties": {
+                "content_id": {
+                    "type": "string"
+                },
+                "content_image": {
+                    "type": "string"
+                },
+                "content_title": {
+                    "type": "string"
+                },
+                "content_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "log_action": {
+                    "type": "string"
+                },
+                "log_action_details": {
+                    "type": "string"
+                },
+                "log_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.LogsByRange": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Log"
+                    }
+                },
+                "date": {
+                    "type": "string"
                 }
             }
         },

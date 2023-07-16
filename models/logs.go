@@ -3,7 +3,9 @@ package models
 import (
 	"app/db"
 	"app/requests"
+	"app/responses"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -81,8 +83,74 @@ func (logsModel *LogsModel) CreateLog(uid string, data requests.CreateLog) {
 	}
 }
 
-func (logsModel *LogsModel) GetLogsByDateRange(uid string) {
+func (logsModel *LogsModel) GetLogsByDateRange(uid string, data requests.LogsByDateRange) ([]responses.LogsByRange, error) {
+	dateString := "2006-01-02"
 
+	fromDate, _ := time.Parse(dateString, data.From)
+	toDate, _ := time.Parse(dateString, data.To)
+
+	match := bson.M{"$match": bson.M{
+		"user_id": uid,
+		"created_at": bson.M{
+			"$gte": fromDate,
+			"$lte": toDate,
+		},
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"created_at_str": bson.M{
+			"$dateToString": bson.M{
+				"format": "%Y-%m-%d",
+				"date":   "$created_at",
+			},
+		},
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$created_at_str",
+		"data": bson.M{
+			"$push": "$$ROOT",
+		},
+		"count": bson.M{
+			"$count": bson.M{},
+		},
+	}}
+
+	sortArray := bson.M{"$set": bson.M{
+		"date": "$_id",
+		"data": bson.M{
+			"$sortArray": bson.M{
+				"input": "$data",
+				"sortBy": bson.M{
+					"created_at": -1,
+				},
+			},
+		},
+	}}
+
+	cursor, err := logsModel.LogsCollection.Aggregate(context.TODO(), bson.A{
+		match, set, group, sortArray,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to aggregate logs: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate logs.")
+	}
+
+	var logs []responses.LogsByRange
+	if err = cursor.All(context.TODO(), &logs); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to decode logs: ", err)
+
+		return nil, fmt.Errorf("Failed to decode logs.")
+	}
+
+	return logs, nil
 }
 
 func (logsModel *LogsModel) DeleteLogsByUserID(uid string) {

@@ -9,3 +9,8 @@ type CreateLog struct {
 	ContentType      string `json:"content_type" binding:"required,oneof=anime game movie tv"`
 	ContentID        string `json:"content_id" binding:"required"`
 }
+
+type LogsByDateRange struct {
+	From string `form:"from" binding:"required" time_format:"2006-01-02"`
+	To   string `form:"to" binding:"required" time_format:"2006-01-02"`
+}

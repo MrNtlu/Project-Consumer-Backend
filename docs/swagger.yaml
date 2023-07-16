@@ -1227,6 +1227,36 @@ definitions:
       tmdb_id:
         type: integer
     type: object
+  responses.Log:
+    properties:
+      content_id:
+        type: string
+      content_image:
+        type: string
+      content_title:
+        type: string
+      content_type:
+        type: string
+      created_at:
+        type: string
+      log_action:
+        type: string
+      log_action_details:
+        type: string
+      log_type:
+        type: string
+    type: object
+  responses.LogsByRange:
+    properties:
+      count:
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/responses.Log'
+        type: array
+      date:
+        type: string
+    type: object
   responses.Movie:
     properties:
       _id:
@@ -2460,6 +2490,43 @@ paths:
       security:
       - BearerAuth: []
       summary: Create Game List
+      tags:
+      - user_list
+  /list/logs:
+    get:
+      consumes:
+      - application/json
+      description: Returns logs by user id and date range
+      parameters:
+      - in: query
+        name: from
+        required: true
+        type: string
+      - in: query
+        name: to
+        required: true
+        type: string
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.LogsByRange'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Logs by User ID and date range
       tags:
       - user_list
   /list/movie:

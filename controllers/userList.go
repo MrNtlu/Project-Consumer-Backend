@@ -667,6 +667,44 @@ func (u *UserListController) GetUserListByUserID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": userList})
 }
 
+// Get Logs
+// @Summary Get Logs by User ID and date range
+// @Description Returns logs by user id and date range
+// @Tags user_list
+// @Accept application/json
+// @Produce application/json
+// @Param logsbydaterange query requests.LogsByDateRange true "Logs by Date Range"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} responses.LogsByRange
+// @Failure 500 {string} string
+// @Router /list/logs [get]
+func (u *UserListController) GetLogsByDateRange(c *gin.Context) {
+	var data requests.LogsByDateRange
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	logsModel := models.NewLogsModel(u.Database)
+
+	logs, err := logsModel.GetLogsByDateRange(uid, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": logs})
+}
+
 // Delete List by Type
 // @Summary Delete List by Type
 // @Description Deletes list by type and user id

@@ -17,6 +17,7 @@ func userListRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mon
 		{
 			userList.DELETE("", userListController.DeleteListByUserIDAndType)
 			userList.GET("", userListController.GetUserListByUserID)
+			userList.GET("/logs", userListController.GetLogsByDateRange)
 			userList.PATCH("", userListController.UpdateUserListPublicVisibility)
 		}
 
