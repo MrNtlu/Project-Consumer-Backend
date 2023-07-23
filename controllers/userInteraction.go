@@ -85,7 +85,7 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 			return
 		}
 
-		contentTitle = game.TitleOriginal
+		contentTitle = game.Title
 		contentImage = game.BackgroundImage
 	case "movie":
 		movieModel := models.NewMovieModel(ui.Database)
@@ -106,7 +106,7 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 			return
 		}
 
-		contentTitle = movie.TitleOriginal
+		contentTitle = movie.TitleEn
 		contentImage = movie.ImageURL
 	case "tv":
 		tvSeriesModel := models.NewTVModel(ui.Database)
@@ -127,7 +127,7 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 			return
 		}
 
-		contentTitle = tvSeries.TitleOriginal
+		contentTitle = tvSeries.TitleEn
 		contentImage = tvSeries.ImageURL
 	}
 
@@ -303,7 +303,7 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 
 		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
 
-		contentTitle = game.TitleOriginal
+		contentTitle = game.Title
 		contentImage = game.BackgroundImage
 
 		go logModel.CreateLog(uid, requests.CreateLog{
@@ -361,7 +361,7 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 
 		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
 
-		contentTitle = movie.TitleOriginal
+		contentTitle = movie.TitleEn
 		contentImage = movie.ImageURL
 
 		go logModel.CreateLog(uid, requests.CreateLog{
@@ -419,7 +419,7 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 
 		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
 
-		contentTitle = tvSeries.TitleOriginal
+		contentTitle = tvSeries.TitleEn
 		contentImage = tvSeries.ImageURL
 
 		go logModel.CreateLog(uid, requests.CreateLog{
@@ -543,7 +543,7 @@ func (ui *UserInteractionController) DeleteConsumeLaterById(c *gin.Context) {
 				ID: consumeLater.ContentID,
 			})
 
-			contentTitle = game.TitleOriginal
+			contentTitle = game.Title
 			contentImage = game.BackgroundImage
 		case "movie":
 			movieModel := models.NewMovieModel(ui.Database)
@@ -552,7 +552,7 @@ func (ui *UserInteractionController) DeleteConsumeLaterById(c *gin.Context) {
 				ID: consumeLater.ContentID,
 			})
 
-			contentTitle = movie.TitleOriginal
+			contentTitle = movie.TitleEn
 			contentImage = movie.ImageURL
 		case "tv":
 			tvSeriesModel := models.NewTVModel(ui.Database)
@@ -561,7 +561,7 @@ func (ui *UserInteractionController) DeleteConsumeLaterById(c *gin.Context) {
 				ID: consumeLater.ContentID,
 			})
 
-			contentTitle = tvSeries.TitleOriginal
+			contentTitle = tvSeries.TitleEn
 			contentImage = tvSeries.ImageURL
 		}
 

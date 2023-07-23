@@ -147,7 +147,7 @@ func (u *UserListController) CreateGameList(c *gin.Context) {
 		LogType:          models.UserListLogType,
 		LogAction:        models.AddLogAction,
 		LogActionDetails: createdGameList.Status,
-		ContentTitle:     game.TitleOriginal,
+		ContentTitle:     game.Title,
 		ContentImage:     game.BackgroundImage,
 		ContentType:      "game",
 		ContentID:        createdGameList.GameID,
@@ -215,7 +215,7 @@ func (u *UserListController) CreateMovieWatchList(c *gin.Context) {
 		LogType:          models.UserListLogType,
 		LogAction:        models.AddLogAction,
 		LogActionDetails: createdWatchList.Status,
-		ContentTitle:     movie.TitleOriginal,
+		ContentTitle:     movie.TitleEn,
 		ContentImage:     movie.ImageURL,
 		ContentType:      "movie",
 		ContentID:        createdWatchList.MovieID,
@@ -283,7 +283,7 @@ func (u *UserListController) CreateTVSeriesWatchList(c *gin.Context) {
 		LogType:          models.UserListLogType,
 		LogAction:        models.AddLogAction,
 		LogActionDetails: createdTVSeriesWatchList.Status,
-		ContentTitle:     tvSeries.TitleOriginal,
+		ContentTitle:     tvSeries.TitleEn,
 		ContentImage:     tvSeries.ImageURL,
 		ContentType:      "tv",
 		ContentID:        createdTVSeriesWatchList.TvID,
@@ -474,7 +474,7 @@ func (u *UserListController) UpdateGameListByID(c *gin.Context) {
 		LogType:          models.UserListLogType,
 		LogAction:        models.UpdateLogAction,
 		LogActionDetails: updatedGameList.Status,
-		ContentTitle:     game.TitleOriginal,
+		ContentTitle:     game.Title,
 		ContentImage:     game.BackgroundImage,
 		ContentType:      "game",
 		ContentID:        updatedGameList.GameID,
@@ -545,7 +545,7 @@ func (u *UserListController) UpdateMovieListByID(c *gin.Context) {
 		LogType:          models.UserListLogType,
 		LogAction:        models.UpdateLogAction,
 		LogActionDetails: updatedWatchList.Status,
-		ContentTitle:     movie.TitleOriginal,
+		ContentTitle:     movie.TitleEn,
 		ContentImage:     movie.ImageURL,
 		ContentType:      "movie",
 		ContentID:        updatedWatchList.MovieID,
@@ -620,7 +620,7 @@ func (u *UserListController) UpdateTVSeriesListByID(c *gin.Context) {
 		LogType:          models.UserListLogType,
 		LogAction:        models.UpdateLogAction,
 		LogActionDetails: updatedTVList.Status,
-		ContentTitle:     tvSeries.TitleOriginal,
+		ContentTitle:     tvSeries.TitleEn,
 		ContentImage:     tvSeries.ImageURL,
 		ContentType:      "tv",
 		ContentID:        updatedTVList.TvID,
@@ -754,7 +754,7 @@ func (u *UserListController) DeleteListByUserIDAndType(c *gin.Context) {
 			ID: gameList.GameID,
 		})
 
-		contentTitle = game.TitleOriginal
+		contentTitle = game.Title
 		contentImage = game.BackgroundImage
 		contentID = gameList.GameID
 	case "movie":
@@ -765,7 +765,7 @@ func (u *UserListController) DeleteListByUserIDAndType(c *gin.Context) {
 			ID: movieList.MovieID,
 		})
 
-		contentTitle = movie.TitleOriginal
+		contentTitle = movie.TitleEn
 		contentImage = movie.ImageURL
 		contentID = movieList.MovieID
 	case "tv":
@@ -776,7 +776,7 @@ func (u *UserListController) DeleteListByUserIDAndType(c *gin.Context) {
 			ID: tvList.TvID,
 		})
 
-		contentTitle = tvSeries.TitleOriginal
+		contentTitle = tvSeries.TitleEn
 		contentImage = tvSeries.ImageURL
 		contentID = tvList.TvID
 	}
