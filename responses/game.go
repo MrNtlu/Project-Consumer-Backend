@@ -14,7 +14,7 @@ type Game struct {
 	MetacriticScore           int64                         `bson:"metacritic_score" json:"metacritic_score"`
 	MetacriticScoreByPlatform []GameMetacriticScorePlatform `bson:"metacritic_score_by_platform" json:"metacritic_score_by_platform"`
 	ReleaseDate               string                        `bson:"release_date" json:"release_date"`
-	BackgroundImage           string                        `bson:"background_image" json:"background_image"`
+	ImageUrl                  string                        `bson:"image_url" json:"image_url"`
 	Subreddit                 *string                       `bson:"subreddit" json:"subreddit"`
 	AgeRating                 *string                       `bson:"age_rating" json:"age_rating"`
 	RelatedGames              []GameRelation                `bson:"related_games" json:"related_games"`
@@ -39,7 +39,7 @@ type GameDetails struct {
 	MetacriticScore           int64                         `bson:"metacritic_score" json:"metacritic_score"`
 	MetacriticScoreByPlatform []GameMetacriticScorePlatform `bson:"metacritic_score_by_platform" json:"metacritic_score_by_platform"`
 	ReleaseDate               string                        `bson:"release_date" json:"release_date"`
-	BackgroundImage           string                        `bson:"background_image" json:"background_image"`
+	ImageUrl                  string                        `bson:"image_url" json:"image_url"`
 	Subreddit                 *string                       `bson:"subreddit" json:"subreddit"`
 	AgeRating                 *string                       `bson:"age_rating" json:"age_rating"`
 	RelatedGames              []GameRelation                `bson:"related_games" json:"related_games"`
@@ -51,6 +51,7 @@ type GameDetails struct {
 	Stores                    []GameStore                   `bson:"stores" json:"stores"`
 	HasReleaseDate            bool                          `bson:"has_release_date" json:"has_release_date"`
 	GameList                  *GamePlayList                 `bson:"game_list" json:"game_list"`
+	WatchLater                *ConsumeLater                 `bson:"watch_later" json:"watch_later"`
 }
 
 type GamePlayList struct {

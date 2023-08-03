@@ -22,7 +22,7 @@ func NewAnimeController(mongoDB *db.MongoDB) AnimeController {
 // Get Preview Animes
 // @Summary Get Preview Animes
 // @Description Returns preview animes
-// @Tags movie
+// @Tags anime
 // @Accept application/json
 // @Produce application/json
 // @Success 200 {array} responses.Anime
@@ -43,7 +43,7 @@ func (a *AnimeController) GetPreviewAnimes(c *gin.Context) {
 		return
 	}
 
-	popularAnimes, _, err := animeModel.GetAnimesBySortAndFilter(requests.SortFilterAnime{
+	topRatedAnimes, _, err := animeModel.GetAnimesBySortAndFilter(requests.SortFilterAnime{
 		Sort: "popularity",
 		Page: 1,
 	})
@@ -55,8 +55,18 @@ func (a *AnimeController) GetPreviewAnimes(c *gin.Context) {
 		return
 	}
 
-	//TODO Add TopRated
-	c.JSON(http.StatusOK, gin.H{"upcoming": upcomingAnimes, "popular": popularAnimes}) //, "top": topMovies
+	popularAnimes, _, err := animeModel.GetPopularAnimesBySort(requests.Pagination{
+		Page: 1,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"upcoming": upcomingAnimes, "top": topRatedAnimes, "popular": popularAnimes})
 }
 
 // Get Upcoming Animes
@@ -91,6 +101,40 @@ func (a *AnimeController) GetUpcomingAnimesBySort(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": upcomingAnimes})
+}
+
+// Get Popular Animes
+// @Summary Get Popular Animes by Sort
+// @Description Returns popular animes with pagination
+// @Tags anime
+// @Accept application/json
+// @Produce application/json
+// @Param pagination body requests.Pagination true "Pagination"
+// @Success 200 {array} responses.Anime
+// @Failure 500 {string} string
+// @Router /anime/top [get]
+func (a *AnimeController) GetPopularAnimesBySort(c *gin.Context) {
+	var data requests.Pagination
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	animeModel := models.NewAnimeModel(a.Database)
+
+	popularAnimes, pagination, err := animeModel.GetPopularAnimesBySort(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": popularAnimes})
 }
 
 // Get Animes By Year and Season
@@ -236,4 +280,38 @@ func (a *AnimeController) GetAnimeDetails(c *gin.Context) {
 			"data": animeDetails,
 		})
 	}
+}
+
+// Search Anime
+// @Summary Search Anime
+// @Description Search animes
+// @Tags anime
+// @Accept application/json
+// @Produce application/json
+// @Param search body requests.Search true "Search"
+// @Success 200 {array} responses.Anime
+// @Failure 500 {string} string
+// @Router /anime/search [get]
+func (a *AnimeController) SearchAnimeByTitle(c *gin.Context) {
+	var data requests.Search
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	animeModel := models.NewAnimeModel(a.Database)
+
+	animes, pagination, err := animeModel.SearchAnimeByTitle(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": animes})
 }

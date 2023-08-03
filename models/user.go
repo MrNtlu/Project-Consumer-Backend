@@ -875,10 +875,9 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 						},
 						bson.M{
 							"$project": bson.M{
-								"background_image": 1,
-								"image_url":        1,
-								"title_original":   1,
-								"title":            1,
+								"image_url":      1,
+								"title_original": 1,
+								"title":          1,
 								"times_finished": bson.M{
 									"$arrayElemAt": bson.A{
 										"$$times_finished",

@@ -190,7 +190,7 @@ func (gameModel *GameModel) GetGameDetailsWithPlayList(data requests.ID, uuid st
 	}}
 
 	lookup := bson.M{"$lookup": bson.M{
-		"from": "movie-watch-lists",
+		"from": "game-lists",
 		"let": bson.M{
 			"uuid":    uuid,
 			"game_id": "$game_id",
@@ -222,8 +222,41 @@ func (gameModel *GameModel) GetGameDetailsWithPlayList(data requests.ID, uuid st
 		"preserveNullAndEmptyArrays": true,
 	}}
 
+	lookupWatchLater := bson.M{"$lookup": bson.M{
+		"from": "consume-laters",
+		"let": bson.M{
+			"uuid":    uuid,
+			"game_id": "$game_id",
+			"rawg_id": "$rawg_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$and": bson.A{
+							bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$content_id", "$$game_id"}},
+									bson.M{"$eq": bson.A{"$content_external_id", "$$rawg_id"}},
+								},
+							},
+							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "watch_later",
+	}}
+
+	unwindWatchLater := bson.M{"$unwind": bson.M{
+		"path":                       "$watch_later",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
 	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, set, lookup, unwindWatchList,
+		match, set, lookup, unwindWatchList, lookupWatchLater, unwindWatchLater,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{

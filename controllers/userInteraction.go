@@ -86,7 +86,7 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 		}
 
 		contentTitle = game.Title
-		contentImage = game.BackgroundImage
+		contentImage = game.ImageUrl
 	case "movie":
 		movieModel := models.NewMovieModel(ui.Database)
 
@@ -304,7 +304,7 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
 
 		contentTitle = game.Title
-		contentImage = game.BackgroundImage
+		contentImage = game.ImageUrl
 
 		go logModel.CreateLog(uid, requests.CreateLog{
 			LogType:          models.ConsumeLaterLogType,
@@ -544,7 +544,7 @@ func (ui *UserInteractionController) DeleteConsumeLaterById(c *gin.Context) {
 			})
 
 			contentTitle = game.Title
-			contentImage = game.BackgroundImage
+			contentImage = game.ImageUrl
 		case "movie":
 			movieModel := models.NewMovieModel(ui.Database)
 

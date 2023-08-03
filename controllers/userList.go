@@ -148,7 +148,7 @@ func (u *UserListController) CreateGameList(c *gin.Context) {
 		LogAction:        models.AddLogAction,
 		LogActionDetails: createdGameList.Status,
 		ContentTitle:     game.Title,
-		ContentImage:     game.BackgroundImage,
+		ContentImage:     game.ImageUrl,
 		ContentType:      "game",
 		ContentID:        createdGameList.GameID,
 	})
@@ -475,7 +475,7 @@ func (u *UserListController) UpdateGameListByID(c *gin.Context) {
 		LogAction:        models.UpdateLogAction,
 		LogActionDetails: updatedGameList.Status,
 		ContentTitle:     game.Title,
-		ContentImage:     game.BackgroundImage,
+		ContentImage:     game.ImageUrl,
 		ContentType:      "game",
 		ContentID:        updatedGameList.GameID,
 	})
@@ -755,7 +755,7 @@ func (u *UserListController) DeleteListByUserIDAndType(c *gin.Context) {
 		})
 
 		contentTitle = game.Title
-		contentImage = game.BackgroundImage
+		contentImage = game.ImageUrl
 		contentID = gameList.GameID
 	case "movie":
 		movieModel := models.NewMovieModel(u.Database)

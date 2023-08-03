@@ -119,9 +119,52 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "movie"
+                    "anime"
                 ],
                 "summary": "Get Preview Animes",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Anime"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/anime/search": {
+            "get": {
+                "description": "Search animes",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "anime"
+                ],
+                "summary": "Search Anime",
+                "parameters": [
+                    {
+                        "description": "Search",
+                        "name": "search",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.Search"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -162,6 +205,49 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/requests.SortByYearSeasonAnime"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Anime"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/anime/top": {
+            "get": {
+                "description": "Returns popular animes with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "anime"
+                ],
+                "summary": "Get Popular Animes by Sort",
+                "parameters": [
+                    {
+                        "description": "Pagination",
+                        "name": "pagination",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.Pagination"
                         }
                     }
                 ],
@@ -1417,49 +1503,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/movie/decade": {
-            "get": {
-                "description": "Returns popular movies by decade with pagination",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "movie"
-                ],
-                "summary": "Get Popular Movies by decade",
-                "parameters": [
-                    {
-                        "description": "Filter by Decade",
-                        "name": "filterbydecade",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.FilterByDecade"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.Movie"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/movie/details": {
             "get": {
                 "description": "Returns movie details with optional authentication",
@@ -1491,49 +1534,6 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/responses.MovieDetails"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/movie/genre": {
-            "get": {
-                "description": "Returns popular movies by genre with pagination",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "movie"
-                ],
-                "summary": "Get Popular Movies by genre",
-                "parameters": [
-                    {
-                        "description": "Filter by Genre",
-                        "name": "filterbygenre",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.FilterByGenre"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.Movie"
                             }
                         }
                     },
@@ -4028,9 +4028,6 @@ const docTemplate = `{
                 "age_rating": {
                     "type": "string"
                 },
-                "background_image": {
-                    "type": "string"
-                },
                 "description": {
                     "type": "string"
                 },
@@ -4048,6 +4045,9 @@ const docTemplate = `{
                 },
                 "has_release_date": {
                     "type": "boolean"
+                },
+                "image_url": {
+                    "type": "string"
                 },
                 "metacritic_score": {
                     "type": "integer"
@@ -4123,9 +4123,6 @@ const docTemplate = `{
                 "age_rating": {
                     "type": "string"
                 },
-                "background_image": {
-                    "type": "string"
-                },
                 "description": {
                     "type": "string"
                 },
@@ -4146,6 +4143,9 @@ const docTemplate = `{
                 },
                 "has_release_date": {
                     "type": "boolean"
+                },
+                "image_url": {
+                    "type": "string"
                 },
                 "metacritic_score": {
                     "type": "integer"
@@ -4209,6 +4209,9 @@ const docTemplate = `{
                 },
                 "title_original": {
                     "type": "string"
+                },
+                "watch_later": {
+                    "$ref": "#/definitions/responses.ConsumeLater"
                 }
             }
         },

@@ -1018,8 +1018,6 @@ definitions:
         type: string
       age_rating:
         type: string
-      background_image:
-        type: string
       description:
         type: string
       developers:
@@ -1032,6 +1030,8 @@ definitions:
         type: array
       has_release_date:
         type: boolean
+      image_url:
+        type: string
       metacritic_score:
         type: integer
       metacritic_score_by_platform:
@@ -1081,8 +1081,6 @@ definitions:
         type: string
       age_rating:
         type: string
-      background_image:
-        type: string
       description:
         type: string
       developers:
@@ -1097,6 +1095,8 @@ definitions:
         type: array
       has_release_date:
         type: boolean
+      image_url:
+        type: string
       metacritic_score:
         type: integer
       metacritic_score_by_platform:
@@ -1139,6 +1139,8 @@ definitions:
         type: string
       title_original:
         type: string
+      watch_later:
+        $ref: '#/definitions/responses.ConsumeLater'
     type: object
   responses.GameGenre:
     properties:
@@ -1889,7 +1891,35 @@ paths:
             type: string
       summary: Get Preview Animes
       tags:
-      - movie
+      - anime
+  /anime/search:
+    get:
+      consumes:
+      - application/json
+      description: Search animes
+      parameters:
+      - description: Search
+        in: body
+        name: search
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Search'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Anime'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Search Anime
+      tags:
+      - anime
   /anime/season:
     get:
       consumes:
@@ -1916,6 +1946,34 @@ paths:
           schema:
             type: string
       summary: Get Animes by Year and Season
+      tags:
+      - anime
+  /anime/top:
+    get:
+      consumes:
+      - application/json
+      description: Returns popular animes with pagination
+      parameters:
+      - description: Pagination
+        in: body
+        name: pagination
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Pagination'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Anime'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Popular Animes by Sort
       tags:
       - anime
   /anime/upcoming:
@@ -2711,34 +2769,6 @@ paths:
       summary: Get Movies by Sort and Filter
       tags:
       - movie
-  /movie/decade:
-    get:
-      consumes:
-      - application/json
-      description: Returns popular movies by decade with pagination
-      parameters:
-      - description: Filter by Decade
-        in: body
-        name: filterbydecade
-        required: true
-        schema:
-          $ref: '#/definitions/requests.FilterByDecade'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.Movie'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Popular Movies by decade
-      tags:
-      - movie
   /movie/details:
     get:
       consumes:
@@ -2765,34 +2795,6 @@ paths:
           schema:
             type: string
       summary: Get Movie Details
-      tags:
-      - movie
-  /movie/genre:
-    get:
-      consumes:
-      - application/json
-      description: Returns popular movies by genre with pagination
-      parameters:
-      - description: Filter by Genre
-        in: body
-        name: filterbygenre
-        required: true
-        schema:
-          $ref: '#/definitions/requests.FilterByGenre'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.Movie'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Popular Movies by genre
       tags:
       - movie
   /movie/preview:

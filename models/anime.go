@@ -7,6 +7,7 @@ import (
 	"app/utils"
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	p "github.com/gobeam/mongo-go-pagination"
@@ -28,6 +29,7 @@ func NewAnimeModel(mongoDB *db.MongoDB) *AnimeModel {
 
 const (
 	animeUpcomingPaginationLimit = 40
+	animeSearchLimit             = 50
 	animePaginationLimit         = 40
 )
 
@@ -40,6 +42,36 @@ const (
 * [x] Get top upcoming
 * [x] Get anime details
  */
+
+func (animeModel *AnimeModel) GetPopularAnimesBySort(data requests.Pagination) ([]responses.Anime, p.PaginationData, error) {
+	addFields := bson.M{"$addFields": bson.M{
+		"popularity": bson.M{
+			"$multiply": bson.A{
+				"$mal_score", "$mal_scored_by",
+			},
+		},
+	}}
+
+	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animePaginationLimit).
+		Page(data.Page).Sort("popularity", -1).Aggregate(addFields)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate popular animes: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get popular animes.")
+	}
+
+	var popularAnimes []responses.Anime
+	for _, raw := range paginatedData.Data {
+		var anime *responses.Anime
+		if marshalErr := bson.Unmarshal(raw, &anime); marshalErr == nil {
+			popularAnimes = append(popularAnimes, *anime)
+		}
+	}
+
+	return popularAnimes, paginatedData.Pagination, nil
+}
 
 func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.SortUpcoming) ([]responses.Anime, p.PaginationData, error) {
 	currentSeason := getSeasonFromMonth()
@@ -237,11 +269,7 @@ func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterA
 
 	switch data.Sort {
 	case "popularity":
-		if data.Status != nil && *data.Status == "upcoming" {
-			sortType = "popularity"
-		} else {
-			sortType = "mal_score"
-		}
+		sortType = "mal_score"
 		sortOrder = -1
 	case "new":
 		sortType = "aired.from"
@@ -311,9 +339,17 @@ func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterA
 
 func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uuid string) (responses.AnimeDetails, error) {
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
+	malID, _ := strconv.Atoi(data.ID)
 
 	match := bson.M{"$match": bson.M{
-		"_id": objectID,
+		"$or": bson.A{
+			bson.M{
+				"_id": objectID,
+			},
+			bson.M{
+				"mal_id": malID,
+			},
+		},
 	}}
 
 	set := bson.M{"$set": bson.M{
@@ -415,6 +451,36 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 	}
 
 	return responses.AnimeDetails{}, nil
+}
+
+func (animeModel *AnimeModel) SearchAnimeByTitle(data requests.Search) ([]responses.Anime, p.PaginationData, error) {
+	search := bson.M{"$search": bson.M{
+		"index": "anime_search",
+		"text": bson.M{
+			"query": data.Search,
+			"path":  bson.A{"title_en", "title_jp", "title_original"},
+		},
+	}}
+
+	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animeSearchLimit).
+		Page(data.Page).Aggregate(search)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"data": data,
+		}).Error("failed to search anime by title: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to search anime by title.")
+	}
+
+	var animes []responses.Anime
+	for _, raw := range paginatedData.Data {
+		var anime *responses.Anime
+		if marshallErr := bson.Unmarshal(raw, &anime); marshallErr == nil {
+			animes = append(animes, *anime)
+		}
+	}
+
+	return animes, paginatedData.Pagination, nil
 }
 
 func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime, error) {
