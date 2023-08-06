@@ -19,6 +19,56 @@ func NewGameController(mongoDB *db.MongoDB) GameController {
 	}
 }
 
+// Get Preview Games
+// @Summary Get Preview Games
+// @Description Returns preview games
+// @Tags game
+// @Accept application/json
+// @Produce application/json
+// @Success 200 {array} responses.Game
+// @Failure 500 {string} string
+// @Router /game/preview [get]
+func (g *GameController) GetPreviewGames(c *gin.Context) {
+	gameModel := models.NewGameModel(g.Database)
+
+	upcomingGames, _, err := gameModel.GetUpcomingGamesBySort(requests.SortUpcoming{
+		Sort: "popularity",
+		Page: 1,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	topRatedGames, _, err := gameModel.GetGamesByFilterAndSort(requests.SortFilterGame{
+		Sort: "popularity",
+		Page: 1,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	popularGames, _, err := gameModel.GetPopularGamesBySort(requests.Pagination{
+		Page: 1,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"upcoming": upcomingGames, "top": topRatedGames, "popular": popularGames})
+}
+
 // Get Upcoming Games
 // @Summary Get Upcoming Games by Sort
 // @Description Returns upcoming games by sort with pagination
@@ -51,6 +101,40 @@ func (g *GameController) GetUpcomingGamesBySort(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": upcomingGames})
+}
+
+// Get Popular Games
+// @Summary Get Popular Games by Sort
+// @Description Returns popular games with pagination
+// @Tags game
+// @Accept application/json
+// @Produce application/json
+// @Param pagination body requests.Pagination true "Pagination"
+// @Success 200 {array} responses.Game
+// @Failure 500 {string} string
+// @Router /game/popular [get]
+func (g *GameController) GetPopularGamesBySort(c *gin.Context) {
+	var data requests.Pagination
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	gameModel := models.NewGameModel(g.Database)
+
+	populargames, pagination, err := gameModel.GetPopularGamesBySort(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": populargames})
 }
 
 // Get Games
@@ -94,7 +178,6 @@ func (g *GameController) GetGamesByFilterAndSort(c *gin.Context) {
 // @Accept application/json
 // @Produce application/json
 // @Param id body requests.ID true "ID"
-// @Success 200 {array} responses.Game
 // @Success 200 {array} responses.GameDetails
 // @Failure 500 {string} string
 // @Router /game/details [get]
@@ -110,17 +193,8 @@ func (g *GameController) GetGameDetails(c *gin.Context) {
 
 	gameModel := models.NewGameModel(g.Database)
 
-	gameDetails, err := gameModel.GetGameDetails(data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
 	uid, OK := c.Get("uuid")
-	if OK && uid != nil && gameDetails.TitleOriginal != "" {
+	if OK && uid != nil {
 		gameDetailsWithPlayList, err := gameModel.GetGameDetailsWithPlayList(data, uid.(string))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -134,6 +208,15 @@ func (g *GameController) GetGameDetails(c *gin.Context) {
 			"data": gameDetailsWithPlayList,
 		})
 	} else {
+		gameDetails, err := gameModel.GetGameDetails(data)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"data": gameDetails,
 		})

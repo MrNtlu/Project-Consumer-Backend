@@ -7,6 +7,7 @@ import (
 	"app/utils"
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	p "github.com/gobeam/mongo-go-pagination"
@@ -157,30 +158,132 @@ func (gameModel *GameModel) GetGamesByFilterAndSort(data requests.SortFilterGame
 	return games, paginatedData.Pagination, nil
 }
 
-func (gameModel *GameModel) GetGameDetails(data requests.ID) (responses.Game, error) {
-	objectID, _ := primitive.ObjectIDFromHex(data.ID)
+func (gameModel *GameModel) GetPopularGamesBySort(data requests.Pagination) ([]responses.Game, p.PaginationData, error) {
+	addFields := bson.M{"$addFields": bson.M{
+		"popularity": bson.M{
+			"$multiply": bson.A{
+				"$rawg_rating", "$rawg_rating_count",
+			},
+		},
+	}}
 
-	result := gameModel.Collection.FindOne(context.TODO(), bson.M{
-		"_id": objectID,
-	})
-
-	var game responses.Game
-	if err := result.Decode(&game); err != nil {
+	paginatedData, err := p.New(gameModel.Collection).Context(context.TODO()).Limit(gamePaginationLimit).
+		Page(data.Page).Sort("popularity", -1).Aggregate(addFields)
+	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"game_id": data.ID,
-		}).Error("failed to find game details by id: ", err)
+			"request": data,
+		}).Error("failed to aggregate popular games: ", err)
 
-		return responses.Game{}, fmt.Errorf("Failed to find game by id.")
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get popular games.")
 	}
 
-	return game, nil
+	var popularGames []responses.Game
+	for _, raw := range paginatedData.Data {
+		var game *responses.Game
+		if marshalErr := bson.Unmarshal(raw, &game); marshalErr == nil {
+			popularGames = append(popularGames, *game)
+		}
+	}
+
+	return popularGames, paginatedData.Pagination, nil
+}
+
+func (gameModel *GameModel) GetGameDetails(data requests.ID) (responses.GameDetails, error) {
+	objectID, _ := primitive.ObjectIDFromHex(data.ID)
+	rawgID, _ := strconv.Atoi(data.ID)
+
+	match := bson.M{"$match": bson.M{
+		"$or": bson.A{
+			bson.M{
+				"_id": objectID,
+			},
+			bson.M{
+				"rawg_id": rawgID,
+			},
+		},
+	}}
+
+	relatedGamesLookup := bson.M{"$lookup": bson.M{
+		"from": "games",
+		"let": bson.M{
+			"rawg_id": "$related_games.rawg_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$in": bson.A{
+							"$rawg_id", "$$rawg_id",
+						},
+					},
+				},
+			},
+			bson.M{
+				"$project": bson.M{
+					"_id":            1,
+					"title":          1,
+					"title_original": 1,
+					"rawg_id":        1,
+					"image_url":      1,
+					"platforms":      1,
+					"release_date":   1,
+				},
+			},
+		},
+		"as": "related_games",
+	}}
+
+	sortRelatedGames := bson.M{"$set": bson.M{
+		"related_games": bson.M{
+			"$sortArray": bson.M{
+				"input": "$related_games",
+				"sortBy": bson.M{
+					"release_date": -1,
+				},
+			},
+		},
+	}}
+
+	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, relatedGamesLookup, sortRelatedGames,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": data.ID,
+		}).Error("failed to aggregate game details: ", err)
+
+		return responses.GameDetails{}, fmt.Errorf("Failed to aggregate game details with watch list.")
+	}
+
+	var gameDetails []responses.GameDetails
+	if err = cursor.All(context.TODO(), &gameDetails); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": data.ID,
+		}).Error("failed to decode game details: ", err)
+
+		return responses.GameDetails{}, fmt.Errorf("Failed to decode game details.")
+	}
+
+	if len(gameDetails) > 0 {
+		return gameDetails[0], nil
+	}
+
+	return responses.GameDetails{}, nil
 }
 
 func (gameModel *GameModel) GetGameDetailsWithPlayList(data requests.ID, uuid string) (responses.GameDetails, error) {
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
+	rawgID, _ := strconv.Atoi(data.ID)
 
 	match := bson.M{"$match": bson.M{
-		"_id": objectID,
+		"$or": bson.A{
+			bson.M{
+				"_id": objectID,
+			},
+			bson.M{
+				"rawg_id": rawgID,
+			},
+		},
 	}}
 
 	set := bson.M{"$set": bson.M{
@@ -255,16 +358,58 @@ func (gameModel *GameModel) GetGameDetailsWithPlayList(data requests.ID, uuid st
 		"preserveNullAndEmptyArrays": true,
 	}}
 
+	relatedGamesLookup := bson.M{"$lookup": bson.M{
+		"from": "games",
+		"let": bson.M{
+			"rawg_id": "$related_games.rawg_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$in": bson.A{
+							"$rawg_id", "$$rawg_id",
+						},
+					},
+				},
+			},
+			bson.M{
+				"$project": bson.M{
+					"_id":            1,
+					"title":          1,
+					"title_original": 1,
+					"rawg_id":        1,
+					"image_url":      1,
+					"platforms":      1,
+					"release_date":   1,
+				},
+			},
+		},
+		"as": "related_games",
+	}}
+
+	sortRelatedGames := bson.M{"$set": bson.M{
+		"related_games": bson.M{
+			"$sortArray": bson.M{
+				"input": "$related_games",
+				"sortBy": bson.M{
+					"release_date": -1,
+				},
+			},
+		},
+	}}
+
 	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
 		match, set, lookup, unwindWatchList, lookupWatchLater, unwindWatchLater,
+		relatedGamesLookup, sortRelatedGames,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid": uuid,
 			"id":  data.ID,
-		}).Error("failed to aggregate game details: ", err)
+		}).Error("failed to aggregate authenticated game details: ", err)
 
-		return responses.GameDetails{}, fmt.Errorf("Failed to aggregate game details with watch list.")
+		return responses.GameDetails{}, fmt.Errorf("Failed to aggregate game details with play list.")
 	}
 
 	var gameDetails []responses.GameDetails
@@ -272,9 +417,9 @@ func (gameModel *GameModel) GetGameDetailsWithPlayList(data requests.ID, uuid st
 		logrus.WithFields(logrus.Fields{
 			"uid": uuid,
 			"id":  data.ID,
-		}).Error("failed to decode game details: ", err)
+		}).Error("failed to decode authenticated game details: ", err)
 
-		return responses.GameDetails{}, fmt.Errorf("Failed to decode game details.")
+		return responses.GameDetails{}, fmt.Errorf("Failed to decode game details with play list.")
 	}
 
 	if len(gameDetails) > 0 {

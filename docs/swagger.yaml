@@ -124,6 +124,9 @@ definitions:
         type: boolean
       mail_notification:
         type: boolean
+      membership_type:
+        description: 0 Basic, 1 Premium 2 Premium Supporter
+        type: integer
       oauth_type:
         type: integer
       username:
@@ -147,6 +150,8 @@ definitions:
     properties:
       is_premium:
         type: boolean
+      membership_type:
+        type: integer
     type: object
   requests.ChangeNotification:
     properties:
@@ -1028,8 +1033,6 @@ definitions:
         items:
           $ref: '#/definitions/responses.GameGenre'
         type: array
-      has_release_date:
-        type: boolean
       image_url:
         type: string
       metacritic_score:
@@ -1093,8 +1096,6 @@ definitions:
         items:
           $ref: '#/definitions/responses.GameGenre'
         type: array
-      has_release_date:
-        type: boolean
       image_url:
         type: string
       metacritic_score:
@@ -1119,7 +1120,7 @@ definitions:
         type: integer
       related_games:
         items:
-          $ref: '#/definitions/responses.GameRelation'
+          $ref: '#/definitions/responses.GameDetailsRelation'
         type: array
       release_date:
         type: string
@@ -1141,6 +1142,25 @@ definitions:
         type: string
       watch_later:
         $ref: '#/definitions/responses.ConsumeLater'
+    type: object
+  responses.GameDetailsRelation:
+    properties:
+      _id:
+        type: string
+      image_url:
+        type: string
+      platforms:
+        items:
+          type: string
+        type: array
+      rawg_id:
+        type: integer
+      release_date:
+        type: string
+      title:
+        type: string
+      title_original:
+        type: string
     type: object
   responses.GameGenre:
     properties:
@@ -1684,6 +1704,8 @@ definitions:
         type: array
       level:
         type: integer
+      membership_type:
+        type: integer
       movie_count:
         type: integer
       tv_count:
@@ -1871,6 +1893,34 @@ paths:
       summary: Get Anime Details
       tags:
       - anime
+  /anime/popular:
+    get:
+      consumes:
+      - application/json
+      description: Returns popular animes with pagination
+      parameters:
+      - description: Pagination
+        in: body
+        name: pagination
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Pagination'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Anime'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Popular Animes by Sort
+      tags:
+      - anime
   /anime/preview:
     get:
       consumes:
@@ -1946,34 +1996,6 @@ paths:
           schema:
             type: string
       summary: Get Animes by Year and Season
-      tags:
-      - anime
-  /anime/top:
-    get:
-      consumes:
-      - application/json
-      description: Returns popular animes with pagination
-      parameters:
-      - description: Pagination
-        in: body
-        name: pagination
-        required: true
-        schema:
-          $ref: '#/definitions/requests.Pagination'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.Anime'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Popular Animes by Sort
       tags:
       - anime
   /anime/upcoming:
@@ -2260,6 +2282,55 @@ paths:
           schema:
             type: string
       summary: Get Game Details
+      tags:
+      - game
+  /game/popular:
+    get:
+      consumes:
+      - application/json
+      description: Returns popular games with pagination
+      parameters:
+      - description: Pagination
+        in: body
+        name: pagination
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Pagination'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Game'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Popular Games by Sort
+      tags:
+      - game
+  /game/preview:
+    get:
+      consumes:
+      - application/json
+      description: Returns preview games
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Game'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Preview Games
       tags:
       - game
   /game/upcoming:

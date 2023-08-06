@@ -7,6 +7,8 @@ require (
 	github.com/swaggo/gin-swagger v1.5.3
 )
 
+require github.com/sashabaranov/go-openai v1.14.1 // indirect
+
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.2.0 // indirect

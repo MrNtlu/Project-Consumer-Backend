@@ -109,6 +109,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/anime/popular": {
+            "get": {
+                "description": "Returns popular animes with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "anime"
+                ],
+                "summary": "Get Popular Animes by Sort",
+                "parameters": [
+                    {
+                        "description": "Pagination",
+                        "name": "pagination",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.Pagination"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Anime"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/anime/preview": {
             "get": {
                 "description": "Returns preview animes",
@@ -205,49 +248,6 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/requests.SortByYearSeasonAnime"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.Anime"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/anime/top": {
-            "get": {
-                "description": "Returns popular animes with pagination",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "anime"
-                ],
-                "summary": "Get Popular Animes by Sort",
-                "parameters": [
-                    {
-                        "description": "Pagination",
-                        "name": "pagination",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.Pagination"
                         }
                     }
                 ],
@@ -702,6 +702,81 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/responses.GameDetails"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/game/popular": {
+            "get": {
+                "description": "Returns popular games with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "game"
+                ],
+                "summary": "Get Popular Games by Sort",
+                "parameters": [
+                    {
+                        "description": "Pagination",
+                        "name": "pagination",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.Pagination"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Game"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/game/preview": {
+            "get": {
+                "description": "Returns preview games",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "game"
+                ],
+                "summary": "Get Preview Games",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Game"
                             }
                         }
                     },
@@ -2737,6 +2812,10 @@ const docTemplate = `{
                 "mail_notification": {
                     "type": "boolean"
                 },
+                "membership_type": {
+                    "description": "0 Basic, 1 Premium 2 Premium Supporter",
+                    "type": "integer"
+                },
                 "oauth_type": {
                     "type": "integer"
                 },
@@ -2772,6 +2851,9 @@ const docTemplate = `{
             "properties": {
                 "is_premium": {
                     "type": "boolean"
+                },
+                "membership_type": {
+                    "type": "integer"
                 }
             }
         },
@@ -4043,9 +4125,6 @@ const docTemplate = `{
                         "$ref": "#/definitions/responses.GameGenre"
                     }
                 },
-                "has_release_date": {
-                    "type": "boolean"
-                },
                 "image_url": {
                     "type": "string"
                 },
@@ -4141,9 +4220,6 @@ const docTemplate = `{
                         "$ref": "#/definitions/responses.GameGenre"
                     }
                 },
-                "has_release_date": {
-                    "type": "boolean"
-                },
                 "image_url": {
                     "type": "string"
                 },
@@ -4180,7 +4256,7 @@ const docTemplate = `{
                 "related_games": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.GameRelation"
+                        "$ref": "#/definitions/responses.GameDetailsRelation"
                     }
                 },
                 "release_date": {
@@ -4212,6 +4288,35 @@ const docTemplate = `{
                 },
                 "watch_later": {
                     "$ref": "#/definitions/responses.ConsumeLater"
+                }
+            }
+        },
+        "responses.GameDetailsRelation": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "platforms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rawg_id": {
+                    "type": "integer"
+                },
+                "release_date": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
                 }
             }
         },
@@ -5037,6 +5142,9 @@ const docTemplate = `{
                     }
                 },
                 "level": {
+                    "type": "integer"
+                },
+                "membership_type": {
                     "type": "integer"
                 },
                 "movie_count": {

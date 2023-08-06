@@ -112,7 +112,7 @@ func (a *AnimeController) GetUpcomingAnimesBySort(c *gin.Context) {
 // @Param pagination body requests.Pagination true "Pagination"
 // @Success 200 {array} responses.Anime
 // @Failure 500 {string} string
-// @Router /anime/top [get]
+// @Router /anime/popular [get]
 func (a *AnimeController) GetPopularAnimesBySort(c *gin.Context) {
 	var data requests.Pagination
 	if err := c.ShouldBindQuery(&data); err != nil {

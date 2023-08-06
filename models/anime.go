@@ -337,6 +337,63 @@ func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterA
 	return animes, paginatedData.Pagination, nil
 }
 
+func (animeModel *AnimeModel) SearchAnimeByTitle(data requests.Search) ([]responses.Anime, p.PaginationData, error) {
+	search := bson.M{"$search": bson.M{
+		"index": "anime_search",
+		"text": bson.M{
+			"query": data.Search,
+			"path":  bson.A{"title_en", "title_jp", "title_original"},
+		},
+	}}
+
+	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animeSearchLimit).
+		Page(data.Page).Aggregate(search)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"data": data,
+		}).Error("failed to search anime by title: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to search anime by title.")
+	}
+
+	var animes []responses.Anime
+	for _, raw := range paginatedData.Data {
+		var anime *responses.Anime
+		if marshallErr := bson.Unmarshal(raw, &anime); marshallErr == nil {
+			animes = append(animes, *anime)
+		}
+	}
+
+	return animes, paginatedData.Pagination, nil
+}
+
+func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime, error) {
+	objectID, _ := primitive.ObjectIDFromHex(data.ID)
+	malID, _ := strconv.Atoi(data.ID)
+
+	result := animeModel.Collection.FindOne(context.TODO(), bson.M{
+		"$or": bson.A{
+			bson.M{
+				"_id": objectID,
+			},
+			bson.M{
+				"mal_id": malID,
+			},
+		},
+	})
+
+	var anime responses.Anime
+	if err := result.Decode(&anime); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"anime_id": data.ID,
+		}).Error("failed to find anime details by id: ", err)
+
+		return responses.Anime{}, fmt.Errorf("Failed to find anime by id.")
+	}
+
+	return anime, nil
+}
+
 func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uuid string) (responses.AnimeDetails, error) {
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 	malID, _ := strconv.Atoi(data.ID)
@@ -451,55 +508,6 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 	}
 
 	return responses.AnimeDetails{}, nil
-}
-
-func (animeModel *AnimeModel) SearchAnimeByTitle(data requests.Search) ([]responses.Anime, p.PaginationData, error) {
-	search := bson.M{"$search": bson.M{
-		"index": "anime_search",
-		"text": bson.M{
-			"query": data.Search,
-			"path":  bson.A{"title_en", "title_jp", "title_original"},
-		},
-	}}
-
-	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animeSearchLimit).
-		Page(data.Page).Aggregate(search)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"data": data,
-		}).Error("failed to search anime by title: ", err)
-
-		return nil, p.PaginationData{}, fmt.Errorf("Failed to search anime by title.")
-	}
-
-	var animes []responses.Anime
-	for _, raw := range paginatedData.Data {
-		var anime *responses.Anime
-		if marshallErr := bson.Unmarshal(raw, &anime); marshallErr == nil {
-			animes = append(animes, *anime)
-		}
-	}
-
-	return animes, paginatedData.Pagination, nil
-}
-
-func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime, error) {
-	objectID, _ := primitive.ObjectIDFromHex(data.ID)
-
-	result := animeModel.Collection.FindOne(context.TODO(), bson.M{
-		"_id": objectID,
-	})
-
-	var anime responses.Anime
-	if err := result.Decode(&anime); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"anime_id": data.ID,
-		}).Error("failed to find anime details by id: ", err)
-
-		return responses.Anime{}, fmt.Errorf("Failed to find anime by id.")
-	}
-
-	return anime, nil
 }
 
 func getSeasonFromMonth() string {

@@ -15,6 +15,7 @@ type UserInfo struct {
 	Username        string          `bson:"username" json:"username"`
 	EmailAddress    string          `bson:"email" json:"email"`
 	IsPremium       bool            `bson:"is_premium" json:"is_premium"`
+	MembershipType  int             `bson:"membership_type" json:"membership_type"`
 	Image           string          `bson:"image" json:"image"`
 	AnimeCount      int             `bson:"anime_count" json:"anime_count"`
 	GameCount       int             `bson:"game_count" json:"game_count"`

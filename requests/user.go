@@ -32,7 +32,8 @@ type ChangeNotification struct {
 }
 
 type ChangeMembership struct {
-	IsPremium bool `json:"is_premium"`
+	IsPremium      bool `json:"is_premium"`
+	MembershipType int  `json:"membership_type"`
 }
 
 type ForgotPassword struct {

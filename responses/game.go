@@ -24,7 +24,6 @@ type Game struct {
 	Developers                []string                      `bson:"developers" json:"developers"`
 	Publishers                []string                      `bson:"publishers" json:"publishers"`
 	Stores                    []GameStore                   `bson:"stores" json:"stores"`
-	HasReleaseDate            bool                          `bson:"has_release_date" json:"has_release_date"`
 }
 
 type GameDetails struct {
@@ -42,14 +41,13 @@ type GameDetails struct {
 	ImageUrl                  string                        `bson:"image_url" json:"image_url"`
 	Subreddit                 *string                       `bson:"subreddit" json:"subreddit"`
 	AgeRating                 *string                       `bson:"age_rating" json:"age_rating"`
-	RelatedGames              []GameRelation                `bson:"related_games" json:"related_games"`
+	RelatedGames              []GameDetailsRelation         `bson:"related_games" json:"related_games"`
 	Genres                    []GameGenre                   `bson:"genres" json:"genres"`
 	Tags                      []string                      `bson:"tags" json:"tags"`
 	Platforms                 []string                      `bson:"platforms" json:"platforms"`
 	Developers                []string                      `bson:"developers" json:"developers"`
 	Publishers                []string                      `bson:"publishers" json:"publishers"`
 	Stores                    []GameStore                   `bson:"stores" json:"stores"`
-	HasReleaseDate            bool                          `bson:"has_release_date" json:"has_release_date"`
 	GameList                  *GamePlayList                 `bson:"game_list" json:"game_list"`
 	WatchLater                *ConsumeLater                 `bson:"watch_later" json:"watch_later"`
 }
@@ -74,6 +72,16 @@ type GameRelation struct {
 	Name        string `bson:"name" json:"name"`
 	ReleaseDate string `bson:"release_date" json:"release_date"`
 	RawgID      int64  `bson:"rawg_id" json:"rawg_id"`
+}
+
+type GameDetailsRelation struct {
+	ID            primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	RawgID        int64              `bson:"rawg_id" json:"rawg_id"`
+	Title         string             `bson:"title" json:"title"`
+	TitleOriginal string             `bson:"title_original" json:"title_original"`
+	ReleaseDate   string             `bson:"release_date" json:"release_date"`
+	ImageUrl      string             `bson:"image_url" json:"image_url"`
+	Platforms     []string           `bson:"platforms" json:"platforms"`
 }
 
 type GameGenre struct {

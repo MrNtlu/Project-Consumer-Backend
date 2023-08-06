@@ -38,6 +38,7 @@ type User struct {
 	CreatedAt          time.Time          `bson:"created_at" json:"-"`
 	UpdatedAt          time.Time          `bson:"updated_at" json:"-"`
 	IsPremium          bool               `bson:"is_premium" json:"is_premium"`
+	MembershipType     int                `bson:"membership_type" json:"membership_type"` //0 Basic, 1 Premium 2 Premium Supporter
 	IsOAuthUser        bool               `bson:"is_oauth" json:"is_oauth"`
 	OAuthType          *int               `bson:"oauth_type" json:"oauth_type"`
 	RefreshToken       *string            `bson:"refresh_token" json:"-"`
@@ -56,6 +57,7 @@ func createUserObject(emailAddress, username, password, fcmToken, image string) 
 		CreatedAt:        time.Now().UTC(),
 		UpdatedAt:        time.Now().UTC(),
 		IsPremium:        false,
+		MembershipType:   0,
 		IsOAuthUser:      false,
 		AppNotification:  true,
 		MailNotification: true,
@@ -71,6 +73,7 @@ func createOAuthUserObject(emailAddress, username, fcmToken, image string, refre
 		CreatedAt:        time.Now().UTC(),
 		UpdatedAt:        time.Now().UTC(),
 		IsPremium:        false,
+		MembershipType:   0,
 		IsOAuthUser:      true,
 		AppNotification:  true,
 		MailNotification: false,
@@ -134,8 +137,9 @@ func (userModel *UserModel) UpdateUserMembership(uid string, data requests.Chang
 	objectUID, _ := primitive.ObjectIDFromHex(uid)
 
 	if _, err := userModel.Collection.UpdateOne(context.TODO(), bson.M{"_id": objectUID}, bson.M{"$set": bson.M{
-		"is_premium": data.IsPremium,
-		"updated_at": time.Now().UTC(),
+		"is_premium":      data.IsPremium,
+		"membership_type": data.MembershipType,
+		"updated_at":      time.Now().UTC(),
 	}}); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid":        uid,
@@ -641,15 +645,16 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 	}}
 
 	project := bson.M{"$project": bson.M{
-		"username":    "$username",
-		"email":       "$email",
-		"is_premium":  "$is_premium",
-		"image":       "$image",
-		"anime_count": "$anime_count",
-		"movie_count": "$movie_count",
-		"tv_count":    "$tv_count",
-		"game_count":  "$game_count",
-		"fcm_token":   "$fcm_token",
+		"username":        "$username",
+		"email":           "$email",
+		"is_premium":      "$is_premium",
+		"membership_type": "$membership_type",
+		"image":           "$image",
+		"anime_count":     "$anime_count",
+		"movie_count":     "$movie_count",
+		"tv_count":        "$tv_count",
+		"game_count":      "$game_count",
+		"fcm_token":       "$fcm_token",
 		"legend_anime_list": bson.M{
 			"$map": bson.M{
 				"input": bson.M{
