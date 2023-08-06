@@ -3348,6 +3348,7 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "popularity",
+                        "metacritic",
                         "new",
                         "old"
                     ]
@@ -4435,7 +4436,7 @@ const docTemplate = `{
         "responses.GameStore": {
             "type": "object",
             "properties": {
-                "stores": {
+                "store_id": {
                     "type": "integer"
                 },
                 "url": {

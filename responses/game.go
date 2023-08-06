@@ -91,5 +91,5 @@ type GameGenre struct {
 
 type GameStore struct {
 	Url     string `bson:"url" json:"url"`
-	StoreID int    `bson:"stores" json:"stores"`
+	StoreID int    `bson:"store_id" json:"store_id"`
 }

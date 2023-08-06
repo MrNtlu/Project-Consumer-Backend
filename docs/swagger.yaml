@@ -501,6 +501,7 @@ definitions:
       sort:
         enum:
         - popularity
+        - metacritic
         - new
         - old
         type: string
@@ -1237,7 +1238,7 @@ definitions:
     type: object
   responses.GameStore:
     properties:
-      stores:
+      store_id:
         type: integer
       url:
         type: string

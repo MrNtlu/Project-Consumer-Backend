@@ -111,11 +111,10 @@ func (gameModel *GameModel) GetGamesByFilterAndSort(data requests.SortFilterGame
 
 	switch data.Sort {
 	case "popularity":
-		if data.TBA != nil && *data.TBA {
-			sortType = "rawg_rating"
-		} else {
-			sortType = "metacritic_score"
-		}
+		sortType = "rawg_rating"
+		sortOrder = -1
+	case "metacritic":
+		sortType = "metacritic_score"
 		sortOrder = -1
 	case "new":
 		sortType = "release_date"

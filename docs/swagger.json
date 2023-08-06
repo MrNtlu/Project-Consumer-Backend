@@ -3345,6 +3345,7 @@
                     "type": "string",
                     "enum": [
                         "popularity",
+                        "metacritic",
                         "new",
                         "old"
                     ]
@@ -4432,7 +4433,7 @@
         "responses.GameStore": {
             "type": "object",
             "properties": {
-                "stores": {
+                "store_id": {
                     "type": "integer"
                 },
                 "url": {
