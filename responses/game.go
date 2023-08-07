@@ -58,6 +58,7 @@ type GamePlayList struct {
 	GameID            string             `bson:"game_id" json:"game_id"`
 	GameRAWGID        int64              `bson:"game_rawg_id" json:"game_rawg_id"`
 	Status            string             `bson:"status" json:"status"`
+	HoursPlayed       *int               `bson:"hours_played" json:"hours_played"`
 	Score             *float32           `bson:"score" json:"score"`
 	AchievementStatus *float32           `bson:"achievement_status" json:"achievement_status"`
 	TimesFinished     int                `bson:"times_finished" json:"times_finished"`

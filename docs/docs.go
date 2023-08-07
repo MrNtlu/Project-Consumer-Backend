@@ -4405,6 +4405,9 @@ const docTemplate = `{
                 "game_rawg_id": {
                     "type": "integer"
                 },
+                "hours_played": {
+                    "type": "integer"
+                },
                 "score": {
                     "type": "number"
                 },
