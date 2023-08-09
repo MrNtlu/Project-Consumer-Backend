@@ -1,3 +1,8 @@
 docker-compose up //run
 docker-compose up --build //rebuild
 docker-compose down //shutdown
+
+//Gcloud
+
+gcloud app logs read
+gcloud app deploy
