@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"app/db"
 	"app/models"
 	"app/requests"
 	"net/http"
@@ -8,10 +9,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type OpenAIController struct{}
+type OpenAIController struct {
+	Database *db.MongoDB
+}
 
-func NewOpenAiController() OpenAIController {
-	return OpenAIController{}
+func NewOpenAiController(mongoDB *db.MongoDB) OpenAIController {
+	return OpenAIController{
+		Database: mongoDB,
+	}
 }
 
 func (ai *OpenAIController) GetRecommendation(c *gin.Context) {
@@ -35,5 +40,19 @@ func (ai *OpenAIController) GetRecommendation(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resp})
+	movieModel := models.NewMovieModel(ai.Database)
+
+	movies, err := movieModel.GetMoviesFromOpenAI(resp.Recommendation)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": models.OpenAIMovieResponse{
+		OpenAIResponse: resp,
+		Movies:         movies,
+	}})
 }

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"app/responses"
 	"context"
 	"os"
 	"strings"
@@ -43,6 +44,11 @@ func CreateOpenAIClient() *OpenAI {
 type OpenAIResponse struct {
 	TotalUsedToken int      `bson:"total_used_token" json:"total_used_token"`
 	Recommendation []string `bson:"recommendation" json:"recommendation"`
+}
+
+type OpenAIMovieResponse struct {
+	OpenAIResponse OpenAIResponse    `bson:"openai_response" json:"openai_response"`
+	Movies         []responses.Movie `bson:"movies" json:"movies"`
 }
 
 func (oa *OpenAI) GetRecommendation(message string) (OpenAIResponse, error) {

@@ -21,7 +21,7 @@ func SetupRoutes(router *gin.Engine, jwtToken *jwt.GinJWTMiddleware, mongoDB *db
 	userListRouter(apiRouter, jwtToken, mongoDB)
 	userInteractionRouter(apiRouter, jwtToken, mongoDB)
 
-	openAiController := controllers.NewOpenAiController()
+	openAiController := controllers.NewOpenAiController(mongoDB)
 	router.GET("openai", openAiController.GetRecommendation)
 
 	router.NoRoute(func(c *gin.Context) {

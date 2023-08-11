@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type MovieModel struct {
@@ -40,6 +41,40 @@ const (
  */
 
 //TODO Caching with Redis
+
+//TODO Implement for general usage
+func (movieModel *MovieModel) GetMoviesFromOpenAI(movies []string) ([]responses.Movie, error) {
+	match := bson.M{
+		"title_original": bson.M{
+			"$in": movies,
+		},
+	}
+
+	sort := bson.M{
+		"tmdb_popularity": -1,
+	}
+	options := options.Find().SetSort(sort)
+
+	cursor, err := movieModel.Collection.Find(context.TODO(), match, options)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"movies": movies,
+		}).Error("failed to aggregate movies: ", err)
+
+		return nil, fmt.Errorf("Failed to get movie recommendation.")
+	}
+
+	var movieList []responses.Movie
+	if err := cursor.All(context.TODO(), &movieList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"movies": movies,
+		}).Error("failed to decode movies: ", err)
+
+		return nil, fmt.Errorf("Failed to decode get movie recommendation.")
+	}
+
+	return movieList, nil
+}
 
 func (movieModel *MovieModel) GetTopRatedMoviesBySort(data requests.Pagination) ([]responses.Movie, p.PaginationData, error) {
 	addFields := bson.M{"$addFields": bson.M{
