@@ -19,6 +19,7 @@ func NewOpenAiController(mongoDB *db.MongoDB) OpenAIController {
 	}
 }
 
+//TODO Documentation and add for other contents
 func (ai *OpenAIController) GetRecommendation(c *gin.Context) {
 	var data requests.OpenAIRecommendation
 	if err := c.ShouldBindQuery(&data); err != nil {
