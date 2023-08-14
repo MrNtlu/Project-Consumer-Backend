@@ -8,14 +8,12 @@ import (
 )
 
 func SendForgotPasswordEmail(token, mail string) error {
-	url := (os.Getenv("BASE_URI") + "/confirm-password-reset?token=" + token + "&mail=" + mail)
+	url := (os.Getenv("BASE_URI") + "api/v1/confirm-password-reset?token=" + token + "&mail=" + mail)
 
 	e := email.NewEmail()
-	//TODO: Change From
-	e.From = "Project Consumer <" + os.Getenv("FROM_MAIL") + ">"
+	e.From = "Watchlistfy <" + os.Getenv("FROM_MAIL") + ">"
 	e.To = []string{mail}
 	e.Subject = "Forgot Password"
-	//TODO: Change HTML
 	e.HTML = []byte(
 		`<!doctype html>
 		<html lang="en-US">
@@ -41,7 +39,7 @@ func SendForgotPasswordEmail(token, mail string) error {
 							</tr>
 							<tr>
 								<td style="text-align:center;">
-									<img width="100" src="https://user-images.githubusercontent.com/25686023/155740270-208e9079-a139-4810-b02c-2977c602919d.png" title="logo" alt="logo">
+									<img width="125" src="https://user-images.githubusercontent.com/25686023/260456776-4729f5b7-3823-49e7-b246-59f51a360786.png" title="logo" alt="logo">
 								</td>
 							</tr>
 							<tr>
@@ -80,7 +78,7 @@ func SendForgotPasswordEmail(token, mail string) error {
 							</tr>
 							<tr>
 								<td style="text-align:center;">
-									<p style="font-size:14px; color:rgba(69, 80, 86, 0.7411764705882353); line-height:18px; margin:0 0 0;">&copy; <strong>Kanma</strong></p>
+									<p style="font-size:14px; color:rgba(69, 80, 86, 0.7411764705882353); line-height:18px; margin:0 0 0;">&copy; <strong>Watchlistfy</strong></p>
 								</td>
 							</tr>
 							<tr>
@@ -103,11 +101,9 @@ func SendForgotPasswordEmail(token, mail string) error {
 
 func SendPasswordChangedEmail(content, mail string) error {
 	e := email.NewEmail()
-	//TODO: Change From
-	e.From = "Project Consumer <" + os.Getenv("FROM_MAIL") + ">"
+	e.From = "Watchlistfy <" + os.Getenv("FROM_MAIL") + ">"
 	e.To = []string{mail}
 	e.Subject = "Password Reset"
-	//TODO: Change HTML
 	e.HTML = []byte(
 		`<!doctype html>
 		<html lang="en-US">
@@ -131,7 +127,7 @@ func SendPasswordChangedEmail(content, mail string) error {
 							</tr>
 							<tr>
 								<td style="text-align:center;">
-									<img width="100" src="https://user-images.githubusercontent.com/25686023/155740270-208e9079-a139-4810-b02c-2977c602919d.png" title="logo" alt="logo">
+									<img width="125" src="https://user-images.githubusercontent.com/25686023/260456776-4729f5b7-3823-49e7-b246-59f51a360786.png" title="logo" alt="logo">
 								</td>
 							</tr>
 							<tr>
@@ -165,7 +161,7 @@ func SendPasswordChangedEmail(content, mail string) error {
 							</tr>
 							<tr>
 								<td style="text-align:center;">
-									<p style="font-size:14px; color:rgba(69, 80, 86, 0.7411764705882353); line-height:18px; margin:0 0 0;">&copy; <strong>Kanma</strong></p>
+									<p style="font-size:14px; color:rgba(69, 80, 86, 0.7411764705882353); line-height:18px; margin:0 0 0;">&copy; <strong>Watchlistfy</strong></p>
 								</td>
 							</tr>
 							<tr>

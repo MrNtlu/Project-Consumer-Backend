@@ -1820,6 +1820,38 @@
                 }
             }
         },
+        "/openai": {
+            "get": {
+                "description": "Returns movie recommendations from OpenAI",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openai"
+                ],
+                "summary": "Get Movie Recommendations from OpenAI",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.OpenAIMovieResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/tv": {
             "get": {
                 "description": "Returns tv series by sort and filter with pagination",
@@ -2744,6 +2776,34 @@
                 },
                 "user_id": {
                     "type": "string"
+                }
+            }
+        },
+        "models.OpenAIMovieResponse": {
+            "type": "object",
+            "properties": {
+                "movies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Movie"
+                    }
+                },
+                "openai_response": {
+                    "$ref": "#/definitions/models.OpenAIResponse"
+                }
+            }
+        },
+        "models.OpenAIResponse": {
+            "type": "object",
+            "properties": {
+                "recommendation": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "total_used_token": {
+                    "type": "integer"
                 }
             }
         },

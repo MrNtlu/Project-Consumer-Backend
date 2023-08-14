@@ -19,7 +19,17 @@ func NewOpenAiController(mongoDB *db.MongoDB) OpenAIController {
 	}
 }
 
-//TODO Documentation and add for other contents
+//TODO Add for other contents
+
+// Get Movie Recommendations
+// @Summary Get Movie Recommendations from OpenAI
+// @Description Returns movie recommendations from OpenAI
+// @Tags openai
+// @Accept application/json
+// @Produce application/json
+// @Success 200 {array} models.OpenAIMovieResponse
+// @Failure 500 {string} string
+// @Router /openai [get]
 func (ai *OpenAIController) GetRecommendation(c *gin.Context) {
 	var data requests.OpenAIRecommendation
 	if err := c.ShouldBindQuery(&data); err != nil {

@@ -12,6 +12,7 @@ import (
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/sethvargo/go-password/password"
 )
 
 type UserController struct {
@@ -434,6 +435,60 @@ func (u *UserController) ForgotPassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully send password reset email."})
+}
+
+func (u *UserController) ConfirmPasswordReset(c *gin.Context) {
+	token := c.Query("token")
+	email := c.Query("mail")
+
+	userModel := models.NewUserModel(u.Database)
+
+	user, err := userModel.FindUserByResetTokenAndEmail(token, email)
+	if err != nil {
+		http.ServeFile(c.Writer, c.Request, "assets/error_password_reset.html")
+		return
+	}
+
+	if user.EmailAddress == "" {
+		http.ServeFile(c.Writer, c.Request, "assets/error_password_reset.html")
+		return
+	}
+
+	if user.IsOAuthUser {
+		http.ServeFile(c.Writer, c.Request, "assets/error_password_reset.html")
+		return
+	}
+
+	const (
+		passwordLength = 10
+		numDigits      = 4
+	)
+
+	generatedPass, err := password.Generate(passwordLength, numDigits, 0, true, false)
+	if err != nil {
+		generatedPass = user.EmailAddress + "_Password"
+	}
+
+	user.Password = utils.HashPassword(generatedPass)
+	user.PasswordResetToken = ""
+
+	if err = userModel.UpdateUser(user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	if err := helpers.SendPasswordChangedEmail(generatedPass, user.EmailAddress); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	http.ServeFile(c.Writer, c.Request, "assets/confirm_password.html")
 }
 
 // Delete User

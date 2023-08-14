@@ -7,7 +7,10 @@ require (
 	github.com/swaggo/gin-swagger v1.5.3
 )
 
-require github.com/sashabaranov/go-openai v1.14.1 // indirect
+require (
+	github.com/sashabaranov/go-openai v1.14.1 // indirect
+	github.com/sethvargo/go-password v0.2.0 // indirect
+)
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect

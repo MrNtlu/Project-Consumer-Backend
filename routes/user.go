@@ -11,7 +11,7 @@ import (
 func userRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongoDB *db.MongoDB) {
 	userController := controllers.NewUserController(mongoDB)
 
-	// router.GET("/confirm-password-reset", userController.ConfirmPasswordReset)
+	router.GET("/confirm-password-reset", userController.ConfirmPasswordReset)
 
 	auth := router.Group("/auth")
 	{
@@ -20,9 +20,7 @@ func userRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongoDB
 		auth.POST("/logout", jwtToken.LogoutHandler)
 		auth.GET("/refresh", jwtToken.RefreshHandler)
 
-		//TODO: Implement confirm password
-		//https://github.com/MrNtlu/Asset-Manager/blob/master/controllers/user.go
-		// 	auth.GET("/confirm-password-reset", userController.ConfirmPasswordReset)
+		auth.GET("/confirm-password-reset", userController.ConfirmPasswordReset)
 	}
 
 	user := router.Group("/user")

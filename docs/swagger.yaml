@@ -83,6 +83,24 @@ definitions:
       user_id:
         type: string
     type: object
+  models.OpenAIMovieResponse:
+    properties:
+      movies:
+        items:
+          $ref: '#/definitions/responses.Movie'
+        type: array
+      openai_response:
+        $ref: '#/definitions/models.OpenAIResponse'
+    type: object
+  models.OpenAIResponse:
+    properties:
+      recommendation:
+        items:
+          type: string
+        type: array
+      total_used_token:
+        type: integer
+    type: object
   models.TVSeriesWatchList:
     properties:
       _id:
@@ -3003,6 +3021,27 @@ paths:
       summary: OAuth2 Google Login
       tags:
       - oauth2
+  /openai:
+    get:
+      consumes:
+      - application/json
+      description: Returns movie recommendations from OpenAI
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.OpenAIMovieResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Movie Recommendations from OpenAI
+      tags:
+      - openai
   /tv:
     get:
       consumes:
