@@ -22,7 +22,7 @@ func SetupRoutes(router *gin.Engine, jwtToken *jwt.GinJWTMiddleware, mongoDB *db
 	userInteractionRouter(apiRouter, jwtToken, mongoDB)
 
 	openAiController := controllers.NewOpenAiController(mongoDB)
-	router.GET("openai", openAiController.GetRecommendation)
+	router.Use(jwtToken.MiddlewareFunc()).GET("openai", openAiController.GetRecommendation)
 
 	router.NoRoute(func(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "All routes lead to Rome 🏛️"})

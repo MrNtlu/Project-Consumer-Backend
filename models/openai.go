@@ -10,24 +10,19 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const prompt = `You are a recommendation system. Your job is to recommend list of movies to user based on their previously watched/enjoyed movies. Suggest 10 similar movies.
+const prompt = `You are a recommendation system. Recommend 10 movies similar to user's watched/enjoyed. Follow rules strictly:
 
-You have to follow these rules strictly, don't miss anything!
-1- Response template should be, Movie name.
-2- Suggest/recommend 10 movies.
-3- Do not ever suggest movies user already rated/watched.
-4- Recommend each movie separately and by their full name. Don't recommend movies in groups or series.
-5- Recommend each movie by their full name. Just the name of the movies in list.
-6- Don't add anything else to response. Don't add text like sure, yes, based on your previously watched etc. `
-
-const promptAlt = `You are a recommendation system. Recommend 10 movies similar to user's watched/enjoyed. Follow rules strictly:
-
-1- Response template, Movie name
+1- Response template, Movie name\n
 2- Suggest 10 movies.
 3- Avoid seen movies.
 4- Recommend individually, no groups.
 5- Use movie names only.
-6- No extra text. `
+6- No extra text.
+
+List of movies user rated,
+`
+
+const message = "Recommend movies."
 
 type OpenAI struct {
 	Client *openai.Client
@@ -51,7 +46,7 @@ type OpenAIMovieResponse struct {
 	Movies         []responses.Movie `bson:"movies" json:"movies"`
 }
 
-func (oa *OpenAI) GetRecommendation(message string) (OpenAIResponse, error) {
+func (oa *OpenAI) GetRecommendation(watchList string) (OpenAIResponse, error) {
 	resp, err := oa.Client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
@@ -59,7 +54,7 @@ func (oa *OpenAI) GetRecommendation(message string) (OpenAIResponse, error) {
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,
-					Content: promptAlt,
+					Content: prompt + watchList,
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
@@ -70,7 +65,7 @@ func (oa *OpenAI) GetRecommendation(message string) (OpenAIResponse, error) {
 	)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"input": message,
+			"watch_list": watchList,
 		}).Error("Error: ", err)
 
 		return OpenAIResponse{}, err

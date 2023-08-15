@@ -3,9 +3,11 @@ package controllers
 import (
 	"app/db"
 	"app/models"
-	"app/requests"
+	"fmt"
 	"net/http"
+	"strings"
 
+	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,18 +33,12 @@ func NewOpenAiController(mongoDB *db.MongoDB) OpenAIController {
 // @Failure 500 {string} string
 // @Router /openai [get]
 func (ai *OpenAIController) GetRecommendation(c *gin.Context) {
-	var data requests.OpenAIRecommendation
-	if err := c.ShouldBindQuery(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": validatorErrorHandler(err),
-		})
-
-		return
-	}
-
+	movieModel := models.NewMovieModel(ai.Database)
+	userListModel := models.NewUserListModel(ai.Database)
 	openAIModel := models.CreateOpenAIClient()
 
-	resp, err := openAIModel.GetRecommendation(data.Input)
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	watchList, err := userListModel.GetMovieListByUserID(uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -51,7 +47,22 @@ func (ai *OpenAIController) GetRecommendation(c *gin.Context) {
 		return
 	}
 
-	movieModel := models.NewMovieModel(ai.Database)
+	watchListAsStringList := make([]string, len(watchList))
+	for i, movieWatchList := range watchList {
+		score := *movieWatchList.Score
+		watchListAsStringList[i] = fmt.Sprintf("%s, %.0f.", movieWatchList.TitleOriginal, score)
+	}
+
+	watchListAsString := strings.Join(watchListAsStringList, "\n")
+
+	resp, err := openAIModel.GetRecommendation(watchListAsString)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
 
 	movies, err := movieModel.GetMoviesFromOpenAI(resp.Recommendation)
 	if err != nil {

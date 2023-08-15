@@ -575,6 +575,73 @@ func (userListModel *UserListModel) GetBaseTVSeriesListByID(movieID string) (TVS
 	return tvList, nil
 }
 
+func (userListModel *UserListModel) GetMovieListByUserID(uid string) ([]responses.MovieList, error) {
+	match := bson.M{"$match": bson.M{
+		"user_id": uid,
+	}}
+
+	movieListLookup := bson.M{"$lookup": bson.M{
+		"from": "movies",
+		"let": bson.M{
+			"movie_obj_id":  "$movie_obj_id",
+			"movie_tmdb_id": "$movie_tmdb_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$or": bson.A{
+							bson.M{
+								"$eq": bson.A{"$_id", "$$movie_obj_id"},
+							},
+							bson.M{
+								"$eq": bson.A{
+									"$tmdb_id",
+									"$$movie_tmdb_id",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"as": "movie",
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$movie",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"title_original": "$movie.title_original",
+		"score":          1,
+	}}
+
+	cursor, err := userListModel.MovieWatchListCollection.Aggregate(context.TODO(), bson.A{
+		match, movieListLookup, unwind, project,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to aggregate movie watch list: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate movie watch list.")
+	}
+
+	var userList []responses.MovieList
+	if err = cursor.All(context.TODO(), &userList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to decode movie watch list: ", err)
+
+		return nil, fmt.Errorf("Failed to decode movie watch list.")
+	}
+
+	return userList, nil
+}
+
 func (userListModel *UserListModel) GetUserListByUserID(uid string, data requests.SortList) (responses.UserList, error) {
 	match := bson.M{"$match": bson.M{
 		"user_id": uid,
