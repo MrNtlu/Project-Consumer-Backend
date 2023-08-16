@@ -510,7 +510,7 @@ func (userModel *UserModel) GetUserLevel(uid string) (int, error) {
 	unwind := bson.M{"$unwind": bson.M{
 		"path":                       "$lookups",
 		"includeArrayIndex":          "index",
-		"preserveNullAndEmptyArrays": true,
+		"preserveNullAndEmptyArrays": false,
 	}}
 
 	replaceRoot := bson.M{"$replaceRoot": bson.M{
@@ -622,7 +622,7 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 	unwind := bson.M{"$unwind": bson.M{
 		"path":                       "$lookups",
 		"includeArrayIndex":          "index",
-		"preserveNullAndEmptyArrays": true,
+		"preserveNullAndEmptyArrays": false,
 	}}
 
 	replaceRoot := bson.M{"$replaceRoot": bson.M{
@@ -906,7 +906,7 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 	unwindContentFacet := bson.M{"$unwind": bson.M{
 		"path":                       "$lookups",
 		"includeArrayIndex":          "index",
-		"preserveNullAndEmptyArrays": true,
+		"preserveNullAndEmptyArrays": false,
 	}}
 
 	finalReplaceRoot := bson.M{"$replaceRoot": bson.M{

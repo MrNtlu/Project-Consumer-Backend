@@ -1410,7 +1410,7 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 	unwind := bson.M{"$unwind": bson.M{
 		"path":                       "$lookups",
 		"includeArrayIndex":          "index",
-		"preserveNullAndEmptyArrays": true,
+		"preserveNullAndEmptyArrays": false,
 	}}
 
 	replaceRoot := bson.M{"$replaceRoot": bson.M{
