@@ -94,6 +94,19 @@ func (o *OAuth2Controller) OAuth2GoogleLogin(jwt *jwt.GinJWTMiddleware) gin.Hand
 			return
 		}
 
+		userListModel := models.NewUserListModel(o.Database)
+		baseUserList, _ := userListModel.GetBaseUserListByUserID(user.ID.Hex())
+
+		if baseUserList.UserID == "" {
+			if err := userListModel.CreateUserList(user.ID.Hex(), user.Username); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
+
+				return
+			}
+		}
+
 		token, _, err := jwt.TokenGenerator(user)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

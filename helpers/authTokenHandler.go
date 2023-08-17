@@ -60,6 +60,11 @@ func SetupJWTHandler(mongoDB *db.MongoDB) *jwt.GinJWTMiddleware {
 				return "", errIncorrectAuth
 			}
 
+			if data.FCMToken != nil && user.FCMToken != *data.FCMToken {
+				user.FCMToken = *data.FCMToken
+				go userModel.UpdateUser(user)
+			}
+
 			return user, nil
 		},
 		PayloadFunc: func(data interface{}) jwt.MapClaims {

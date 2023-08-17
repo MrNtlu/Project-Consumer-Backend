@@ -178,7 +178,7 @@ func handleTimesFinished(status string, timesFinished *int) int {
 }
 
 //! Create
-func (userListModel *UserListModel) CreateUserList(uid, slug string) {
+func (userListModel *UserListModel) CreateUserList(uid, slug string) error {
 	userListObject := createUserListObject(uid, slug)
 
 	if _, err := userListModel.UserListCollection.InsertOne(context.TODO(), userListObject); err != nil {
@@ -186,7 +186,11 @@ func (userListModel *UserListModel) CreateUserList(uid, slug string) {
 			"uid":  uid,
 			"slug": slug,
 		}).Error("failed to create new user list: ", err)
+
+		return err
 	}
+
+	return nil
 }
 
 func (userListModel *UserListModel) CreateAnimeList(uid string, data requests.CreateAnimeList, anime responses.Anime) (AnimeList, error) {

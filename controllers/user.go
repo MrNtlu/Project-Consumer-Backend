@@ -72,7 +72,13 @@ func (u *UserController) Register(c *gin.Context) {
 	}
 
 	userListModel := models.NewUserListModel(u.Database)
-	go userListModel.CreateUserList(createdUser.ID.Hex(), createdUser.Username)
+	if err := userListModel.CreateUserList(createdUser.ID.Hex(), createdUser.Username); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Registered successfully."})
 }
