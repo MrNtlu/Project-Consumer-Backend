@@ -89,12 +89,12 @@ func SetupJWTHandler(mongoDB *db.MongoDB) *jwt.GinJWTMiddleware {
 			c.SetCookie("access_token", token, 259200, "/", os.Getenv("BASE_URI"), true, true)
 			c.JSON(http.StatusOK, gin.H{"access_token": token})
 		},
-		TokenLookup:    "header: Authorization, cookie: jwt_token",
+		TokenLookup:    "header: Authorization, cookie: access_token",
 		TimeFunc:       time.Now,
 		SendCookie:     true,
-		SecureCookie:   false,       // non HTTPS dev environments
-		CookieHTTPOnly: true,        // JS can't modify
-		CookieName:     "jwt_token", // default jwt
+		SecureCookie:   false,          // non HTTPS dev environments
+		CookieHTTPOnly: true,           // JS can't modify
+		CookieName:     "access_token", // default jwt
 	})
 
 	if err != nil {
