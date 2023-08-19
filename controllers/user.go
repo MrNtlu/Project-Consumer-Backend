@@ -521,8 +521,12 @@ func (u *UserController) DeleteUser(c *gin.Context) {
 	}
 
 	userListModel := models.NewUserListModel(u.Database)
+	userInteractionModel := models.NewUserInteractionModel(u.Database)
+	logsModel := models.NewLogsModel(u.Database)
 
 	go userListModel.DeleteUserListByUserID(uid)
+	go userInteractionModel.DeleteAllConsumeLaterByUserID(uid)
+	go logsModel.DeleteLogsByUserID(uid)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully deleted user."})
 }
