@@ -14,7 +14,6 @@ type Anime struct {
 	TitleJP       string             `bson:"title_jp" json:"title_jp"`
 	Description   string             `bson:"description" json:"description"`
 	ImageURL      string             `bson:"image_url" json:"image_url"`
-	SmallImageURL string             `bson:"small_image_url" json:"small_image_url"`
 	MalID         int64              `bson:"mal_id" json:"mal_id"`
 	MalScore      float64            `bson:"mal_score" json:"mal_score"`
 	MalScoredBy   int64              `bson:"mal_scored_by" json:"mal_scored_by"`
@@ -45,7 +44,6 @@ type AnimeDetails struct {
 	TitleJP       string             `bson:"title_jp" json:"title_jp"`
 	Description   string             `bson:"description" json:"description"`
 	ImageURL      string             `bson:"image_url" json:"image_url"`
-	SmallImageURL string             `bson:"small_image_url" json:"small_image_url"`
 	MalID         int64              `bson:"mal_id" json:"mal_id"`
 	MalScore      float64            `bson:"mal_score" json:"mal_score"`
 	MalScoredBy   int64              `bson:"mal_scored_by" json:"mal_scored_by"`
@@ -106,9 +104,8 @@ type AnimeCharacter struct {
 }
 
 type AnimeGenre struct {
-	Name  string `bson:"name" json:"name"`
-	Url   string `bson:"url" json:"url"`
-	MalID int64  `bson:"mal_id" json:"mal_id"`
+	Name string `bson:"name" json:"name"`
+	Url  string `bson:"url" json:"url"`
 }
 
 type AnimeRelation struct {

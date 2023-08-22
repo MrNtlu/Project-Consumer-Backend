@@ -15,10 +15,9 @@ type Game struct {
 	MetacriticScoreByPlatform []GameMetacriticScorePlatform `bson:"metacritic_score_by_platform" json:"metacritic_score_by_platform"`
 	ReleaseDate               string                        `bson:"release_date" json:"release_date"`
 	ImageUrl                  string                        `bson:"image_url" json:"image_url"`
-	Subreddit                 *string                       `bson:"subreddit" json:"subreddit"`
 	AgeRating                 *string                       `bson:"age_rating" json:"age_rating"`
 	RelatedGames              []GameRelation                `bson:"related_games" json:"related_games"`
-	Genres                    []GameGenre                   `bson:"genres" json:"genres"`
+	Genres                    []string                      `bson:"genres" json:"genres"`
 	Tags                      []string                      `bson:"tags" json:"tags"`
 	Platforms                 []string                      `bson:"platforms" json:"platforms"`
 	Developers                []string                      `bson:"developers" json:"developers"`
@@ -39,10 +38,9 @@ type GameDetails struct {
 	MetacriticScoreByPlatform []GameMetacriticScorePlatform `bson:"metacritic_score_by_platform" json:"metacritic_score_by_platform"`
 	ReleaseDate               string                        `bson:"release_date" json:"release_date"`
 	ImageUrl                  string                        `bson:"image_url" json:"image_url"`
-	Subreddit                 *string                       `bson:"subreddit" json:"subreddit"`
 	AgeRating                 *string                       `bson:"age_rating" json:"age_rating"`
 	RelatedGames              []GameDetailsRelation         `bson:"related_games" json:"related_games"`
-	Genres                    []GameGenre                   `bson:"genres" json:"genres"`
+	Genres                    []string                      `bson:"genres" json:"genres"`
 	Tags                      []string                      `bson:"tags" json:"tags"`
 	Platforms                 []string                      `bson:"platforms" json:"platforms"`
 	Developers                []string                      `bson:"developers" json:"developers"`
@@ -83,11 +81,6 @@ type GameDetailsRelation struct {
 	ReleaseDate   string             `bson:"release_date" json:"release_date"`
 	ImageUrl      string             `bson:"image_url" json:"image_url"`
 	Platforms     []string           `bson:"platforms" json:"platforms"`
-}
-
-type GameGenre struct {
-	Name   string `bson:"name" json:"name"`
-	RawgID string `bson:"rawg_id" json:"rawg_id"`
 }
 
 type GameStore struct {

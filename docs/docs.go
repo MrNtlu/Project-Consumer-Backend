@@ -3769,9 +3769,6 @@ const docTemplate = `{
                 "season": {
                     "type": "string"
                 },
-                "small_image_url": {
-                    "type": "string"
-                },
                 "source": {
                     "type": "string"
                 },
@@ -3931,9 +3928,6 @@ const docTemplate = `{
                 "season": {
                     "type": "string"
                 },
-                "small_image_url": {
-                    "type": "string"
-                },
                 "source": {
                     "type": "string"
                 },
@@ -3984,9 +3978,6 @@ const docTemplate = `{
         "responses.AnimeGenre": {
             "type": "object",
             "properties": {
-                "mal_id": {
-                    "type": "integer"
-                },
                 "name": {
                     "type": "string"
                 },
@@ -4183,7 +4174,7 @@ const docTemplate = `{
                 "genres": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.GameGenre"
+                        "type": "string"
                     }
                 },
                 "image_url": {
@@ -4234,9 +4225,6 @@ const docTemplate = `{
                         "$ref": "#/definitions/responses.GameStore"
                     }
                 },
-                "subreddit": {
-                    "type": "string"
-                },
                 "tags": {
                     "type": "array",
                     "items": {
@@ -4278,7 +4266,7 @@ const docTemplate = `{
                 "genres": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.GameGenre"
+                        "type": "string"
                     }
                 },
                 "image_url": {
@@ -4329,9 +4317,6 @@ const docTemplate = `{
                         "$ref": "#/definitions/responses.GameStore"
                     }
                 },
-                "subreddit": {
-                    "type": "string"
-                },
                 "tags": {
                     "type": "array",
                     "items": {
@@ -4377,17 +4362,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "title_original": {
-                    "type": "string"
-                }
-            }
-        },
-        "responses.GameGenre": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "rawg_id": {
                     "type": "string"
                 }
             }
@@ -4507,17 +4481,6 @@ const docTemplate = `{
                 }
             }
         },
-        "responses.Genre": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "tmdb_id": {
-                    "type": "integer"
-                }
-            }
-        },
         "responses.Log": {
             "type": "object",
             "properties": {
@@ -4585,7 +4548,7 @@ const docTemplate = `{
                 "genres": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.Genre"
+                        "type": "string"
                     }
                 },
                 "image_url": {
@@ -4604,9 +4567,6 @@ const docTemplate = `{
                     }
                 },
                 "release_date": {
-                    "type": "string"
-                },
-                "small_image_url": {
                     "type": "string"
                 },
                 "status": {
@@ -4665,7 +4625,7 @@ const docTemplate = `{
                 "genres": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.Genre"
+                        "type": "string"
                     }
                 },
                 "image_url": {
@@ -4684,9 +4644,6 @@ const docTemplate = `{
                     }
                 },
                 "release_date": {
-                    "type": "string"
-                },
-                "small_image_url": {
                     "type": "string"
                 },
                 "status": {
@@ -4814,9 +4771,6 @@ const docTemplate = `{
                 "air_date": {
                     "type": "string"
                 },
-                "description": {
-                    "type": "string"
-                },
                 "episode_count": {
                     "type": "integer"
                 },
@@ -4924,7 +4878,7 @@ const docTemplate = `{
                 "genres": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.Genre"
+                        "type": "string"
                     }
                 },
                 "image_url": {
@@ -4947,9 +4901,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/responses.Season"
                     }
-                },
-                "small_image_url": {
-                    "type": "string"
                 },
                 "status": {
                     "type": "string"
@@ -5016,7 +4967,7 @@ const docTemplate = `{
                 "genres": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.Genre"
+                        "type": "string"
                     }
                 },
                 "image_url": {
@@ -5039,9 +4990,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/responses.Season"
                     }
-                },
-                "small_image_url": {
-                    "type": "string"
                 },
                 "status": {
                     "type": "string"

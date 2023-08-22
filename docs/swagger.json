@@ -3766,9 +3766,6 @@
                 "season": {
                     "type": "string"
                 },
-                "small_image_url": {
-                    "type": "string"
-                },
                 "source": {
                     "type": "string"
                 },
@@ -3928,9 +3925,6 @@
                 "season": {
                     "type": "string"
                 },
-                "small_image_url": {
-                    "type": "string"
-                },
                 "source": {
                     "type": "string"
                 },
@@ -3981,9 +3975,6 @@
         "responses.AnimeGenre": {
             "type": "object",
             "properties": {
-                "mal_id": {
-                    "type": "integer"
-                },
                 "name": {
                     "type": "string"
                 },
@@ -4180,7 +4171,7 @@
                 "genres": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.GameGenre"
+                        "type": "string"
                     }
                 },
                 "image_url": {
@@ -4231,9 +4222,6 @@
                         "$ref": "#/definitions/responses.GameStore"
                     }
                 },
-                "subreddit": {
-                    "type": "string"
-                },
                 "tags": {
                     "type": "array",
                     "items": {
@@ -4275,7 +4263,7 @@
                 "genres": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.GameGenre"
+                        "type": "string"
                     }
                 },
                 "image_url": {
@@ -4326,9 +4314,6 @@
                         "$ref": "#/definitions/responses.GameStore"
                     }
                 },
-                "subreddit": {
-                    "type": "string"
-                },
                 "tags": {
                     "type": "array",
                     "items": {
@@ -4374,17 +4359,6 @@
                     "type": "string"
                 },
                 "title_original": {
-                    "type": "string"
-                }
-            }
-        },
-        "responses.GameGenre": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "rawg_id": {
                     "type": "string"
                 }
             }
@@ -4504,17 +4478,6 @@
                 }
             }
         },
-        "responses.Genre": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "tmdb_id": {
-                    "type": "integer"
-                }
-            }
-        },
         "responses.Log": {
             "type": "object",
             "properties": {
@@ -4582,7 +4545,7 @@
                 "genres": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.Genre"
+                        "type": "string"
                     }
                 },
                 "image_url": {
@@ -4601,9 +4564,6 @@
                     }
                 },
                 "release_date": {
-                    "type": "string"
-                },
-                "small_image_url": {
                     "type": "string"
                 },
                 "status": {
@@ -4662,7 +4622,7 @@
                 "genres": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.Genre"
+                        "type": "string"
                     }
                 },
                 "image_url": {
@@ -4681,9 +4641,6 @@
                     }
                 },
                 "release_date": {
-                    "type": "string"
-                },
-                "small_image_url": {
                     "type": "string"
                 },
                 "status": {
@@ -4811,9 +4768,6 @@
                 "air_date": {
                     "type": "string"
                 },
-                "description": {
-                    "type": "string"
-                },
                 "episode_count": {
                     "type": "integer"
                 },
@@ -4921,7 +4875,7 @@
                 "genres": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.Genre"
+                        "type": "string"
                     }
                 },
                 "image_url": {
@@ -4944,9 +4898,6 @@
                     "items": {
                         "$ref": "#/definitions/responses.Season"
                     }
-                },
-                "small_image_url": {
-                    "type": "string"
                 },
                 "status": {
                     "type": "string"
@@ -5013,7 +4964,7 @@
                 "genres": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.Genre"
+                        "type": "string"
                     }
                 },
                 "image_url": {
@@ -5036,9 +4987,6 @@
                     "items": {
                         "$ref": "#/definitions/responses.Season"
                     }
-                },
-                "small_image_url": {
-                    "type": "string"
                 },
                 "status": {
                     "type": "string"

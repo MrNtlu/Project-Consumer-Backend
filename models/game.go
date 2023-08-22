@@ -127,7 +127,7 @@ func (gameModel *GameModel) GetGamesByFilterAndSort(data requests.SortFilterGame
 	match := bson.M{}
 	if data.Genres != nil || data.Platform != nil || data.TBA != nil {
 		if data.Genres != nil {
-			match["genres.name"] = bson.M{
+			match["genres"] = bson.M{
 				"$in": bson.A{data.Genres},
 			}
 		}

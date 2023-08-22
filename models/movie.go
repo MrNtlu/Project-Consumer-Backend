@@ -202,7 +202,7 @@ func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterM
 		}
 
 		if data.Genres != nil {
-			match["genres.name"] = bson.M{
+			match["genres"] = bson.M{
 				"$in": bson.A{data.Genres},
 			}
 		}

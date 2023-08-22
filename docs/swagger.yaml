@@ -778,8 +778,6 @@ definitions:
         type: array
       season:
         type: string
-      small_image_url:
-        type: string
       source:
         type: string
       status:
@@ -885,8 +883,6 @@ definitions:
         type: array
       season:
         type: string
-      small_image_url:
-        type: string
       source:
         type: string
       status:
@@ -920,8 +916,6 @@ definitions:
     type: object
   responses.AnimeGenre:
     properties:
-      mal_id:
-        type: integer
       name:
         type: string
       url:
@@ -1050,7 +1044,7 @@ definitions:
         type: array
       genres:
         items:
-          $ref: '#/definitions/responses.GameGenre'
+          type: string
         type: array
       image_url:
         type: string
@@ -1084,8 +1078,6 @@ definitions:
         items:
           $ref: '#/definitions/responses.GameStore'
         type: array
-      subreddit:
-        type: string
       tags:
         items:
           type: string
@@ -1113,7 +1105,7 @@ definitions:
         $ref: '#/definitions/responses.GamePlayList'
       genres:
         items:
-          $ref: '#/definitions/responses.GameGenre'
+          type: string
         type: array
       image_url:
         type: string
@@ -1147,8 +1139,6 @@ definitions:
         items:
           $ref: '#/definitions/responses.GameStore'
         type: array
-      subreddit:
-        type: string
       tags:
         items:
           type: string
@@ -1179,13 +1169,6 @@ definitions:
       title:
         type: string
       title_original:
-        type: string
-    type: object
-  responses.GameGenre:
-    properties:
-      name:
-        type: string
-      rawg_id:
         type: string
     type: object
   responses.GameList:
@@ -1263,13 +1246,6 @@ definitions:
       url:
         type: string
     type: object
-  responses.Genre:
-    properties:
-      name:
-        type: string
-      tmdb_id:
-        type: integer
-    type: object
   responses.Log:
     properties:
       content_id:
@@ -1314,7 +1290,7 @@ definitions:
         type: string
       genres:
         items:
-          $ref: '#/definitions/responses.Genre'
+          type: string
         type: array
       image_url:
         type: string
@@ -1327,8 +1303,6 @@ definitions:
           $ref: '#/definitions/responses.ProductionAndCompany'
         type: array
       release_date:
-        type: string
-      small_image_url:
         type: string
       status:
         type: string
@@ -1367,7 +1341,7 @@ definitions:
         type: string
       genres:
         items:
-          $ref: '#/definitions/responses.Genre'
+          type: string
         type: array
       image_url:
         type: string
@@ -1380,8 +1354,6 @@ definitions:
           $ref: '#/definitions/responses.ProductionAndCompany'
         type: array
       release_date:
-        type: string
-      small_image_url:
         type: string
       status:
         type: string
@@ -1465,8 +1437,6 @@ definitions:
     properties:
       air_date:
         type: string
-      description:
-        type: string
       episode_count:
         type: integer
       image_url:
@@ -1537,7 +1507,7 @@ definitions:
         type: string
       genres:
         items:
-          $ref: '#/definitions/responses.Genre'
+          type: string
         type: array
       image_url:
         type: string
@@ -1553,8 +1523,6 @@ definitions:
         items:
           $ref: '#/definitions/responses.Season'
         type: array
-      small_image_url:
-        type: string
       status:
         type: string
       streaming:
@@ -1598,7 +1566,7 @@ definitions:
         type: string
       genres:
         items:
-          $ref: '#/definitions/responses.Genre'
+          type: string
         type: array
       image_url:
         type: string
@@ -1614,8 +1582,6 @@ definitions:
         items:
           $ref: '#/definitions/responses.Season'
         type: array
-      small_image_url:
-        type: string
       status:
         type: string
       streaming:

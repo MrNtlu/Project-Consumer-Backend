@@ -8,7 +8,6 @@ type Movie struct {
 	TitleOriginal       string                 `bson:"title_original" json:"title_original"`
 	Description         string                 `bson:"description" json:"description"`
 	ImageURL            string                 `bson:"image_url" json:"image_url"`
-	SmallImageURL       string                 `bson:"small_image_url" json:"small_image_url"`
 	Status              string                 `bson:"status" json:"status"`
 	Length              int                    `bson:"length" json:"length"`
 	ImdbID              string                 `bson:"imdb_id" json:"imdb_id"`
@@ -19,7 +18,7 @@ type Movie struct {
 	ReleaseDate         string                 `bson:"release_date" json:"release_date"`
 	Backdrop            *string                `bson:"backdrop" json:"backdrop"`
 	ProductionCompanies []ProductionAndCompany `bson:"production_companies" json:"production_companies"`
-	Genres              []Genre                `bson:"genres" json:"genres"`
+	Genres              []string               `bson:"genres" json:"genres"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
 	Actors              []Actor                `bson:"actors" json:"actors"`
 	Translations        []Translation          `bson:"translations" json:"translations"`
@@ -31,7 +30,6 @@ type MovieDetails struct {
 	TitleOriginal       string                 `bson:"title_original" json:"title_original"`
 	Description         string                 `bson:"description" json:"description"`
 	ImageURL            string                 `bson:"image_url" json:"image_url"`
-	SmallImageURL       string                 `bson:"small_image_url" json:"small_image_url"`
 	Status              string                 `bson:"status" json:"status"`
 	Length              int                    `bson:"length" json:"length"`
 	ImdbID              string                 `bson:"imdb_id" json:"imdb_id"`
@@ -42,7 +40,7 @@ type MovieDetails struct {
 	ReleaseDate         string                 `bson:"release_date" json:"release_date"`
 	Backdrop            *string                `bson:"backdrop" json:"backdrop"`
 	ProductionCompanies []ProductionAndCompany `bson:"production_companies" json:"production_companies"`
-	Genres              []Genre                `bson:"genres" json:"genres"`
+	Genres              []string               `bson:"genres" json:"genres"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
 	Actors              []Actor                `bson:"actors" json:"actors"`
 	Translations        []Translation          `bson:"translations" json:"translations"`
@@ -70,11 +68,6 @@ type Actor struct {
 	Image     *string `bson:"image" json:"image"`
 	Name      string  `bson:"name" json:"name"`
 	Character string  `bson:"character" json:"character"`
-}
-
-type Genre struct {
-	TmdbID int    `bson:"tmdb_id" json:"tmdb_id"`
-	Name   string `bson:"name" json:"name"`
 }
 
 type Streaming struct {
