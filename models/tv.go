@@ -210,7 +210,7 @@ func (tvModel *TVModel) GetUpcomingSeasonTVSeries(data requests.SortUpcoming) ([
 	}}
 
 	paginatedData, err := p.New(tvModel.Collection).Context(context.TODO()).Limit(tvSeriesUpcomingPaginationLimit).
-		Page(data.Page).Sort("has_air_date", hasAirDateOrder).Sort(sortType, sortOrder).Sort("_id", 1).Aggregate(match, addFields)
+		Page(data.Page).Sort("has_release_date", hasAirDateOrder).Sort(sortType, sortOrder).Sort("_id", 1).Aggregate(match, addFields)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,

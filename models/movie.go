@@ -4,6 +4,7 @@ import (
 	"app/db"
 	"app/requests"
 	"app/responses"
+	"app/utils"
 	"context"
 	"fmt"
 	"strconv"
@@ -129,8 +130,13 @@ func (movieModel *MovieModel) GetUpcomingMoviesBySort(data requests.SortUpcoming
 	}
 
 	match := bson.M{"$match": bson.M{
-		"status": bson.M{
-			"$ne": "Released",
+		"$or": bson.A{
+			bson.M{
+				"status": bson.M{
+					"$ne": "Released",
+				},
+			},
+			bson.M{"release_date": bson.M{"$gte": utils.GetCurrentDate()}},
 		},
 	}}
 
