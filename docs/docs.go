@@ -4148,6 +4148,9 @@ const docTemplate = `{
                 "image_url": {
                     "type": "string"
                 },
+                "title_en": {
+                    "type": "string"
+                },
                 "title_original": {
                     "type": "string"
                 }

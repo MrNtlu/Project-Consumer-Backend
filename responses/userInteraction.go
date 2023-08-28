@@ -19,6 +19,7 @@ type ConsumeLater struct {
 }
 
 type ConsumeLaterContent struct {
+	TitleEn       string  `bson:"title_en" json:"title_en"`
 	TitleOriginal string  `bson:"title_original" json:"title_original"`
 	ImageURL      *string `bson:"image_url" json:"image_url"`
 	Description   string  `bson:"description" json:"description"`
