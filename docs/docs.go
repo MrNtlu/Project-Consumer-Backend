@@ -5132,28 +5132,10 @@ const docTemplate = `{
                 "is_premium": {
                     "type": "boolean"
                 },
-                "legend_anime_list": {
+                "legend_content": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.UserInfoAnime"
-                    }
-                },
-                "legend_game_list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.UserInfoGame"
-                    }
-                },
-                "legend_movie_list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.UserInfoMovie"
-                    }
-                },
-                "legend_tv_list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.UserInfoTV"
+                        "$ref": "#/definitions/responses.UserInfoContent"
                     }
                 },
                 "level": {
@@ -5173,76 +5155,13 @@ const docTemplate = `{
                 }
             }
         },
-        "responses.UserInfoAnime": {
+        "responses.UserInfoContent": {
             "type": "object",
             "properties": {
                 "_id": {
                     "type": "string"
                 },
-                "image_url": {
-                    "type": "string"
-                },
-                "times_finished": {
-                    "type": "integer"
-                },
-                "title_en": {
-                    "type": "string"
-                },
-                "title_jp": {
-                    "type": "string"
-                },
-                "title_original": {
-                    "type": "string"
-                }
-            }
-        },
-        "responses.UserInfoGame": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "type": "string"
-                },
-                "background_image": {
-                    "type": "string"
-                },
-                "image_url": {
-                    "type": "string"
-                },
-                "times_finished": {
-                    "type": "integer"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "title_original": {
-                    "type": "string"
-                }
-            }
-        },
-        "responses.UserInfoMovie": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "type": "string"
-                },
-                "image_url": {
-                    "type": "string"
-                },
-                "times_finished": {
-                    "type": "integer"
-                },
-                "title_en": {
-                    "type": "string"
-                },
-                "title_original": {
-                    "type": "string"
-                }
-            }
-        },
-        "responses.UserInfoTV": {
-            "type": "object",
-            "properties": {
-                "_id": {
+                "content_type": {
                     "type": "string"
                 },
                 "image_url": {

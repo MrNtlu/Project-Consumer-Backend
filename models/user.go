@@ -762,6 +762,7 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 								"image_url":      1,
 								"title_original": 1,
 								"title_en":       1,
+								"content_type":   "movie",
 								"times_finished": bson.M{
 									"$arrayElemAt": bson.A{
 										"$$times_finished",
@@ -802,6 +803,7 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 								"image_url":      1,
 								"title_original": 1,
 								"title_en":       1,
+								"content_type":   "tv",
 								"times_finished": bson.M{
 									"$arrayElemAt": bson.A{
 										"$$times_finished",
@@ -842,7 +844,7 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 								"image_url":      1,
 								"title_original": 1,
 								"title_en":       1,
-								"title_jp":       1,
+								"content_type":   "anime",
 								"times_finished": bson.M{
 									"$arrayElemAt": bson.A{
 										"$$times_finished",
@@ -882,7 +884,8 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 							"$project": bson.M{
 								"image_url":      1,
 								"title_original": 1,
-								"title":          1,
+								"title_en":       "$title",
+								"content_type":   "game",
 								"times_finished": bson.M{
 									"$arrayElemAt": bson.A{
 										"$$times_finished",
@@ -913,9 +916,20 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 		"newRoot": "$lookups",
 	}}
 
+	concatArrays := bson.M{"$set": bson.M{
+		"legend_content": bson.M{
+			"$concatArrays": bson.A{
+				"$legend_movie_list",
+				"$legend_tv_list",
+				"$legend_anime_list",
+				"$legend_game_list",
+			},
+		},
+	}}
+
 	cursor, err := userModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, addFields, facet, unwind, replaceRoot,
-		set, project, contentFacet, unwindContentFacet, finalReplaceRoot,
+		match, addFields, facet, unwind, replaceRoot, set, project,
+		contentFacet, unwindContentFacet, finalReplaceRoot, concatArrays,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{

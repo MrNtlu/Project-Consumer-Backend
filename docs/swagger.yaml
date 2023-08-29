@@ -1675,21 +1675,9 @@ definitions:
         type: string
       is_premium:
         type: boolean
-      legend_anime_list:
+      legend_content:
         items:
-          $ref: '#/definitions/responses.UserInfoAnime'
-        type: array
-      legend_game_list:
-        items:
-          $ref: '#/definitions/responses.UserInfoGame'
-        type: array
-      legend_movie_list:
-        items:
-          $ref: '#/definitions/responses.UserInfoMovie'
-        type: array
-      legend_tv_list:
-        items:
-          $ref: '#/definitions/responses.UserInfoTV'
+          $ref: '#/definitions/responses.UserInfoContent'
         type: array
       level:
         type: integer
@@ -1702,52 +1690,11 @@ definitions:
       username:
         type: string
     type: object
-  responses.UserInfoAnime:
+  responses.UserInfoContent:
     properties:
       _id:
         type: string
-      image_url:
-        type: string
-      times_finished:
-        type: integer
-      title_en:
-        type: string
-      title_jp:
-        type: string
-      title_original:
-        type: string
-    type: object
-  responses.UserInfoGame:
-    properties:
-      _id:
-        type: string
-      background_image:
-        type: string
-      image_url:
-        type: string
-      times_finished:
-        type: integer
-      title:
-        type: string
-      title_original:
-        type: string
-    type: object
-  responses.UserInfoMovie:
-    properties:
-      _id:
-        type: string
-      image_url:
-        type: string
-      times_finished:
-        type: integer
-      title_en:
-        type: string
-      title_original:
-        type: string
-    type: object
-  responses.UserInfoTV:
-    properties:
-      _id:
+      content_type:
         type: string
       image_url:
         type: string
