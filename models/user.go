@@ -927,9 +927,20 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 		},
 	}}
 
+	sortArrays := bson.M{"$set": bson.M{
+		"legend_content": bson.M{
+			"$sortArray": bson.M{
+				"input": "$items",
+				"sortBy": bson.M{
+					"times_finished": -1,
+				},
+			},
+		},
+	}}
+
 	cursor, err := userModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, addFields, facet, unwind, replaceRoot, set, project,
-		contentFacet, unwindContentFacet, finalReplaceRoot, concatArrays,
+		match, addFields, facet, unwind, replaceRoot, set, project, contentFacet,
+		unwindContentFacet, finalReplaceRoot, concatArrays, sortArrays,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
