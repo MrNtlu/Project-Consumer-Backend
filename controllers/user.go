@@ -135,6 +135,20 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 	userLevel, _ := userModel.GetUserLevel(uid)
 	userInfo.Level = userLevel
 
+	userInteractionModel := models.NewUserInteractionModel(u.Database)
+
+	consumeLaterList, err := userInteractionModel.GetConsumeLater(uid, requests.SortFilterConsumeLater{
+		Sort: "new",
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+	userInfo.ConsumeLater = consumeLaterList
+
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched user info.", "data": userInfo})
 }
 

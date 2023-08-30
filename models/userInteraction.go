@@ -171,6 +171,15 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 								},
 							},
 						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+								"description":    1,
+								"score":          "$tmdb_vote",
+							},
+						},
 					},
 					"as": "content",
 				},
@@ -196,6 +205,15 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 										bson.M{"$eq": bson.A{"$tmdb_id", "$$external_id"}},
 									},
 								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+								"description":    1,
+								"score":          "$tmdb_vote",
 							},
 						},
 					},
@@ -225,6 +243,15 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 								},
 							},
 						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+								"description":    1,
+								"score":          "$mal_score",
+							},
+						},
 					},
 					"as": "content",
 				},
@@ -250,6 +277,15 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 										bson.M{"$eq": bson.A{"$rawg_id", "$$external_id"}},
 									},
 								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       "$title",
+								"title_original": 1,
+								"image_url":      1,
+								"description":    1,
+								"score":          "$rawg_rating",
 							},
 						},
 					},

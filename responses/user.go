@@ -24,6 +24,7 @@ type UserInfo struct {
 	FCMToken       string            `bson:"fcm_token" json:"fcm_token"`
 	Level          int               `bson:"level" json:"level"`
 	LegendContent  []UserInfoContent `bson:"legend_content" json:"legend_content"`
+	ConsumeLater   []ConsumeLater    `bson:"consume_later" json:"consume_later"`
 }
 
 type UserInfoContent struct {

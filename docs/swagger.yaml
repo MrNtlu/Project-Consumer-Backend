@@ -1027,6 +1027,8 @@ definitions:
         type: string
       image_url:
         type: string
+      score:
+        type: number
       title_en:
         type: string
       title_original:
@@ -1665,6 +1667,10 @@ definitions:
     properties:
       anime_count:
         type: integer
+      consume_later:
+        items:
+          $ref: '#/definitions/responses.ConsumeLater'
+        type: array
       email:
         type: string
       fcm_token:

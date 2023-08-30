@@ -4148,6 +4148,9 @@ const docTemplate = `{
                 "image_url": {
                     "type": "string"
                 },
+                "score": {
+                    "type": "number"
+                },
                 "title_en": {
                     "type": "string"
                 },
@@ -5116,6 +5119,12 @@ const docTemplate = `{
             "properties": {
                 "anime_count": {
                     "type": "integer"
+                },
+                "consume_later": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.ConsumeLater"
+                    }
                 },
                 "email": {
                     "type": "string"

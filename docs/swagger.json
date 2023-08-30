@@ -4145,6 +4145,9 @@
                 "image_url": {
                     "type": "string"
                 },
+                "score": {
+                    "type": "number"
+                },
                 "title_en": {
                     "type": "string"
                 },
@@ -5113,6 +5116,12 @@
             "properties": {
                 "anime_count": {
                     "type": "integer"
+                },
+                "consume_later": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.ConsumeLater"
+                    }
                 },
                 "email": {
                     "type": "string"
