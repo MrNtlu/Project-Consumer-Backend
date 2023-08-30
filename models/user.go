@@ -930,7 +930,7 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 	sortArrays := bson.M{"$set": bson.M{
 		"legend_content": bson.M{
 			"$sortArray": bson.M{
-				"input": "$items",
+				"input": "$legend_content",
 				"sortBy": bson.M{
 					"times_finished": -1,
 				},
