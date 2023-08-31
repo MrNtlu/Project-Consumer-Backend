@@ -31,10 +31,7 @@ func NewGameController(mongoDB *db.MongoDB) GameController {
 func (g *GameController) GetPreviewGames(c *gin.Context) {
 	gameModel := models.NewGameModel(g.Database)
 
-	upcomingGames, _, err := gameModel.GetUpcomingGamesBySort(requests.SortUpcoming{
-		Sort: "popularity",
-		Page: 1,
-	})
+	upcomingGames, _, err := gameModel.GetUpcomingGamesBySort(requests.Pagination{Page: 1})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -44,7 +41,7 @@ func (g *GameController) GetPreviewGames(c *gin.Context) {
 	}
 
 	topRatedGames, _, err := gameModel.GetGamesByFilterAndSort(requests.SortFilterGame{
-		Sort: "popularity",
+		Sort: "top",
 		Page: 1,
 	})
 	if err != nil {
@@ -55,7 +52,8 @@ func (g *GameController) GetPreviewGames(c *gin.Context) {
 		return
 	}
 
-	popularGames, _, err := gameModel.GetPopularGamesBySort(requests.Pagination{
+	popularGames, _, err := gameModel.GetGamesByFilterAndSort(requests.SortFilterGame{
+		Sort: "popularity",
 		Page: 1,
 	})
 	if err != nil {
@@ -75,12 +73,12 @@ func (g *GameController) GetPreviewGames(c *gin.Context) {
 // @Tags game
 // @Accept application/json
 // @Produce application/json
-// @Param sortupcoming body requests.SortUpcoming true "Sort Upcoming"
+// @Param pagination body requests.Pagination true "Pagination"
 // @Success 200 {array} responses.Game
 // @Failure 500 {string} string
 // @Router /game/upcoming [get]
 func (g *GameController) GetUpcomingGamesBySort(c *gin.Context) {
-	var data requests.SortUpcoming
+	var data requests.Pagination
 	if err := c.ShouldBindQuery(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": validatorErrorHandler(err),
@@ -101,40 +99,6 @@ func (g *GameController) GetUpcomingGamesBySort(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": upcomingGames})
-}
-
-// Get Popular Games
-// @Summary Get Popular Games by Sort
-// @Description Returns popular games with pagination
-// @Tags game
-// @Accept application/json
-// @Produce application/json
-// @Param pagination body requests.Pagination true "Pagination"
-// @Success 200 {array} responses.Game
-// @Failure 500 {string} string
-// @Router /game/popular [get]
-func (g *GameController) GetPopularGamesBySort(c *gin.Context) {
-	var data requests.Pagination
-	if err := c.ShouldBindQuery(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": validatorErrorHandler(err),
-		})
-
-		return
-	}
-
-	gameModel := models.NewGameModel(g.Database)
-
-	populargames, pagination, err := gameModel.GetPopularGamesBySort(data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": populargames})
 }
 
 // Get Games

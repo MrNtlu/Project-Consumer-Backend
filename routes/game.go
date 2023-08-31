@@ -15,7 +15,6 @@ func gameRouter(router *gin.RouterGroup, mongoDB *db.MongoDB) {
 	{
 		game.GET("/preview", gameController.GetPreviewGames)
 		game.GET("/upcoming", gameController.GetUpcomingGamesBySort)
-		game.GET("/popular", gameController.GetPopularGamesBySort)
 		game.GET("", gameController.GetGamesByFilterAndSort)
 		game.Use(helpers.OptionalTokenCheck).GET("/details", gameController.GetGameDetails)
 	}

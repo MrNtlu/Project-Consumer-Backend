@@ -109,49 +109,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/anime/popular": {
-            "get": {
-                "description": "Returns popular animes with pagination",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "anime"
-                ],
-                "summary": "Get Popular Animes by Sort",
-                "parameters": [
-                    {
-                        "description": "Pagination",
-                        "name": "pagination",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.Pagination"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.Anime"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/anime/preview": {
             "get": {
                 "description": "Returns preview animes",
@@ -714,49 +671,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/game/popular": {
-            "get": {
-                "description": "Returns popular games with pagination",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "game"
-                ],
-                "summary": "Get Popular Games by Sort",
-                "parameters": [
-                    {
-                        "description": "Pagination",
-                        "name": "pagination",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.Pagination"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.Game"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/game/preview": {
             "get": {
                 "description": "Returns preview games",
@@ -804,12 +718,12 @@ const docTemplate = `{
                 "summary": "Get Upcoming Games by Sort",
                 "parameters": [
                     {
-                        "description": "Sort Upcoming",
-                        "name": "sortupcoming",
+                        "description": "Pagination",
+                        "name": "pagination",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/requests.SortUpcoming"
+                            "$ref": "#/definitions/requests.Pagination"
                         }
                     }
                 ],
@@ -1696,49 +1610,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/movie/top": {
-            "get": {
-                "description": "Returns top rated movies with pagination",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "movie"
-                ],
-                "summary": "Get Top Rated Movies",
-                "parameters": [
-                    {
-                        "description": "Pagination",
-                        "name": "pagination",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.Pagination"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.Movie"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/movie/upcoming": {
             "get": {
                 "description": "Returns upcoming movies by sort with pagination",
@@ -1754,12 +1625,12 @@ const docTemplate = `{
                 "summary": "Get Upcoming Movies by Sort",
                 "parameters": [
                     {
-                        "description": "Sort Upcoming",
-                        "name": "sortupcoming",
+                        "description": "Pagination",
+                        "name": "pagination",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/requests.SortUpcoming"
+                            "$ref": "#/definitions/requests.Pagination"
                         }
                     }
                 ],
@@ -1984,49 +1855,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/tv/popular": {
-            "get": {
-                "description": "Returns popular tv series",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tv"
-                ],
-                "summary": "Get Popular TV Series by Sort",
-                "parameters": [
-                    {
-                        "description": "Pagination",
-                        "name": "pagination",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.Pagination"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.TVSeries"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/tv/preview": {
             "get": {
                 "description": "Returns preview tv series",
@@ -2102,49 +1930,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/tv/top": {
-            "get": {
-                "description": "Returns top rated tv series",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tv"
-                ],
-                "summary": "Get Top Rated TV Series by Sort",
-                "parameters": [
-                    {
-                        "description": "Pagination",
-                        "name": "pagination",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.Pagination"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.TVSeries"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/tv/upcoming": {
             "get": {
                 "description": "Returns upcoming tv series by sort with pagination",
@@ -2160,12 +1945,12 @@ const docTemplate = `{
                 "summary": "Get Upcoming TV Series by Sort",
                 "parameters": [
                     {
-                        "description": "Sort Upcoming",
-                        "name": "sortupcoming",
+                        "description": "Pagination",
+                        "name": "pagination",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/requests.SortUpcoming"
+                            "$ref": "#/definitions/requests.Pagination"
                         }
                     }
                 ],
@@ -3340,6 +3125,7 @@ const docTemplate = `{
                 "sort": {
                     "type": "string",
                     "enum": [
+                        "top",
                         "popularity",
                         "new",
                         "old"
@@ -3407,8 +3193,8 @@ const docTemplate = `{
                 "sort": {
                     "type": "string",
                     "enum": [
+                        "top",
                         "popularity",
-                        "metacritic",
                         "new",
                         "old"
                     ]
@@ -3448,6 +3234,7 @@ const docTemplate = `{
                 "sort": {
                     "type": "string",
                     "enum": [
+                        "top",
                         "popularity",
                         "new",
                         "old"
@@ -3497,6 +3284,7 @@ const docTemplate = `{
                 "sort": {
                     "type": "string",
                     "enum": [
+                        "top",
                         "popularity",
                         "new",
                         "old"
@@ -3753,6 +3541,9 @@ const docTemplate = `{
                 },
                 "mal_scored_by": {
                     "type": "integer"
+                },
+                "popularity": {
+                    "type": "number"
                 },
                 "producers": {
                     "type": "array",
@@ -4201,6 +3992,9 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "popularity": {
+                    "type": "number"
+                },
                 "publishers": {
                     "type": "array",
                     "items": {
@@ -4602,6 +4396,9 @@ const docTemplate = `{
                 "tmdb_vote_count": {
                     "type": "integer"
                 },
+                "top_rated": {
+                    "type": "number"
+                },
                 "translations": {
                     "type": "array",
                     "items": {
@@ -4934,6 +4731,9 @@ const docTemplate = `{
                 },
                 "tmdb_vote_count": {
                     "type": "integer"
+                },
+                "top_rated": {
+                    "type": "number"
                 },
                 "total_episodes": {
                     "type": "integer"

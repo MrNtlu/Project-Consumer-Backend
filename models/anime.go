@@ -33,69 +33,8 @@ const (
 	animePaginationLimit         = 40
 )
 
-/* TODO Endpoints
-* [x] Get upcoming by popularity etc.
-* [x] Get by season/year
-* [x] Get currently airing animes by day
-* [x] Get anime by popularity, genre etc.
-* [x] Get top airing
-* [x] Get top upcoming
-* [x] Get anime details
- */
-
-func (animeModel *AnimeModel) GetPopularAnimesBySort(data requests.Pagination) ([]responses.Anime, p.PaginationData, error) {
-	addFields := bson.M{"$addFields": bson.M{
-		"popularity": bson.M{
-			"$multiply": bson.A{
-				"$mal_score", "$mal_scored_by",
-			},
-		},
-	}}
-
-	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animePaginationLimit).
-		Page(data.Page).Sort("popularity", -1).Aggregate(addFields)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"request": data,
-		}).Error("failed to aggregate popular animes: ", err)
-
-		return nil, p.PaginationData{}, fmt.Errorf("Failed to get popular animes.")
-	}
-
-	var popularAnimes []responses.Anime
-	for _, raw := range paginatedData.Data {
-		var anime *responses.Anime
-		if marshalErr := bson.Unmarshal(raw, &anime); marshalErr == nil {
-			popularAnimes = append(popularAnimes, *anime)
-		}
-	}
-
-	return popularAnimes, paginatedData.Pagination, nil
-}
-
-func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.SortUpcoming) ([]responses.Anime, p.PaginationData, error) {
+func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.Pagination) ([]responses.Anime, p.PaginationData, error) {
 	currentSeason := getSeasonFromMonth()
-
-	var (
-		sortType            string
-		sortOrder           int8
-		hasReleaseDateOrder int8
-	)
-
-	switch data.Sort {
-	case "popularity":
-		sortType = "popularity"
-		sortOrder = -1
-		hasReleaseDateOrder = -1
-	case "soon":
-		sortType = "aired.from"
-		sortOrder = 1
-		hasReleaseDateOrder = -1
-	case "later":
-		sortType = "aired.from"
-		sortOrder = -1
-		hasReleaseDateOrder = 1
-	}
 
 	match := bson.M{"$match": bson.M{
 		"is_airing": false,
@@ -142,8 +81,16 @@ func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.SortUpcoming
 		},
 	}}
 
+	addPopularityFields := bson.M{"$addFields": bson.M{
+		"popularity": bson.M{
+			"$multiply": bson.A{
+				"$mal_score", "$mal_scored_by",
+			},
+		},
+	}}
+
 	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animeUpcomingPaginationLimit).
-		Page(data.Page).Sort("has_year", hasReleaseDateOrder).Sort(sortType, sortOrder).Sort("_id", 1).Aggregate(match, addFields)
+		Page(data.Page).Sort("has_year", -1).Sort("popularity", -1).Sort("_id", 1).Aggregate(match, addFields, addPopularityFields)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
@@ -262,14 +209,25 @@ func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek() ([]responses
 }
 
 func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterAnime) ([]responses.Anime, p.PaginationData, error) {
+	addFields := bson.M{"$addFields": bson.M{
+		"popularity": bson.M{
+			"$multiply": bson.A{
+				"$mal_score", "$mal_scored_by",
+			},
+		},
+	}}
+
 	var (
 		sortType  string
 		sortOrder int8
 	)
 
 	switch data.Sort {
-	case "popularity":
+	case "top":
 		sortType = "mal_score"
+		sortOrder = -1
+	case "popularity":
+		sortType = "popularity"
 		sortOrder = -1
 	case "new":
 		sortType = "aired.from"
@@ -279,7 +237,7 @@ func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterA
 		sortOrder = 1
 	}
 
-	match := bson.M{}
+	matchFields := bson.M{}
 	if data.Status != nil || data.Genres != nil || data.Demographics != nil ||
 		data.Studios != nil || data.Themes != nil {
 
@@ -295,43 +253,53 @@ func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterA
 				status = "Finished Airing"
 			}
 
-			match["status"] = status
+			matchFields["status"] = status
 		}
 
 		if data.Genres != nil {
-			match["genres.name"] = bson.M{
+			matchFields["genres.name"] = bson.M{
 				"$in": bson.A{data.Genres},
 			}
 		}
 
 		if data.Demographics != nil {
-			match["demographics.name"] = bson.M{
+			matchFields["demographics.name"] = bson.M{
 				"$in": bson.A{data.Demographics},
 			}
 		}
 
 		if data.Studios != nil {
-			match["studios.name"] = bson.M{
+			matchFields["studios.name"] = bson.M{
 				"$in": bson.A{data.Studios},
 			}
 		}
 
 		if data.Themes != nil {
-			match["themes.name"] = bson.M{
+			matchFields["themes.name"] = bson.M{
 				"$in": bson.A{data.Themes},
 			}
 		}
 	}
 
-	var animes []responses.Anime
+	match := bson.M{"$match": matchFields}
+
 	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animePaginationLimit).
-		Page(data.Page).Sort(sortType, sortOrder).Filter(match).Decode(&animes).Find()
+		Page(data.Page).Sort(sortType, sortOrder).Aggregate(match, addFields)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
+			"match":   match,
 		}).Error("failed to aggregate animes by sort and filter: ", err)
 
 		return nil, p.PaginationData{}, fmt.Errorf("Failed to get animes by selected filters.")
+	}
+
+	var animes []responses.Anime
+	for _, raw := range paginatedData.Data {
+		var anime *responses.Anime
+		if marshalErr := bson.Unmarshal(raw, &anime); marshalErr == nil {
+			animes = append(animes, *anime)
+		}
 	}
 
 	return animes, paginatedData.Pagination, nil

@@ -33,14 +33,6 @@ const (
 	moviePaginationLimit         = 40
 )
 
-/* TODO Endpoints
-* [x] Get upcoming movies by popularity etc.
-* [x] Get movies by release date, popularity, genre etc. (sort & filter)
-* [x] Get movie details
-* [x] Get top movies by every decade 1980's 1990's etc.
-* [ ] Get top movies by every genre (?)
- */
-
 //TODO Caching with Redis
 
 //TODO Implement for general usage
@@ -77,58 +69,7 @@ func (movieModel *MovieModel) GetMoviesFromOpenAI(movies []string) ([]responses.
 	return movieList, nil
 }
 
-func (movieModel *MovieModel) GetTopRatedMoviesBySort(data requests.Pagination) ([]responses.Movie, p.PaginationData, error) {
-	addFields := bson.M{"$addFields": bson.M{
-		"top_rated": bson.M{
-			"$multiply": bson.A{
-				"$tmdb_vote", "$tmdb_vote_count",
-			},
-		},
-	}}
-
-	paginatedData, err := p.New(movieModel.Collection).Context(context.TODO()).Limit(tvSeriesPaginationLimit).
-		Page(data.Page).Sort("top_rated", -1).Aggregate(addFields)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"request": data,
-		}).Error("failed to aggregate top rated movies: ", err)
-
-		return nil, p.PaginationData{}, fmt.Errorf("Failed to get top rated movies.")
-	}
-
-	var topRatedMovies []responses.Movie
-	for _, raw := range paginatedData.Data {
-		var movie *responses.Movie
-		if marshalErr := bson.Unmarshal(raw, &movie); marshalErr == nil {
-			topRatedMovies = append(topRatedMovies, *movie)
-		}
-	}
-
-	return topRatedMovies, paginatedData.Pagination, nil
-}
-
-func (movieModel *MovieModel) GetUpcomingMoviesBySort(data requests.SortUpcoming) ([]responses.Movie, p.PaginationData, error) {
-	var (
-		sortType            string
-		sortOrder           int8
-		hasReleaseDateOrder int8
-	)
-
-	switch data.Sort {
-	case "popularity":
-		sortType = "tmdb_popularity"
-		sortOrder = -1
-		hasReleaseDateOrder = -1
-	case "soon":
-		sortType = "release_date"
-		sortOrder = 1
-		hasReleaseDateOrder = -1
-	case "later":
-		sortType = "release_date"
-		sortOrder = -1
-		hasReleaseDateOrder = 1
-	}
-
+func (movieModel *MovieModel) GetUpcomingMoviesBySort(data requests.Pagination) ([]responses.Movie, p.PaginationData, error) {
 	match := bson.M{"$match": bson.M{
 		"$or": bson.A{
 			bson.M{
@@ -147,7 +88,7 @@ func (movieModel *MovieModel) GetUpcomingMoviesBySort(data requests.SortUpcoming
 	}}
 
 	paginatedData, err := p.New(movieModel.Collection).Context(context.TODO()).Limit(movieUpcomingPaginationLimit).
-		Page(data.Page).Sort("has_release_date", hasReleaseDateOrder).Sort(sortType, sortOrder).Sort("_id", 1).Aggregate(match, addFields)
+		Page(data.Page).Sort("has_release_date", -1).Sort("tmdb_popularity", -1).Sort("_id", 1).Aggregate(match, addFields)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
@@ -168,12 +109,23 @@ func (movieModel *MovieModel) GetUpcomingMoviesBySort(data requests.SortUpcoming
 }
 
 func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterMovie) ([]responses.Movie, p.PaginationData, error) {
+	addFields := bson.M{"$addFields": bson.M{
+		"top_rated": bson.M{
+			"$multiply": bson.A{
+				"$tmdb_vote", "$tmdb_vote_count",
+			},
+		},
+	}}
+
 	var (
 		sortType  string
 		sortOrder int8
 	)
 
 	switch data.Sort {
+	case "top":
+		sortType = "top_rated"
+		sortOrder = -1
 	case "popularity":
 		sortType = "tmdb_popularity"
 		sortOrder = -1
@@ -185,14 +137,14 @@ func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterM
 		sortOrder = 1
 	}
 
-	match := bson.M{}
+	matchFields := bson.M{}
 	if data.Status != nil || data.Genres != nil || data.ProductionCompanies != nil ||
 		data.ReleaseDateFrom != nil || data.ReleaseDateTo != nil {
 
 		if data.Status != nil {
 			switch *data.Status {
 			case "production":
-				match["$or"] = bson.A{
+				matchFields["$or"] = bson.A{
 					bson.M{
 						"status": "Post Production",
 					},
@@ -201,47 +153,57 @@ func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterM
 					},
 				}
 			case "released":
-				match["status"] = "Released"
+				matchFields["status"] = "Released"
 			case "planned":
-				match["status"] = "Planned"
+				matchFields["status"] = "Planned"
 			}
 		}
 
 		if data.Genres != nil {
-			match["genres"] = bson.M{
+			matchFields["genres"] = bson.M{
 				"$in": bson.A{data.Genres},
 			}
 		}
 
 		if data.ProductionCompanies != nil {
-			match["production_companies.name"] = bson.M{
+			matchFields["production_companies.name"] = bson.M{
 				"$in": bson.A{data.ProductionCompanies},
 			}
 		}
 
 		if data.ReleaseDateFrom != nil {
 			if data.ReleaseDateTo != nil {
-				match["release_date"] = bson.M{
+				matchFields["release_date"] = bson.M{
 					"$gte": strconv.Itoa(*data.ReleaseDateFrom),
 					"$lt":  strconv.Itoa(*data.ReleaseDateTo),
 				}
 			} else {
-				match["release_date"] = bson.M{
+				matchFields["release_date"] = bson.M{
 					"$gte": strconv.Itoa(*data.ReleaseDateFrom),
 				}
 			}
 		}
 	}
 
-	var movies []responses.Movie
+	match := bson.M{"$match": matchFields}
+
 	paginatedData, err := p.New(movieModel.Collection).Context(context.TODO()).Limit(moviePaginationLimit).
-		Page(data.Page).Sort(sortType, sortOrder).Filter(match).Decode(&movies).Find()
+		Page(data.Page).Sort(sortType, sortOrder).Aggregate(match, addFields)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
+			"match":   match,
 		}).Error("failed to aggregate movies by sort and filter: ", err)
 
 		return nil, p.PaginationData{}, fmt.Errorf("Failed to get movies by selected filters.")
+	}
+
+	var movies []responses.Movie
+	for _, raw := range paginatedData.Data {
+		var movie *responses.Movie
+		if marshalErr := bson.Unmarshal(raw, &movie); marshalErr == nil {
+			movies = append(movies, *movie)
+		}
 	}
 
 	return movies, paginatedData.Pagination, nil

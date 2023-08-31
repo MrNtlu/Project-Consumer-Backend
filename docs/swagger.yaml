@@ -470,6 +470,7 @@ definitions:
         type: integer
       sort:
         enum:
+        - top
         - popularity
         - new
         - old
@@ -518,8 +519,8 @@ definitions:
         type: string
       sort:
         enum:
+        - top
         - popularity
-        - metacritic
         - new
         - old
         type: string
@@ -548,6 +549,7 @@ definitions:
         type: integer
       sort:
         enum:
+        - top
         - popularity
         - new
         - old
@@ -584,6 +586,7 @@ definitions:
         type: string
       sort:
         enum:
+        - top
         - popularity
         - new
         - old
@@ -768,6 +771,8 @@ definitions:
         type: number
       mal_scored_by:
         type: integer
+      popularity:
+        type: number
       producers:
         items:
           $ref: '#/definitions/responses.AnimeNameURL'
@@ -1062,6 +1067,8 @@ definitions:
         items:
           type: string
         type: array
+      popularity:
+        type: number
       publishers:
         items:
           type: string
@@ -1326,6 +1333,8 @@ definitions:
         type: number
       tmdb_vote_count:
         type: integer
+      top_rated:
+        type: number
       translations:
         items:
           $ref: '#/definitions/responses.Translation'
@@ -1545,6 +1554,8 @@ definitions:
         type: number
       tmdb_vote_count:
         type: integer
+      top_rated:
+        type: number
       total_episodes:
         type: integer
       total_seasons:
@@ -1833,34 +1844,6 @@ paths:
           schema:
             type: string
       summary: Get Anime Details
-      tags:
-      - anime
-  /anime/popular:
-    get:
-      consumes:
-      - application/json
-      description: Returns popular animes with pagination
-      parameters:
-      - description: Pagination
-        in: body
-        name: pagination
-        required: true
-        schema:
-          $ref: '#/definitions/requests.Pagination'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.Anime'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Popular Animes by Sort
       tags:
       - anime
   /anime/preview:
@@ -2226,34 +2209,6 @@ paths:
       summary: Get Game Details
       tags:
       - game
-  /game/popular:
-    get:
-      consumes:
-      - application/json
-      description: Returns popular games with pagination
-      parameters:
-      - description: Pagination
-        in: body
-        name: pagination
-        required: true
-        schema:
-          $ref: '#/definitions/requests.Pagination'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.Game'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Popular Games by Sort
-      tags:
-      - game
   /game/preview:
     get:
       consumes:
@@ -2281,12 +2236,12 @@ paths:
       - application/json
       description: Returns upcoming games by sort with pagination
       parameters:
-      - description: Sort Upcoming
+      - description: Pagination
         in: body
-        name: sortupcoming
+        name: pagination
         required: true
         schema:
-          $ref: '#/definitions/requests.SortUpcoming'
+          $ref: '#/definitions/requests.Pagination'
       produces:
       - application/json
       responses:
@@ -2859,11 +2814,11 @@ paths:
       summary: Search Movie
       tags:
       - movie
-  /movie/top:
+  /movie/upcoming:
     get:
       consumes:
       - application/json
-      description: Returns top rated movies with pagination
+      description: Returns upcoming movies by sort with pagination
       parameters:
       - description: Pagination
         in: body
@@ -2871,34 +2826,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/requests.Pagination'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.Movie'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Top Rated Movies
-      tags:
-      - movie
-  /movie/upcoming:
-    get:
-      consumes:
-      - application/json
-      description: Returns upcoming movies by sort with pagination
-      parameters:
-      - description: Sort Upcoming
-        in: body
-        name: sortupcoming
-        required: true
-        schema:
-          $ref: '#/definitions/requests.SortUpcoming'
       produces:
       - application/json
       responses:
@@ -3047,34 +2974,6 @@ paths:
       summary: Get TV Series Details
       tags:
       - tv
-  /tv/popular:
-    get:
-      consumes:
-      - application/json
-      description: Returns popular tv series
-      parameters:
-      - description: Pagination
-        in: body
-        name: pagination
-        required: true
-        schema:
-          $ref: '#/definitions/requests.Pagination'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.TVSeries'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Popular TV Series by Sort
-      tags:
-      - tv
   /tv/preview:
     get:
       consumes:
@@ -3124,11 +3023,11 @@ paths:
       summary: Search TV Series
       tags:
       - tv
-  /tv/top:
+  /tv/upcoming:
     get:
       consumes:
       - application/json
-      description: Returns top rated tv series
+      description: Returns upcoming tv series by sort with pagination
       parameters:
       - description: Pagination
         in: body
@@ -3136,34 +3035,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/requests.Pagination'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.TVSeries'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Top Rated TV Series by Sort
-      tags:
-      - tv
-  /tv/upcoming:
-    get:
-      consumes:
-      - application/json
-      description: Returns upcoming tv series by sort with pagination
-      parameters:
-      - description: Sort Upcoming
-        in: body
-        name: sortupcoming
-        required: true
-        schema:
-          $ref: '#/definitions/requests.SortUpcoming'
       produces:
       - application/json
       responses:

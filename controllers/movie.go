@@ -31,10 +31,7 @@ func NewMovieController(mongoDB *db.MongoDB) MovieController {
 func (m *MovieController) GetPreviewMovies(c *gin.Context) {
 	movieModel := models.NewMovieModel(m.Database)
 
-	upcomingMovies, _, err := movieModel.GetUpcomingMoviesBySort(requests.SortUpcoming{
-		Sort: "popularity",
-		Page: 1,
-	})
+	upcomingMovies, _, err := movieModel.GetUpcomingMoviesBySort(requests.Pagination{Page: 1})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -55,7 +52,8 @@ func (m *MovieController) GetPreviewMovies(c *gin.Context) {
 		return
 	}
 
-	topMovies, _, err := movieModel.GetTopRatedMoviesBySort(requests.Pagination{
+	topMovies, _, err := movieModel.GetMoviesBySortAndFilter(requests.SortFilterMovie{
+		Sort: "top",
 		Page: 1,
 	})
 	if err != nil {
@@ -75,12 +73,12 @@ func (m *MovieController) GetPreviewMovies(c *gin.Context) {
 // @Tags movie
 // @Accept application/json
 // @Produce application/json
-// @Param sortupcoming body requests.SortUpcoming true "Sort Upcoming"
+// @Param pagination body requests.Pagination true "Pagination"
 // @Success 200 {array} responses.Movie
 // @Failure 500 {string} string
 // @Router /movie/upcoming [get]
 func (m *MovieController) GetUpcomingMoviesBySort(c *gin.Context) {
-	var data requests.SortUpcoming
+	var data requests.Pagination
 	if err := c.ShouldBindQuery(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": validatorErrorHandler(err),
@@ -101,40 +99,6 @@ func (m *MovieController) GetUpcomingMoviesBySort(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": upcomingMovies})
-}
-
-// Get Top Rated Movies
-// @Summary Get Top Rated Movies
-// @Description Returns top rated movies with pagination
-// @Tags movie
-// @Accept application/json
-// @Produce application/json
-// @Param pagination body requests.Pagination true "Pagination"
-// @Success 200 {array} responses.Movie
-// @Failure 500 {string} string
-// @Router /movie/top [get]
-func (m *MovieController) GetTopRatedMoviesBySort(c *gin.Context) {
-	var data requests.Pagination
-	if err := c.ShouldBindQuery(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": validatorErrorHandler(err),
-		})
-
-		return
-	}
-
-	movieModel := models.NewMovieModel(m.Database)
-
-	topRatedMovies, pagination, err := movieModel.GetTopRatedMoviesBySort(data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": topRatedMovies})
 }
 
 // Get Movies

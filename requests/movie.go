@@ -6,6 +6,6 @@ type SortFilterMovie struct {
 	ProductionCompanies *string `form:"production_companies"`
 	ReleaseDateFrom     *int    `form:"from" binding:"omitempty,number,min=1900,max=2050"`
 	ReleaseDateTo       *int    `form:"to" binding:"omitempty,number,min=1900,max=2050"`
-	Sort                string  `form:"sort" binding:"required,oneof=popularity new old"`
+	Sort                string  `form:"sort" binding:"required,oneof=top popularity new old"`
 	Page                int64   `form:"page" json:"page" binding:"required,number,min=1"`
 }

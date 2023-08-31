@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"time"
 
 	p "github.com/gobeam/mongo-go-pagination"
 	"github.com/sirupsen/logrus"
@@ -32,34 +31,7 @@ const (
 	gamePaginationLimit         = 40
 )
 
-/* TODO Endpoints
-* [x] Get upcoming by popularity etc.
-* [x] Get games by release date, popularity, genre, platform etc.
-* [x] Get game details
- */
-
-func (gameModel *GameModel) GetUpcomingGamesBySort(data requests.SortUpcoming) ([]responses.Game, p.PaginationData, error) {
-	var (
-		sortType            string
-		sortOrder           int8
-		hasReleaseDateOrder int8
-	)
-
-	switch data.Sort {
-	case "popularity":
-		sortType = "rawg_rating"
-		sortOrder = -1
-		hasReleaseDateOrder = -1
-	case "soon":
-		sortType = "release_date"
-		sortOrder = 1
-		hasReleaseDateOrder = -1
-	case "later":
-		sortType = "release_date"
-		sortOrder = -1
-		hasReleaseDateOrder = 1
-	}
-
+func (gameModel *GameModel) GetUpcomingGamesBySort(data requests.Pagination) ([]responses.Game, p.PaginationData, error) {
 	match := bson.M{"$match": bson.M{
 		"$or": bson.A{
 			bson.M{"tba": true},
@@ -80,10 +52,16 @@ func (gameModel *GameModel) GetUpcomingGamesBySort(data requests.SortUpcoming) (
 		},
 	}}
 
-	fmt.Println(time.Now().UTC(), utils.GetCurrentDate())
+	addPopularityFields := bson.M{"$addFields": bson.M{
+		"popularity": bson.M{
+			"$multiply": bson.A{
+				"$rawg_rating", "$rawg_rating_count",
+			},
+		},
+	}}
 
 	paginatedData, err := p.New(gameModel.Collection).Context(context.TODO()).Limit(gameUpcomingPaginationLimit).
-		Page(data.Page).Sort("has_release_date", hasReleaseDateOrder).Sort(sortType, sortOrder).Sort("_id", 1).Aggregate(match, addFields)
+		Page(data.Page).Sort("has_release_date", -1).Sort("popularity", -1).Sort("_id", 1).Aggregate(match, addFields, addPopularityFields)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
@@ -104,6 +82,14 @@ func (gameModel *GameModel) GetUpcomingGamesBySort(data requests.SortUpcoming) (
 }
 
 func (gameModel *GameModel) GetGamesByFilterAndSort(data requests.SortFilterGame) ([]responses.Game, p.PaginationData, error) {
+	addFields := bson.M{"$addFields": bson.M{
+		"popularity": bson.M{
+			"$multiply": bson.A{
+				"$rawg_rating", "$rawg_rating_count",
+			},
+		},
+	}}
+
 	var (
 		sortType  string
 		sortOrder int8
@@ -111,9 +97,9 @@ func (gameModel *GameModel) GetGamesByFilterAndSort(data requests.SortFilterGame
 
 	switch data.Sort {
 	case "popularity":
-		sortType = "rawg_rating"
+		sortType = "popularity"
 		sortOrder = -1
-	case "metacritic":
+	case "top":
 		sortType = "metacritic_score"
 		sortOrder = -1
 	case "new":
@@ -124,67 +110,47 @@ func (gameModel *GameModel) GetGamesByFilterAndSort(data requests.SortFilterGame
 		sortOrder = 1
 	}
 
-	match := bson.M{}
+	matchFields := bson.M{}
 	if data.Genres != nil || data.Platform != nil || data.TBA != nil {
 		if data.Genres != nil {
-			match["genres"] = bson.M{
+			matchFields["genres"] = bson.M{
 				"$in": bson.A{data.Genres},
 			}
 		}
 
 		if data.Platform != nil {
-			match["platforms"] = bson.M{
+			matchFields["platforms"] = bson.M{
 				"$in": bson.A{data.Platform},
 			}
 		}
 
 		if data.TBA != nil {
-			match["tba"] = data.TBA
+			matchFields["tba"] = data.TBA
 		}
 	}
 
-	var games []responses.Game
+	match := bson.M{"$match": matchFields}
+
 	paginatedData, err := p.New(gameModel.Collection).Context(context.TODO()).Limit(gamePaginationLimit).
-		Page(data.Page).Sort(sortType, sortOrder).Filter(match).Decode(&games).Find()
+		Page(data.Page).Sort(sortType, sortOrder).Aggregate(match, addFields)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
+			"match":   match,
 		}).Error("failed to aggregate games by sort and filter", err)
 
 		return nil, p.PaginationData{}, fmt.Errorf("Failed to get games.")
 	}
 
-	return games, paginatedData.Pagination, nil
-}
-
-func (gameModel *GameModel) GetPopularGamesBySort(data requests.Pagination) ([]responses.Game, p.PaginationData, error) {
-	addFields := bson.M{"$addFields": bson.M{
-		"popularity": bson.M{
-			"$multiply": bson.A{
-				"$rawg_rating", "$rawg_rating_count",
-			},
-		},
-	}}
-
-	paginatedData, err := p.New(gameModel.Collection).Context(context.TODO()).Limit(gamePaginationLimit).
-		Page(data.Page).Sort("popularity", -1).Aggregate(addFields)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"request": data,
-		}).Error("failed to aggregate popular games: ", err)
-
-		return nil, p.PaginationData{}, fmt.Errorf("Failed to get popular games.")
-	}
-
-	var popularGames []responses.Game
+	var games []responses.Game
 	for _, raw := range paginatedData.Data {
 		var game *responses.Game
 		if marshalErr := bson.Unmarshal(raw, &game); marshalErr == nil {
-			popularGames = append(popularGames, *game)
+			games = append(games, *game)
 		}
 	}
 
-	return popularGames, paginatedData.Pagination, nil
+	return games, paginatedData.Pagination, nil
 }
 
 func (gameModel *GameModel) GetGameDetails(data requests.ID) (responses.GameDetails, error) {

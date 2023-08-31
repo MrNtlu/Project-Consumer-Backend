@@ -32,36 +32,7 @@ const (
 	tvSeriesPaginationLimit         = 40
 )
 
-/* TODO Endpoints
-* [x] Get upcoming tv series by popularity etc.
-* [x] Get tv series by release date, popularity, genre etc. (sort & filter)
-* [ ] Get tv series details
-* [x] Get top tv series by every decade 1980's 1990's etc.
-* [x] Get top tv series by every genre
- */
-
-func (tvModel *TVModel) GetUpcomingTVSeries(data requests.SortUpcoming) ([]responses.TVSeries, p.PaginationData, error) {
-	var (
-		sortType        string
-		sortOrder       int8
-		hasAirDateOrder int8
-	)
-
-	switch data.Sort {
-	case "popularity":
-		sortType = "tmdb_popularity"
-		sortOrder = -1
-		hasAirDateOrder = -1
-	case "soon":
-		sortType = "first_air_date"
-		sortOrder = 1
-		hasAirDateOrder = -1
-	case "later":
-		sortType = "first_air_date"
-		sortOrder = -1
-		hasAirDateOrder = 1
-	}
-
+func (tvModel *TVModel) GetUpcomingTVSeries(data requests.Pagination) ([]responses.TVSeries, p.PaginationData, error) {
 	match := bson.M{"$match": bson.M{
 		"status": "In Production",
 	}}
@@ -80,7 +51,7 @@ func (tvModel *TVModel) GetUpcomingTVSeries(data requests.SortUpcoming) ([]respo
 	}}
 
 	paginatedData, err := p.New(tvModel.Collection).Context(context.TODO()).Limit(tvSeriesUpcomingPaginationLimit).
-		Page(data.Page).Sort("has_air_date", hasAirDateOrder).Sort(sortType, sortOrder).Sort("_id", 1).Aggregate(match, addFields)
+		Page(data.Page).Sort("has_air_date", -1).Sort("tmdb_popularity", -1).Sort("_id", 1).Aggregate(match, addFields)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
@@ -98,73 +69,6 @@ func (tvModel *TVModel) GetUpcomingTVSeries(data requests.SortUpcoming) ([]respo
 	}
 
 	return upcomingTVSeries, paginatedData.Pagination, nil
-}
-
-func (tvModel *TVModel) GetPopularTVSeries(data requests.Pagination) ([]responses.TVSeries, p.PaginationData, error) {
-	addFields := bson.M{"$addFields": bson.M{
-		"popularity": bson.M{
-			"$multiply": bson.A{
-				bson.M{
-					"$sqrt": bson.M{
-						"$multiply": bson.A{
-							"$tmdb_vote", "$tmdb_vote_count",
-						},
-					},
-				},
-				"$tmdb_popularity",
-			},
-		},
-	}}
-
-	paginatedData, err := p.New(tvModel.Collection).Context(context.TODO()).Limit(tvSeriesPaginationLimit).
-		Page(data.Page).Sort("popularity", -1).Aggregate(addFields)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"request": data,
-		}).Error("failed to aggregate popular tv series: ", err)
-
-		return nil, p.PaginationData{}, fmt.Errorf("Failed to get popular tv series.")
-	}
-
-	var popularTVSeries []responses.TVSeries
-	for _, raw := range paginatedData.Data {
-		var tvSeries *responses.TVSeries
-		if marshalErr := bson.Unmarshal(raw, &tvSeries); marshalErr == nil {
-			popularTVSeries = append(popularTVSeries, *tvSeries)
-		}
-	}
-
-	return popularTVSeries, paginatedData.Pagination, nil
-}
-
-func (tvModel *TVModel) GetTopRatedTVSeries(data requests.Pagination) ([]responses.TVSeries, p.PaginationData, error) {
-	addFields := bson.M{"$addFields": bson.M{
-		"top_rated": bson.M{
-			"$multiply": bson.A{
-				"$tmdb_vote", "$tmdb_vote_count",
-			},
-		},
-	}}
-
-	paginatedData, err := p.New(tvModel.Collection).Context(context.TODO()).Limit(tvSeriesPaginationLimit).
-		Page(data.Page).Sort("top_rated", -1).Aggregate(addFields)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"request": data,
-		}).Error("failed to aggregate top rated tv series: ", err)
-
-		return nil, p.PaginationData{}, fmt.Errorf("Failed to get top rated tv series.")
-	}
-
-	var topRatedTVSeries []responses.TVSeries
-	for _, raw := range paginatedData.Data {
-		var tvSeries *responses.TVSeries
-		if marshalErr := bson.Unmarshal(raw, &tvSeries); marshalErr == nil {
-			topRatedTVSeries = append(topRatedTVSeries, *tvSeries)
-		}
-	}
-
-	return topRatedTVSeries, paginatedData.Pagination, nil
 }
 
 //TODO Get the latest season and sort by that.
@@ -231,12 +135,38 @@ func (tvModel *TVModel) GetUpcomingSeasonTVSeries(data requests.SortUpcoming) ([
 }
 
 func (tvModel *TVModel) GetTVSeriesBySortAndFilter(data requests.SortFilterTVSeries) ([]responses.TVSeries, p.PaginationData, error) {
+	addFields := bson.M{"$addFields": bson.M{
+		"top_rated": bson.M{
+			"$multiply": bson.A{
+				"$tmdb_vote", "$tmdb_vote_count",
+			},
+		},
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"tmdb_popularity": bson.M{
+			"$multiply": bson.A{
+				bson.M{
+					"$sqrt": bson.M{
+						"$multiply": bson.A{
+							"$tmdb_vote", "$tmdb_vote_count",
+						},
+					},
+				},
+				"$tmdb_popularity",
+			},
+		},
+	}}
+
 	var (
 		sortType  string
 		sortOrder int8
 	)
 
 	switch data.Sort {
+	case "top":
+		sortType = "top_rated"
+		sortOrder = -1
 	case "popularity":
 		sortType = "tmdb_popularity"
 		sortOrder = -1
@@ -248,7 +178,7 @@ func (tvModel *TVModel) GetTVSeriesBySortAndFilter(data requests.SortFilterTVSer
 		sortOrder = 1
 	}
 
-	match := bson.M{}
+	matchFields := bson.M{}
 	if data.Status != nil || data.Genres != nil || data.ProductionCompanies != nil ||
 		data.FirstAirDateFrom != nil || data.NumSeason != nil {
 
@@ -263,53 +193,63 @@ func (tvModel *TVModel) GetTVSeriesBySortAndFilter(data requests.SortFilterTVSer
 				status = "Ended"
 			}
 
-			match["status"] = status
+			matchFields["status"] = status
 		}
 
 		if data.Genres != nil {
-			match["genres"] = bson.M{
+			matchFields["genres"] = bson.M{
 				"$in": bson.A{data.Genres},
 			}
 		}
 
 		if data.ProductionCompanies != nil {
-			match["production_companies.name"] = bson.M{
+			matchFields["production_companies.name"] = bson.M{
 				"$in": bson.A{data.ProductionCompanies},
 			}
 		}
 
 		if data.FirstAirDateFrom != nil {
 			if data.FirstAirDateTo != nil {
-				match["first_air_date"] = bson.M{
+				matchFields["first_air_date"] = bson.M{
 					"$gte": strconv.Itoa(*data.FirstAirDateFrom),
 					"$lt":  strconv.Itoa(*data.FirstAirDateTo),
 				}
 			} else {
-				match["first_air_date"] = bson.M{
+				matchFields["first_air_date"] = bson.M{
 					"$gte": strconv.Itoa(*data.FirstAirDateFrom),
 				}
 			}
 		}
 
 		if data.NumSeason != nil {
-			match["total_seasons"] = bson.M{
+			matchFields["total_seasons"] = bson.M{
 				"$gte": *data.NumSeason,
 			}
 		}
 	}
 
-	var tvSeries []responses.TVSeries
+	match := bson.M{"$match": matchFields}
+
 	paginatedData, err := p.New(tvModel.Collection).Context(context.TODO()).Limit(tvSeriesPaginationLimit).
-		Page(data.Page).Sort(sortType, sortOrder).Filter(match).Decode(&tvSeries).Find()
+		Page(data.Page).Sort(sortType, sortOrder).Aggregate(match, addFields, set)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
+			"match":   match,
 		}).Error("failed to aggregate tv series by sort and filter: ", err)
 
 		return nil, p.PaginationData{}, fmt.Errorf("Failed to get tv series by selected filters.")
 	}
 
-	return tvSeries, paginatedData.Pagination, nil
+	var tvSeriesList []responses.TVSeries
+	for _, raw := range paginatedData.Data {
+		var tvSeries *responses.TVSeries
+		if marshalErr := bson.Unmarshal(raw, &tvSeries); marshalErr == nil {
+			tvSeriesList = append(tvSeriesList, *tvSeries)
+		}
+	}
+
+	return tvSeriesList, paginatedData.Pagination, nil
 }
 
 func (tvModel *TVModel) GetTVSeriesDetails(data requests.ID) (responses.TVSeries, error) {

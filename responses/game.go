@@ -9,6 +9,7 @@ type Game struct {
 	Description               string                        `bson:"description" json:"description"`
 	TBA                       bool                          `bson:"tba" json:"tba"`
 	RawgID                    int64                         `bson:"rawg_id" json:"rawg_id"`
+	Popularity                float64                       `bson:"popularity" json:"popularity"`
 	RawgRating                float64                       `bson:"rawg_rating" json:"rawg_rating"`
 	RawgRatingCount           int64                         `bson:"rawg_rating_count" json:"rawg_rating_count"`
 	MetacriticScore           int64                         `bson:"metacritic_score" json:"metacritic_score"`

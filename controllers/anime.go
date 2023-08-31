@@ -31,10 +31,7 @@ func NewAnimeController(mongoDB *db.MongoDB) AnimeController {
 func (a *AnimeController) GetPreviewAnimes(c *gin.Context) {
 	animeModel := models.NewAnimeModel(a.Database)
 
-	upcomingAnimes, _, err := animeModel.GetUpcomingAnimesBySort(requests.SortUpcoming{
-		Sort: "popularity",
-		Page: 1,
-	})
+	upcomingAnimes, _, err := animeModel.GetUpcomingAnimesBySort(requests.Pagination{Page: 1})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -44,7 +41,7 @@ func (a *AnimeController) GetPreviewAnimes(c *gin.Context) {
 	}
 
 	topRatedAnimes, _, err := animeModel.GetAnimesBySortAndFilter(requests.SortFilterAnime{
-		Sort: "popularity",
+		Sort: "top",
 		Page: 1,
 	})
 	if err != nil {
@@ -55,7 +52,8 @@ func (a *AnimeController) GetPreviewAnimes(c *gin.Context) {
 		return
 	}
 
-	popularAnimes, _, err := animeModel.GetPopularAnimesBySort(requests.Pagination{
+	popularAnimes, _, err := animeModel.GetAnimesBySortAndFilter(requests.SortFilterAnime{
+		Sort: "popularity",
 		Page: 1,
 	})
 	if err != nil {
@@ -75,12 +73,12 @@ func (a *AnimeController) GetPreviewAnimes(c *gin.Context) {
 // @Tags anime
 // @Accept application/json
 // @Produce application/json
-// @Param sortupcoming body requests.SortUpcoming true "Sort Upcoming"
+// @Param pagination body requests.Pagination true "Pagination"
 // @Success 200 {array} responses.Anime
 // @Failure 500 {string} string
 // @Router /anime/upcoming [get]
 func (a *AnimeController) GetUpcomingAnimesBySort(c *gin.Context) {
-	var data requests.SortUpcoming
+	var data requests.Pagination
 	if err := c.ShouldBindQuery(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": validatorErrorHandler(err),
@@ -101,40 +99,6 @@ func (a *AnimeController) GetUpcomingAnimesBySort(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": upcomingAnimes})
-}
-
-// Get Popular Animes
-// @Summary Get Popular Animes by Sort
-// @Description Returns popular animes with pagination
-// @Tags anime
-// @Accept application/json
-// @Produce application/json
-// @Param pagination body requests.Pagination true "Pagination"
-// @Success 200 {array} responses.Anime
-// @Failure 500 {string} string
-// @Router /anime/popular [get]
-func (a *AnimeController) GetPopularAnimesBySort(c *gin.Context) {
-	var data requests.Pagination
-	if err := c.ShouldBindQuery(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": validatorErrorHandler(err),
-		})
-
-		return
-	}
-
-	animeModel := models.NewAnimeModel(a.Database)
-
-	popularAnimes, pagination, err := animeModel.GetPopularAnimesBySort(data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": popularAnimes})
 }
 
 // Get Animes By Year and Season

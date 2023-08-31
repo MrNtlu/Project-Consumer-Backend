@@ -13,6 +13,7 @@ type Movie struct {
 	ImdbID              string                 `bson:"imdb_id" json:"imdb_id"`
 	TmdbID              string                 `bson:"tmdb_id" json:"tmdb_id"`
 	TmdbPopularity      float64                `bson:"tmdb_popularity" json:"tmdb_popularity"`
+	TopRated            float64                `bson:"top_rated" json:"top_rated"`
 	TmdbVote            float64                `bson:"tmdb_vote" json:"tmdb_vote"`
 	TmdbVoteCount       int64                  `bson:"tmdb_vote_count" json:"tmdb_vote_count"`
 	ReleaseDate         string                 `bson:"release_date" json:"release_date"`

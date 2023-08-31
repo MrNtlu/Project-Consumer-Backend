@@ -15,6 +15,7 @@ type Anime struct {
 	Description   string             `bson:"description" json:"description"`
 	ImageURL      string             `bson:"image_url" json:"image_url"`
 	MalID         int64              `bson:"mal_id" json:"mal_id"`
+	Popularity    float64            `bson:"popularity" json:"popularity"`
 	MalScore      float64            `bson:"mal_score" json:"mal_score"`
 	MalScoredBy   int64              `bson:"mal_scored_by" json:"mal_scored_by"`
 	Trailer       *string            `bson:"trailer" json:"trailer"`
