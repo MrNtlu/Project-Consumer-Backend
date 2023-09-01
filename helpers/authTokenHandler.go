@@ -32,8 +32,8 @@ func SetupJWTHandler(mongoDB *db.MongoDB) *jwt.GinJWTMiddleware {
 	authMiddleware, err := jwt.New(&jwt.GinJWTMiddleware{
 		Realm:       "project-consumer",
 		Key:         []byte(os.Getenv("JWT_SECRET_KEY")),
-		Timeout:     time.Hour * 72,  // 3 days
-		MaxRefresh:  time.Hour * 168, // 1 Week
+		Timeout:     time.Hour * 336,  // 2 weeks
+		MaxRefresh:  time.Hour * 1460, // 2 months
 		IdentityKey: identityKey,
 		Authenticator: func(c *gin.Context) (interface{}, error) {
 			var data requests.Login
