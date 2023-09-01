@@ -646,6 +646,294 @@ func (userListModel *UserListModel) GetMovieListByUserID(uid string) ([]response
 	return userList, nil
 }
 
+func (userListModel *UserListModel) GetUserListStats(uid string) (responses.UserStats, error) {
+	match := bson.M{"$match": bson.M{
+		"user_id": uid,
+	}}
+
+	facet := bson.M{"$facet": bson.M{
+		"lookups": bson.A{
+			bson.M{
+				"$lookup": bson.M{
+					"from":         "anime-lists",
+					"localField":   "user_id",
+					"foreignField": "user_id",
+					"as":           "anime_list",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from":         "game-lists",
+					"localField":   "user_id",
+					"foreignField": "user_id",
+					"as":           "game_list",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from":         "movie-watch-lists",
+					"localField":   "user_id",
+					"foreignField": "user_id",
+					"as":           "movie_list",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from":         "tvseries-watch-lists",
+					"localField":   "user_id",
+					"foreignField": "user_id",
+					"as":           "tv_list",
+				},
+			},
+		},
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$lookups",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	replaceRoot := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$lookups",
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"movie_list": bson.M{
+			"$map": bson.M{
+				"input": bson.M{
+					"$filter": bson.M{
+						"input": "$movie_list",
+						"as":    "movies",
+						"cond": bson.M{
+							"$gt": bson.A{
+								"$$movies.times_finished",
+								0,
+							},
+						},
+					},
+				},
+				"as": "movie_list",
+				"in": bson.M{
+					"movie_obj_id": bson.M{
+						"$toObjectId": "$$movie_list.movie_id",
+					},
+					"movie_tmdb_id":  "$$movie_list.movie_tmdb_id",
+					"times_finished": "$$movie_list.times_finished",
+				},
+			},
+		},
+		"tv_list": bson.M{
+			"$map": bson.M{
+				"input": bson.M{
+					"$filter": bson.M{
+						"input": "$tv_list",
+						"as":    "tv",
+						"cond": bson.M{
+							"$gt": bson.A{
+								"$$tv.times_finished",
+								0,
+							},
+						},
+					},
+				},
+				"as": "tv_list",
+				"in": bson.M{
+					"tv_obj_id": bson.M{
+						"$toObjectId": "$$tv_list.tv_id",
+					},
+					"tv_tmdb_id":       "$$tv_list.movie_tmdb_id",
+					"times_finished":   "$$tv_list.times_finished",
+					"watched_episodes": "$$tv_list.watched_episodes",
+				},
+			},
+		},
+		"game_list": bson.M{
+			"$map": bson.M{
+				"input": "$game_list",
+				"as":    "game_list",
+				"in": bson.M{
+					"game_obj_id": bson.M{
+						"$toObjectId": "$$game_list.game_id",
+					},
+					"game_rawg_id": "$$game_list.game_rawg_id",
+					"hours_played": "$$game_list.hours_played",
+				},
+			},
+		},
+		"anime_list": bson.M{
+			"$map": bson.M{
+				"input": bson.M{
+					"$filter": bson.M{
+						"input": "$anime_list",
+						"as":    "animes",
+						"cond": bson.M{
+							"$gt": bson.A{
+								"$$animes.times_finished",
+								0,
+							},
+						},
+					},
+				},
+				"as": "anime_list",
+				"in": bson.M{
+					"anime_obj_id": bson.M{
+						"$toObjectId": "$$anime_list.anime_id",
+					},
+					"anime_mal_id":     "$$anime_list.anime_mal_id",
+					"times_finished":   "$$anime_list.times_finished",
+					"watched_episodes": "$$anime_list.watched_episodes",
+				},
+			},
+		},
+	}}
+
+	facetMovies := bson.M{"$facet": bson.M{
+		"lookups": bson.A{
+			bson.M{
+				"$lookup": bson.M{
+					"from": "movies",
+					"let": bson.M{
+						"obj_id":         "$movie_list.movie_obj_id",
+						"tmdb_id":        "$movie_list.movie_tmdb_id",
+						"times_finished": "$movie_list.times_finished",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{
+											"$in": bson.A{"$_id", "$$obj_id"},
+										},
+										bson.M{
+											"$in": bson.A{"$tmdb_id", "$$tmdb_id"},
+										},
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"length": 1,
+								"times_finished": bson.M{
+									"$arrayElemAt": bson.A{
+										"$$times_finished",
+										bson.M{
+											"$indexOfArray": bson.A{
+												"$$obj_id",
+												"$_id",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					"as": "movie_list",
+				},
+			},
+		},
+	}}
+
+	unwindSecond := bson.M{"$unwind": bson.M{
+		"path":                       "$lookups",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	replaceRootSecond := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$lookups",
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"anime_count": bson.M{
+			"$size": "$anime_list",
+		},
+		"game_count": bson.M{
+			"$size": "$game_list",
+		},
+		"movie_count": bson.M{
+			"$size": "$movie_list",
+		},
+		"tv_count": bson.M{
+			"$size": "$tv_list",
+		},
+		"movie_watched_time": bson.M{
+			"$sum": bson.M{
+				"$map": bson.M{
+					"input": "$movie_list",
+					"as":    "movies",
+					"in": bson.M{
+						"$multiply": bson.A{
+							"$$movies.times_finished",
+							"$$movies.length",
+						},
+					},
+				},
+			},
+		},
+		"anime_watched_episodes": bson.M{
+			"$sum": bson.M{
+				"$map": bson.M{
+					"input": "$anime_list",
+					"as":    "animes",
+					"in": bson.M{
+						"$multiply": bson.A{
+							"$$animes.watched_episodes",
+							"$$animes.times_finished",
+						},
+					},
+				},
+			},
+		},
+		"tv_watched_episodes": bson.M{
+			"$sum": bson.M{
+				"$map": bson.M{
+					"input": "$tv_list",
+					"as":    "tv",
+					"in": bson.M{
+						"$multiply": bson.A{
+							"$$tv.watched_episodes",
+							"$$tv.times_finished",
+						},
+					},
+				},
+			},
+		},
+		"game_total_hours_played": bson.M{
+			"$sum": "$game_list.hours_played",
+		},
+	}}
+
+	cursor, err := userListModel.UserListCollection.Aggregate(context.TODO(), bson.A{
+		match, facet, unwind, replaceRoot, set,
+		facetMovies, unwindSecond, replaceRootSecond, project,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to aggregate user list: ", err)
+
+		return responses.UserStats{}, fmt.Errorf("Failed to aggregate user stats.")
+	}
+
+	var userStats []responses.UserStats
+	if err = cursor.All(context.TODO(), &userStats); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to decode user stats: ", err)
+
+		return responses.UserStats{}, fmt.Errorf("Failed to decode user stats.")
+	}
+
+	if len(userStats) > 0 {
+		return userStats[0], nil
+	}
+
+	return responses.UserStats{}, nil
+}
+
 func (userListModel *UserListModel) GetUserListByUserID(uid string, data requests.SortList) (responses.UserList, error) {
 	match := bson.M{"$match": bson.M{
 		"user_id": uid,
@@ -677,123 +965,6 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 		"localField":   "user_id",
 		"foreignField": "user_id",
 		"as":           "tv_watch_list",
-	}}
-
-	addFields := bson.M{"$addFields": bson.M{
-		"anime_count": bson.M{
-			"$size": "$anime_list",
-		},
-		"game_count": bson.M{
-			"$size": "$game_list",
-		},
-		"movie_count": bson.M{
-			"$size": "$movie_watch_list",
-		},
-		"tv_count": bson.M{
-			"$size": "$tv_watch_list",
-		},
-		"anime_total_watched_episodes": bson.M{
-			"$sum": "$anime_list.watched_episodes",
-		},
-		"tv_total_watched_episodes": bson.M{
-			"$sum": "$tv_watch_list.watched_episodes",
-		},
-		"anime_total_finished": bson.M{
-			"$sum": "$anime_list.times_finished",
-		},
-		"game_total_finished": bson.M{
-			"$sum": "$game_list.times_finished",
-		},
-		"movie_total_finished": bson.M{
-			"$sum": "$movie_watch_list.times_finished",
-		},
-		"tv_total_finished": bson.M{
-			"$sum": "$tv_watch_list.times_finished",
-		},
-		"anime_avg_score": bson.M{
-			"$divide": bson.A{
-				bson.M{
-					"$sum": "$anime_list.score",
-				},
-				bson.M{
-					"$cond": bson.A{
-						bson.M{
-							"$gt": bson.A{
-								bson.M{"$size": "$anime_list"},
-								0,
-							},
-						},
-						bson.M{
-							"$size": "$anime_list",
-						},
-						1,
-					},
-				},
-			},
-		},
-		"game_avg_score": bson.M{
-			"$divide": bson.A{
-				bson.M{
-					"$sum": "$game_list.score",
-				},
-				bson.M{
-					"$cond": bson.A{
-						bson.M{
-							"$gt": bson.A{
-								bson.M{"$size": "$game_list"},
-								0,
-							},
-						},
-						bson.M{
-							"$size": "$game_list",
-						},
-						1,
-					},
-				},
-			},
-		},
-		"movie_avg_score": bson.M{
-			"$divide": bson.A{
-				bson.M{
-					"$sum": "$movie_watch_list.score",
-				},
-				bson.M{
-					"$cond": bson.A{
-						bson.M{
-							"$gt": bson.A{
-								bson.M{"$size": "$movie_watch_list"},
-								0,
-							},
-						},
-						bson.M{
-							"$size": "$movie_watch_list",
-						},
-						1,
-					},
-				},
-			},
-		},
-		"tv_avg_score": bson.M{
-			"$divide": bson.A{
-				bson.M{
-					"$sum": "$tv_watch_list.score",
-				},
-				bson.M{
-					"$cond": bson.A{
-						bson.M{
-							"$gt": bson.A{
-								bson.M{"$size": "$tv_watch_list"},
-								0,
-							},
-						},
-						bson.M{
-							"$size": "$tv_watch_list",
-						},
-						1,
-					},
-				},
-			},
-		},
 	}}
 
 	facet := bson.M{"$facet": bson.M{
@@ -1421,63 +1592,9 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 		"newRoot": "$lookups",
 	}}
 
-	/*
-		var (
-			sortType  string
-			sortOrder int8
-		)
-
-		switch data.Sort {
-		case "score":
-			sortType = "score"
-			sortOrder = -1
-		case "timeswatched":
-			sortType = "times_finished"
-			sortOrder = -1
-		}
-
-		sort := bson.M{"$set": bson.M{
-			"movie_watch_list": bson.M{
-				"$sortArray": bson.M{
-					"input": "$movie_watch_list",
-					"sortBy": bson.M{
-						"status_sort": 1,
-						sortType:      sortOrder,
-					},
-				},
-			},
-			"anime_list": bson.M{
-				"$sortArray": bson.M{
-					"input": "$anime_list",
-					"sortBy": bson.M{
-						"status_sort": 1,
-						sortType:      sortOrder,
-					},
-				},
-			},
-			"game_list": bson.M{
-				"$sortArray": bson.M{
-					"input": "$game_list",
-					"sortBy": bson.M{
-						"status_sort": 1,
-						sortType:      sortOrder,
-					},
-				},
-			},
-			"tv_watch_list": bson.M{
-				"$sortArray": bson.M{
-					"input": "$tv_watch_list",
-					"sortBy": bson.M{
-						"status_sort": 1,
-						sortType:      sortOrder,
-					},
-				},
-			},
-		}}
-	*/
 	cursor, err := userListModel.UserListCollection.Aggregate(context.TODO(), bson.A{
 		match, animeListLookup, gameListLookup, movieListLookup,
-		tvListLookup, addFields, facet, unwind, replaceRoot,
+		tvListLookup, facet, unwind, replaceRoot,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{

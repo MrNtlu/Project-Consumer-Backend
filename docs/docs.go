@@ -4920,6 +4920,9 @@ const docTemplate = `{
                 "anime_count": {
                     "type": "integer"
                 },
+                "anime_watched_episodes": {
+                    "type": "integer"
+                },
                 "consume_later": {
                     "type": "array",
                     "items": {
@@ -4933,6 +4936,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "game_count": {
+                    "type": "integer"
+                },
+                "game_total_hours_played": {
                     "type": "integer"
                 },
                 "image": {
@@ -4956,7 +4962,13 @@ const docTemplate = `{
                 "movie_count": {
                     "type": "integer"
                 },
+                "movie_watched_time": {
+                    "type": "integer"
+                },
                 "tv_count": {
+                    "type": "integer"
+                },
+                "tv_watched_episodes": {
                     "type": "integer"
                 },
                 "username": {
@@ -4993,29 +5005,11 @@ const docTemplate = `{
                 "_id": {
                     "type": "string"
                 },
-                "anime_avg_score": {
-                    "type": "number"
-                },
-                "anime_count": {
-                    "type": "integer"
-                },
                 "anime_list": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/responses.AnimeList"
                     }
-                },
-                "anime_total_finished": {
-                    "type": "integer"
-                },
-                "anime_total_watched_episodes": {
-                    "type": "integer"
-                },
-                "game_avg_score": {
-                    "type": "number"
-                },
-                "game_count": {
-                    "type": "integer"
                 },
                 "game_list": {
                     "type": "array",
@@ -5023,20 +5017,8 @@ const docTemplate = `{
                         "$ref": "#/definitions/responses.GameList"
                     }
                 },
-                "game_total_finished": {
-                    "type": "integer"
-                },
                 "is_public": {
                     "type": "boolean"
-                },
-                "movie_avg_score": {
-                    "type": "number"
-                },
-                "movie_count": {
-                    "type": "integer"
-                },
-                "movie_total_finished": {
-                    "type": "integer"
                 },
                 "movie_watch_list": {
                     "type": "array",
@@ -5046,18 +5028,6 @@ const docTemplate = `{
                 },
                 "slug": {
                     "type": "string"
-                },
-                "tv_avg_score": {
-                    "type": "number"
-                },
-                "tv_count": {
-                    "type": "integer"
-                },
-                "tv_total_finished": {
-                    "type": "integer"
-                },
-                "tv_total_watched_episodes": {
-                    "type": "integer"
                 },
                 "tv_watch_list": {
                     "type": "array",

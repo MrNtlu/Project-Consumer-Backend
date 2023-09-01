@@ -1678,6 +1678,8 @@ definitions:
     properties:
       anime_count:
         type: integer
+      anime_watched_episodes:
+        type: integer
       consume_later:
         items:
           $ref: '#/definitions/responses.ConsumeLater'
@@ -1687,6 +1689,8 @@ definitions:
       fcm_token:
         type: string
       game_count:
+        type: integer
+      game_total_hours_played:
         type: integer
       image:
         type: string
@@ -1702,7 +1706,11 @@ definitions:
         type: integer
       movie_count:
         type: integer
+      movie_watched_time:
+        type: integer
       tv_count:
+        type: integer
+      tv_watched_episodes:
         type: integer
       username:
         type: string
@@ -1726,50 +1734,22 @@ definitions:
     properties:
       _id:
         type: string
-      anime_avg_score:
-        type: number
-      anime_count:
-        type: integer
       anime_list:
         items:
           $ref: '#/definitions/responses.AnimeList'
         type: array
-      anime_total_finished:
-        type: integer
-      anime_total_watched_episodes:
-        type: integer
-      game_avg_score:
-        type: number
-      game_count:
-        type: integer
       game_list:
         items:
           $ref: '#/definitions/responses.GameList'
         type: array
-      game_total_finished:
-        type: integer
       is_public:
         type: boolean
-      movie_avg_score:
-        type: number
-      movie_count:
-        type: integer
-      movie_total_finished:
-        type: integer
       movie_watch_list:
         items:
           $ref: '#/definitions/responses.MovieList'
         type: array
       slug:
         type: string
-      tv_avg_score:
-        type: number
-      tv_count:
-        type: integer
-      tv_total_finished:
-        type: integer
-      tv_total_watched_episodes:
-        type: integer
       tv_watch_list:
         items:
           $ref: '#/definitions/responses.TVSeriesList'

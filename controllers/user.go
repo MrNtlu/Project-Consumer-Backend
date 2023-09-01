@@ -149,6 +149,25 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 	}
 	userInfo.ConsumeLater = consumeLaterList
 
+	userListModel := models.NewUserListModel(u.Database)
+
+	userStats, err := userListModel.GetUserListStats(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+	userInfo.AnimeCount = userStats.AnimeCount
+	userInfo.GameCount = userStats.GameCount
+	userInfo.MovieCount = userStats.MovieCount
+	userInfo.TVCount = userStats.TVCount
+	userInfo.MovieWatchedTime = userStats.MovieWatchedTime
+	userInfo.AnimeWatchedEpisodes = userStats.AnimeWatchedEpisodes
+	userInfo.TVWatchedEpisodes = userStats.TVWatchedEpisodes
+	userInfo.GameTotalHoursPlayed = userStats.GameTotalHoursPlayed
+
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched user info.", "data": userInfo})
 }
 

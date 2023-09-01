@@ -26,7 +26,10 @@ func NewUserModel(mongoDB *db.MongoDB) *UserModel {
 	}
 }
 
-const legendContentThreshold = 3
+const legendMovieThreshold = 4
+const legendTVThreshold = 2
+const legendAnimeThreshold = 3
+const legendGameThreshold = 3
 
 type User struct {
 	ID                 primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
@@ -662,7 +665,7 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 						"input": "$anime_list",
 						"as":    "animes",
 						"cond": bson.M{
-							"$gte": bson.A{"$$animes.times_finished", legendContentThreshold},
+							"$gte": bson.A{"$$animes.times_finished", legendAnimeThreshold},
 						},
 					},
 				},
@@ -682,7 +685,7 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 						"input": "$movie_list",
 						"as":    "movies",
 						"cond": bson.M{
-							"$gte": bson.A{"$$movies.times_finished", legendContentThreshold},
+							"$gte": bson.A{"$$movies.times_finished", legendMovieThreshold},
 						},
 					},
 				},
@@ -702,7 +705,7 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 						"input": "$tv_list",
 						"as":    "tvs",
 						"cond": bson.M{
-							"$gte": bson.A{"$$tvs.times_finished", legendContentThreshold},
+							"$gte": bson.A{"$$tvs.times_finished", legendTVThreshold},
 						},
 					},
 				},
@@ -722,7 +725,7 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 						"input": "$game_list",
 						"as":    "games",
 						"cond": bson.M{
-							"$gte": bson.A{"$$games.times_finished", legendContentThreshold},
+							"$gte": bson.A{"$$games.times_finished", legendGameThreshold},
 						},
 					},
 				},

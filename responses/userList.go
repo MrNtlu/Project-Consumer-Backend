@@ -3,28 +3,14 @@ package responses
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type UserList struct {
-	ID                        primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
-	UserID                    string             `bson:"user_id" json:"user_id"`
-	Slug                      string             `bson:"slug" json:"slug"`
-	IsPublic                  bool               `bson:"is_public" json:"is_public"`
-	AnimeCount                int32              `bson:"anime_count" json:"anime_count"`
-	GameCount                 int32              `bson:"game_count" json:"game_count"`
-	MovieCount                int32              `bson:"movie_count" json:"movie_count"`
-	TVCount                   int32              `bson:"tv_count" json:"tv_count"`
-	AnimeTotalWatchedEpisodes int64              `bson:"anime_total_watched_episodes" json:"anime_total_watched_episodes"`
-	TVTotalWatchedEpisodes    int64              `bson:"tv_total_watched_episodes" json:"tv_total_watched_episodes"`
-	AnimeTotalFinished        int64              `bson:"anime_total_finished" json:"anime_total_finished"`
-	GameTotalFinished         int64              `bson:"game_total_finished" json:"game_total_finished"`
-	MovieTotalFinished        int64              `bson:"movie_total_finished" json:"movie_total_finished"`
-	TVTotalFinished           int64              `bson:"tv_total_finished" json:"tv_total_finished"`
-	AnimeAvgScore             float64            `bson:"anime_avg_score" json:"anime_avg_score"`
-	GameAvgScore              float64            `bson:"game_avg_score" json:"game_avg_score"`
-	MovieAvgScore             float64            `bson:"movie_avg_score" json:"movie_avg_score"`
-	TVAvgScore                float64            `bson:"tv_avg_score" json:"tv_avg_score"`
-	AnimeList                 []AnimeList        `bson:"anime_list" json:"anime_list"`
-	MovieList                 []MovieList        `bson:"movie_watch_list" json:"movie_watch_list"`
-	TVList                    []TVSeriesList     `bson:"tv_watch_list" json:"tv_watch_list"`
-	GameList                  []GameList         `bson:"game_list" json:"game_list"`
+	ID        primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	UserID    string             `bson:"user_id" json:"user_id"`
+	Slug      string             `bson:"slug" json:"slug"`
+	IsPublic  bool               `bson:"is_public" json:"is_public"`
+	AnimeList []AnimeList        `bson:"anime_list" json:"anime_list"`
+	MovieList []MovieList        `bson:"movie_watch_list" json:"movie_watch_list"`
+	TVList    []TVSeriesList     `bson:"tv_watch_list" json:"tv_watch_list"`
+	GameList  []GameList         `bson:"game_list" json:"game_list"`
 }
 
 type AnimeList struct {
