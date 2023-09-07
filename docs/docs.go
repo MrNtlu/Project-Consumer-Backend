@@ -4985,6 +4985,9 @@ const docTemplate = `{
                 "content_type": {
                     "type": "string"
                 },
+                "hours_played": {
+                    "type": "integer"
+                },
                 "image_url": {
                     "type": "string"
                 },

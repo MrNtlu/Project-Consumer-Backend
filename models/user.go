@@ -30,6 +30,7 @@ const legendMovieThreshold = 4
 const legendTVThreshold = 2
 const legendAnimeThreshold = 3
 const legendGameThreshold = 3
+const legendGameHoursPlayedThreshold = 300
 
 type User struct {
 	ID                 primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
@@ -725,13 +726,21 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 						"input": "$game_list",
 						"as":    "games",
 						"cond": bson.M{
-							"$gte": bson.A{"$$games.times_finished", legendGameThreshold},
+							"$or": bson.A{
+								bson.M{
+									"$gte": bson.A{"$$games.times_finished", legendGameThreshold},
+								},
+								bson.M{
+									"$gte": bson.A{"$$games.hours_played", legendGameHoursPlayedThreshold},
+								},
+							},
 						},
 					},
 				},
 				"as": "game",
 				"in": bson.M{
 					"times_finished": "$$game.times_finished",
+					"hours_played":   "$$game.hours_played",
 					"game_obj_id": bson.M{
 						"$toObjectId": "$$game.game_id",
 					},
@@ -871,6 +880,7 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 					"let": bson.M{
 						"obj_id":         "$legend_game_list.game_obj_id",
 						"times_finished": "$legend_game_list.times_finished",
+						"hours_played":   "$legend_game_list.hours_played",
 					},
 					"pipeline": bson.A{
 						bson.M{
@@ -889,6 +899,17 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 								"title_original": 1,
 								"title_en":       "$title",
 								"content_type":   "game",
+								"hours_played": bson.M{
+									"$arrayElemAt": bson.A{
+										"$$hours_played",
+										bson.M{
+											"$indexOfArray": bson.A{
+												"$$obj_id",
+												"$_id",
+											},
+										},
+									},
+								},
 								"times_finished": bson.M{
 									"$arrayElemAt": bson.A{
 										"$$times_finished",

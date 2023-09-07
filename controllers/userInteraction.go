@@ -20,6 +20,8 @@ func NewUserInteractionController(mongoDB *db.MongoDB) UserInteractionController
 	}
 }
 
+const errAlreadyInList = "This content is already in User List."
+
 // Create Consume Later
 // @Summary Create Consume Later
 // @Description Creates Consume Later
@@ -229,6 +231,13 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 			return
 		}
 
+		animeList := userListModel.GetAnimeListByUserIdAndAnimeId(uid, consumeLater.ContentID)
+
+		if animeList.UserID != "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": errAlreadyInList})
+			return
+		}
+
 		if _, err = userListModel.CreateAnimeList(uid, requests.CreateAnimeList{
 			AnimeID:       consumeLater.ContentID,
 			AnimeMALID:    anime.MalID,
@@ -284,6 +293,13 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 
 		if game.TitleOriginal == "" {
 			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+			return
+		}
+
+		gameList := userListModel.GetGameListByUserIdAndGameId(uid, consumeLater.ContentID)
+
+		if gameList.UserID != "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": errAlreadyInList})
 			return
 		}
 
@@ -346,6 +362,13 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 			return
 		}
 
+		movieList := userListModel.GetMovieListByUserIdAndMovieId(uid, consumeLater.ContentID)
+
+		if movieList.UserID != "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": errAlreadyInList})
+			return
+		}
+
 		if _, err = userListModel.CreateMovieWatchList(uid, requests.CreateMovieWatchList{
 			MovieID:     consumeLater.ContentID,
 			MovieTmdbID: *consumeLater.ContentExternalID,
@@ -400,6 +423,13 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 
 		if tvSeries.TitleOriginal == "" {
 			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+			return
+		}
+
+		tvList := userListModel.GetTVSeriesListByUserIdAndTVId(uid, consumeLater.ContentID)
+
+		if tvList.UserID != "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": errAlreadyInList})
 			return
 		}
 

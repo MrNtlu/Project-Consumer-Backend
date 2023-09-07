@@ -48,5 +48,6 @@ type UserInfoContent struct {
 	TitleOriginal string             `bson:"title_original" json:"title_original"`
 	ImageURL      string             `bson:"image_url" json:"image_url"`
 	TimesFinished int                `bson:"times_finished" json:"times_finished"`
+	HoursPlayed   *int64             `bson:"hours_played" json:"hours_played"`
 	ContentType   string             `bson:"content_type" json:"content_type"`
 }

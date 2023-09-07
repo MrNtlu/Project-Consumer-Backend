@@ -528,6 +528,22 @@ func (userListModel *UserListModel) GetBaseAnimeListByID(animeListID string) (An
 	return animeList, nil
 }
 
+func (userListModel *UserListModel) GetAnimeListByUserIdAndAnimeId(uid, animeId string) AnimeList {
+	result := userListModel.AnimeListCollection.FindOne(context.TODO(), bson.M{"user_id": uid, "anime_id": animeId})
+
+	var animeList AnimeList
+	if err := result.Decode(&animeList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"user_id":  uid,
+			"anime_id": animeId,
+		}).Error("failed to find anime list by user id and anime id: ", err)
+
+		return AnimeList{}
+	}
+
+	return animeList
+}
+
 func (userListModel *UserListModel) GetBaseGameListByID(gameListID string) (GameList, error) {
 	objectID, _ := primitive.ObjectIDFromHex(gameListID)
 
@@ -543,6 +559,22 @@ func (userListModel *UserListModel) GetBaseGameListByID(gameListID string) (Game
 	}
 
 	return gameList, nil
+}
+
+func (userListModel *UserListModel) GetGameListByUserIdAndGameId(uid, gameId string) GameList {
+	result := userListModel.GameListCollection.FindOne(context.TODO(), bson.M{"user_id": uid, "game_id": gameId})
+
+	var gameList GameList
+	if err := result.Decode(&gameList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"user_id": uid,
+			"game_id": gameId,
+		}).Error("failed to find game list by user id and game id: ", err)
+
+		return GameList{}
+	}
+
+	return gameList
 }
 
 func (userListModel *UserListModel) GetBaseMovieListByID(movieID string) (MovieWatchList, error) {
@@ -562,21 +594,53 @@ func (userListModel *UserListModel) GetBaseMovieListByID(movieID string) (MovieW
 	return movieList, nil
 }
 
-func (userListModel *UserListModel) GetBaseTVSeriesListByID(movieID string) (TVSeriesWatchList, error) {
-	objectID, _ := primitive.ObjectIDFromHex(movieID)
+func (userListModel *UserListModel) GetMovieListByUserIdAndMovieId(uid, movieId string) MovieWatchList {
+	result := userListModel.MovieWatchListCollection.FindOne(context.TODO(), bson.M{"user_id": uid, "movie_id": movieId})
+
+	var movieList MovieWatchList
+	if err := result.Decode(&movieList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"user_id":  uid,
+			"movie_id": movieId,
+		}).Error("failed to find movie list by user id and movie id: ", err)
+
+		return MovieWatchList{}
+	}
+
+	return movieList
+}
+
+func (userListModel *UserListModel) GetBaseTVSeriesListByID(tvID string) (TVSeriesWatchList, error) {
+	objectID, _ := primitive.ObjectIDFromHex(tvID)
 
 	result := userListModel.TVSeriesWatchListCollection.FindOne(context.TODO(), bson.M{"_id": objectID})
 
 	var tvList TVSeriesWatchList
 	if err := result.Decode(&tvList); err != nil {
 		logrus.WithFields(logrus.Fields{
-			"id": movieID,
+			"id": tvID,
 		}).Error("failed to find tv series list by id: ", err)
 
 		return TVSeriesWatchList{}, fmt.Errorf("Failed to find tv series watch list by id.")
 	}
 
 	return tvList, nil
+}
+
+func (userListModel *UserListModel) GetTVSeriesListByUserIdAndTVId(uid, tvID string) TVSeriesWatchList {
+	result := userListModel.TVSeriesWatchListCollection.FindOne(context.TODO(), bson.M{"user_id": uid, "tv_id": tvID})
+
+	var tvList TVSeriesWatchList
+	if err := result.Decode(&tvList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"user_id": uid,
+			"tv_id":   tvID,
+		}).Error("failed to find tv series list by user id and tv id: ", err)
+
+		return TVSeriesWatchList{}
+	}
+
+	return tvList
 }
 
 func (userListModel *UserListModel) GetMovieListByUserID(uid string) ([]responses.MovieList, error) {
