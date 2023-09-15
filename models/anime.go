@@ -311,6 +311,9 @@ func (animeModel *AnimeModel) SearchAnimeByTitle(data requests.Search) ([]respon
 		"text": bson.M{
 			"query": data.Search,
 			"path":  bson.A{"title_en", "title_jp", "title_original"},
+			"fuzzy": bson.M{
+				"maxEdits": 1,
+			},
 		},
 	}}
 
