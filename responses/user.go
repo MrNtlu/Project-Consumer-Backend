@@ -3,8 +3,8 @@ package responses
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type IsUserPremium struct {
-	IsPremium         bool `bson:"is_premium" json:"is_premium"`
-	IsLifetimePremium bool `bson:"is_lifetime_premium" json:"is_lifetime_premium"`
+	IsPremium      bool `bson:"is_premium" json:"is_premium"`
+	MembershipType int  `bson:"membership_type" json:"membership_type"`
 }
 
 type UserLevel struct {

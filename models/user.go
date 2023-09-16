@@ -173,7 +173,7 @@ func (userModel *UserModel) IsUserPremium(uid string) bool {
 		return false
 	}
 
-	return isUserPremium.IsPremium || isUserPremium.IsLifetimePremium
+	return isUserPremium.IsPremium || isUserPremium.MembershipType == 1 || isUserPremium.MembershipType == 2
 }
 
 // Delete
