@@ -38,15 +38,16 @@ type TVSeriesDetails struct {
 	TmdbPopularity      float64                `bson:"tmdb_popularity" json:"tmdb_popularity"`
 	TmdbVote            float64                `bson:"tmdb_vote" json:"tmdb_vote"`
 	TmdbVoteCount       int64                  `bson:"tmdb_vote_count" json:"tmdb_vote_count"`
-	ProductionCompanies []ProductionAndCompany `bson:"production_companies" json:"production_companies"`
 	TotalSeasons        int                    `bson:"total_seasons" json:"total_seasons"`
 	TotalEpisodes       int                    `bson:"total_episodes" json:"total_episodes"`
 	FirstAirDate        string                 `bson:"first_air_date" json:"first_air_date"`
 	Backdrop            *string                `bson:"backdrop" json:"backdrop"`
 	Genres              []string               `bson:"genres" json:"genres"`
+	Recommendations     []Recommendation       `bson:"recommendations" json:"recommendations"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
 	Seasons             []Season               `bson:"seasons" json:"seasons"`
 	Networks            []ProductionAndCompany `bson:"networks" json:"networks"`
+	ProductionCompanies []ProductionAndCompany `bson:"production_companies" json:"production_companies"`
 	Translations        []Translation          `bson:"translations" json:"translations"`
 	Actors              []Actor                `bson:"actors" json:"actors"`
 	TVList              *TVDetailsList         `bson:"tv_list" json:"tv_list"`

@@ -4443,6 +4443,12 @@
                         "$ref": "#/definitions/responses.ProductionAndCompany"
                     }
                 },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Recommendation"
+                    }
+                },
                 "release_date": {
                     "type": "string"
                 },
@@ -4561,6 +4567,29 @@
                     "type": "string"
                 },
                 "origin_country": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.Recommendation": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "release_date": {
+                    "type": "string"
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "tmdb_id": {
                     "type": "string"
                 }
             }
@@ -4786,6 +4815,12 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/responses.ProductionAndCompany"
+                    }
+                },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Recommendation"
                     }
                 },
                 "seasons": {

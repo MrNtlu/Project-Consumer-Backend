@@ -1366,6 +1366,10 @@ definitions:
         items:
           $ref: '#/definitions/responses.ProductionAndCompany'
         type: array
+      recommendations:
+        items:
+          $ref: '#/definitions/responses.Recommendation'
+        type: array
       release_date:
         type: string
       status:
@@ -1444,6 +1448,21 @@ definitions:
       name:
         type: string
       origin_country:
+        type: string
+    type: object
+  responses.Recommendation:
+    properties:
+      description:
+        type: string
+      image_url:
+        type: string
+      release_date:
+        type: string
+      title_en:
+        type: string
+      title_original:
+        type: string
+      tmdb_id:
         type: string
     type: object
   responses.Season:
@@ -1592,6 +1611,10 @@ definitions:
       production_companies:
         items:
           $ref: '#/definitions/responses.ProductionAndCompany'
+        type: array
+      recommendations:
+        items:
+          $ref: '#/definitions/responses.Recommendation'
         type: array
       seasons:
         items:

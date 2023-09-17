@@ -40,6 +40,7 @@ type MovieDetails struct {
 	TmdbVoteCount       int64                  `bson:"tmdb_vote_count" json:"tmdb_vote_count"`
 	ReleaseDate         string                 `bson:"release_date" json:"release_date"`
 	Backdrop            *string                `bson:"backdrop" json:"backdrop"`
+	Recommendations     []Recommendation       `bson:"recommendations" json:"recommendations"`
 	ProductionCompanies []ProductionAndCompany `bson:"production_companies" json:"production_companies"`
 	Genres              []string               `bson:"genres" json:"genres"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
@@ -63,6 +64,15 @@ type ProductionAndCompany struct {
 	Logo          *string `bson:"logo" json:"logo"`
 	Name          string  `bson:"name" json:"name"`
 	OriginCountry string  `bson:"origin_country" json:"origin_country"`
+}
+
+type Recommendation struct {
+	TmdbID        string `bson:"tmdb_id" json:"tmdb_id"`
+	TitleEn       string `bson:"title_en" json:"title_en"`
+	TitleOriginal string `bson:"title_original" json:"title_original"`
+	ReleaseDate   string `bson:"release_date" json:"release_date"`
+	Description   string `bson:"description" json:"description"`
+	ImageURL      string `bson:"image_url" json:"image_url"`
 }
 
 type Actor struct {

@@ -4446,6 +4446,12 @@ const docTemplate = `{
                         "$ref": "#/definitions/responses.ProductionAndCompany"
                     }
                 },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Recommendation"
+                    }
+                },
                 "release_date": {
                     "type": "string"
                 },
@@ -4564,6 +4570,29 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "origin_country": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.Recommendation": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "release_date": {
+                    "type": "string"
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "tmdb_id": {
                     "type": "string"
                 }
             }
@@ -4789,6 +4818,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/responses.ProductionAndCompany"
+                    }
+                },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Recommendation"
                     }
                 },
                 "seasons": {
