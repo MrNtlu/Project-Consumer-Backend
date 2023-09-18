@@ -882,6 +882,10 @@ definitions:
         items:
           $ref: '#/definitions/responses.AnimeNameURL'
         type: array
+      recommendations:
+        items:
+          $ref: '#/definitions/responses.Recommendation'
+        type: array
       relations:
         items:
           $ref: '#/definitions/responses.AnimeRelation'

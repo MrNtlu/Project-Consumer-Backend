@@ -39,35 +39,36 @@ type Anime struct {
 }
 
 type AnimeDetails struct {
-	ID            primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
-	TitleOriginal string             `bson:"title_original" json:"title_original"`
-	TitleEn       string             `bson:"title_en" json:"title_en"`
-	TitleJP       string             `bson:"title_jp" json:"title_jp"`
-	Description   string             `bson:"description" json:"description"`
-	ImageURL      string             `bson:"image_url" json:"image_url"`
-	MalID         int64              `bson:"mal_id" json:"mal_id"`
-	MalScore      float64            `bson:"mal_score" json:"mal_score"`
-	MalScoredBy   int64              `bson:"mal_scored_by" json:"mal_scored_by"`
-	Trailer       *string            `bson:"trailer" json:"trailer"`
-	Type          string             `bson:"type" json:"type"`
-	Source        string             `bson:"source" json:"source"`
-	Episodes      *int64             `bson:"episodes" json:"episodes"`
-	Season        *string            `bson:"season" json:"season"`
-	Year          *int               `bson:"year" json:"year"`
-	Status        string             `bson:"status" json:"status"`
-	IsAiring      bool               `bson:"is_airing" json:"is_airing"`
-	AgeRating     *string            `bson:"age_rating" json:"age_rating"`
-	Aired         AnimeAirDate       `bson:"aired" json:"aired"`
-	Streaming     []AnimeNameURL     `bson:"streaming" json:"streaming"`
-	Producers     []AnimeNameURL     `bson:"producers" json:"producers"`
-	Studios       []AnimeNameURL     `bson:"studios" json:"studios"`
-	Genres        []AnimeGenre       `bson:"genres" json:"genres"`
-	Themes        []AnimeGenre       `bson:"themes" json:"themes"`
-	Demographics  []AnimeGenre       `bson:"demographics" json:"demographics"`
-	Relations     []AnimeRelation    `bson:"relations" json:"relations"`
-	Characters    []AnimeCharacter   `bson:"characters" json:"characters"`
-	AnimeList     *AnimeWatchList    `bson:"anime_list" json:"anime_list"`
-	WatchLater    *ConsumeLater      `bson:"watch_later" json:"watch_later"`
+	ID              primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	TitleOriginal   string             `bson:"title_original" json:"title_original"`
+	TitleEn         string             `bson:"title_en" json:"title_en"`
+	TitleJP         string             `bson:"title_jp" json:"title_jp"`
+	Description     string             `bson:"description" json:"description"`
+	ImageURL        string             `bson:"image_url" json:"image_url"`
+	MalID           int64              `bson:"mal_id" json:"mal_id"`
+	MalScore        float64            `bson:"mal_score" json:"mal_score"`
+	MalScoredBy     int64              `bson:"mal_scored_by" json:"mal_scored_by"`
+	Trailer         *string            `bson:"trailer" json:"trailer"`
+	Type            string             `bson:"type" json:"type"`
+	Source          string             `bson:"source" json:"source"`
+	Episodes        *int64             `bson:"episodes" json:"episodes"`
+	Season          *string            `bson:"season" json:"season"`
+	Year            *int               `bson:"year" json:"year"`
+	Status          string             `bson:"status" json:"status"`
+	IsAiring        bool               `bson:"is_airing" json:"is_airing"`
+	AgeRating       *string            `bson:"age_rating" json:"age_rating"`
+	Aired           AnimeAirDate       `bson:"aired" json:"aired"`
+	Recommendations []Recommendation   `bson:"recommendations" json:"recommendations"`
+	Streaming       []AnimeNameURL     `bson:"streaming" json:"streaming"`
+	Producers       []AnimeNameURL     `bson:"producers" json:"producers"`
+	Studios         []AnimeNameURL     `bson:"studios" json:"studios"`
+	Genres          []AnimeGenre       `bson:"genres" json:"genres"`
+	Themes          []AnimeGenre       `bson:"themes" json:"themes"`
+	Demographics    []AnimeGenre       `bson:"demographics" json:"demographics"`
+	Relations       []AnimeRelation    `bson:"relations" json:"relations"`
+	Characters      []AnimeCharacter   `bson:"characters" json:"characters"`
+	AnimeList       *AnimeWatchList    `bson:"anime_list" json:"anime_list"`
+	WatchLater      *ConsumeLater      `bson:"watch_later" json:"watch_later"`
 }
 
 type AnimeWatchList struct {
@@ -95,6 +96,12 @@ type AnimeAirDate struct {
 	ToDay     int    `bson:"to_day" json:"to_day"`
 	ToMonth   int    `bson:"to_month" json:"to_month"`
 	ToYear    int    `bson:"to_year" json:"to_year"`
+}
+
+type AnimeRecommendation struct {
+	MalID    int64  `bson:"mal_id" json:"mal_id"`
+	Title    string `bson:"title" json:"title"`
+	ImageURL string `bson:"image_url" json:"image_url"`
 }
 
 type AnimeCharacter struct {

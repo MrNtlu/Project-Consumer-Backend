@@ -3710,6 +3710,12 @@ const docTemplate = `{
                         "$ref": "#/definitions/responses.AnimeNameURL"
                     }
                 },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Recommendation"
+                    }
+                },
                 "relations": {
                     "type": "array",
                     "items": {
