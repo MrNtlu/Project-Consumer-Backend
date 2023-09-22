@@ -256,7 +256,14 @@ func (tvModel *TVModel) GetTVSeriesDetails(data requests.ID) (responses.TVSeries
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 
 	result := tvModel.Collection.FindOne(context.TODO(), bson.M{
-		"_id": objectID,
+		"$or": bson.A{
+			bson.M{
+				"_id": objectID,
+			},
+			bson.M{
+				"tmdb_id": data.ID,
+			},
+		},
 	})
 
 	var tvSeries responses.TVSeries
@@ -275,7 +282,14 @@ func (tvModel *TVModel) GetTVSeriesDetailsWithWatchListAndWatchLater(data reques
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 
 	match := bson.M{"$match": bson.M{
-		"_id": objectID,
+		"$or": bson.A{
+			bson.M{
+				"_id": objectID,
+			},
+			bson.M{
+				"tmdb_id": data.ID,
+			},
+		},
 	}}
 
 	set := bson.M{"$set": bson.M{

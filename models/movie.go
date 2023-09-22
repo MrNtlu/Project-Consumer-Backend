@@ -213,7 +213,14 @@ func (movieModel *MovieModel) GetMovieDetails(data requests.ID) (responses.Movie
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 
 	result := movieModel.Collection.FindOne(context.TODO(), bson.M{
-		"_id": objectID,
+		"$or": bson.A{
+			bson.M{
+				"_id": objectID,
+			},
+			bson.M{
+				"tmdb_id": data.ID,
+			},
+		},
 	})
 
 	var movie responses.Movie
@@ -232,7 +239,14 @@ func (movieModel *MovieModel) GetMovieDetailsWithWatchListAndWatchLater(data req
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 
 	match := bson.M{"$match": bson.M{
-		"_id": objectID,
+		"$or": bson.A{
+			bson.M{
+				"_id": objectID,
+			},
+			bson.M{
+				"tmdb_id": data.ID,
+			},
+		},
 	}}
 
 	set := bson.M{"$set": bson.M{
