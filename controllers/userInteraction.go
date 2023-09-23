@@ -20,8 +20,6 @@ func NewUserInteractionController(mongoDB *db.MongoDB) UserInteractionController
 	}
 }
 
-const errAlreadyInList = "This content is already in User List."
-
 // Create Consume Later
 // @Summary Create Consume Later
 // @Description Creates Consume Later
@@ -211,6 +209,7 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 	userListModel := models.NewUserListModel(ui.Database)
 
 	var timesFinished = 1
+	var status = "finished"
 
 	switch consumeLater.ContentType {
 	case "anime":
@@ -234,22 +233,36 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 		animeList := userListModel.GetAnimeListByUserIdAndAnimeId(uid, consumeLater.ContentID)
 
 		if animeList.UserID != "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": errAlreadyInList})
-			return
-		}
+			timesFinished = animeList.TimesFinished + 1
 
-		if _, err = userListModel.CreateAnimeList(uid, requests.CreateAnimeList{
-			AnimeID:       consumeLater.ContentID,
-			AnimeMALID:    anime.MalID,
-			Status:        "finished",
-			TimesFinished: &timesFinished,
-			Score:         data.Score,
-		}, anime); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
+			if _, err := userListModel.UpdateAnimeListByID(animeList, requests.UpdateAnimeList{
+				ID:              consumeLater.ContentID,
+				IsUpdatingScore: true,
+				Score:           data.Score,
+				TimesFinished:   &timesFinished,
+				Status:          &status,
+				WatchedEpisodes: anime.Episodes,
+			}); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
 
-			return
+				return
+			}
+		} else {
+			if _, err = userListModel.CreateAnimeList(uid, requests.CreateAnimeList{
+				AnimeID:       consumeLater.ContentID,
+				AnimeMALID:    anime.MalID,
+				Status:        status,
+				TimesFinished: &timesFinished,
+				Score:         data.Score,
+			}, anime); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
+
+				return
+			}
 		}
 
 		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
@@ -299,22 +312,35 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 		gameList := userListModel.GetGameListByUserIdAndGameId(uid, consumeLater.ContentID)
 
 		if gameList.UserID != "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": errAlreadyInList})
-			return
-		}
+			timesFinished = gameList.TimesFinished + 1
 
-		if _, err = userListModel.CreateGameList(uid, requests.CreateGameList{
-			GameID:        consumeLater.ContentID,
-			GameRAWGID:    *consumeLater.ContentExternalIntID,
-			Status:        "finished",
-			Score:         data.Score,
-			TimesFinished: &timesFinished,
-		}); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
+			if _, err := userListModel.UpdateGameListByID(gameList, requests.UpdateGameList{
+				ID:              consumeLater.ContentID,
+				IsUpdatingScore: true,
+				Score:           data.Score,
+				TimesFinished:   &timesFinished,
+				Status:          &status,
+			}); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
 
-			return
+				return
+			}
+		} else {
+			if _, err = userListModel.CreateGameList(uid, requests.CreateGameList{
+				GameID:        consumeLater.ContentID,
+				GameRAWGID:    *consumeLater.ContentExternalIntID,
+				Status:        status,
+				Score:         data.Score,
+				TimesFinished: &timesFinished,
+			}); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
+
+				return
+			}
 		}
 
 		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
@@ -365,21 +391,34 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 		movieList := userListModel.GetMovieListByUserIdAndMovieId(uid, consumeLater.ContentID)
 
 		if movieList.UserID != "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": errAlreadyInList})
-			return
-		}
+			timesFinished = movieList.TimesFinished + 1
 
-		if _, err = userListModel.CreateMovieWatchList(uid, requests.CreateMovieWatchList{
-			MovieID:     consumeLater.ContentID,
-			MovieTmdbID: *consumeLater.ContentExternalID,
-			Status:      "finished",
-			Score:       data.Score,
-		}); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
+			if _, err := userListModel.UpdateMovieListByID(movieList, requests.UpdateMovieList{
+				ID:              consumeLater.ContentID,
+				IsUpdatingScore: true,
+				Score:           data.Score,
+				TimesFinished:   &timesFinished,
+				Status:          &status,
+			}); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
 
-			return
+				return
+			}
+		} else {
+			if _, err = userListModel.CreateMovieWatchList(uid, requests.CreateMovieWatchList{
+				MovieID:     consumeLater.ContentID,
+				MovieTmdbID: *consumeLater.ContentExternalID,
+				Status:      "finished",
+				Score:       data.Score,
+			}); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
+
+				return
+			}
 		}
 
 		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
@@ -429,22 +468,37 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 		tvList := userListModel.GetTVSeriesListByUserIdAndTVId(uid, consumeLater.ContentID)
 
 		if tvList.UserID != "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": errAlreadyInList})
-			return
-		}
+			timesFinished = tvList.TimesFinished + 1
 
-		if _, err = userListModel.CreateTVSeriesWatchList(uid, requests.CreateTVSeriesWatchList{
-			TvID:          consumeLater.ContentID,
-			TvTmdbID:      tvSeries.TmdbID,
-			Status:        "finished",
-			TimesFinished: &timesFinished,
-			Score:         data.Score,
-		}, tvSeries); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
+			if _, err := userListModel.UpdateTVSeriesListByID(tvList, requests.UpdateTVSeriesList{
+				ID:              consumeLater.ContentID,
+				IsUpdatingScore: true,
+				Score:           data.Score,
+				TimesFinished:   &timesFinished,
+				Status:          &status,
+				WatchedEpisodes: &tvSeries.TotalEpisodes,
+				WatchedSeasons:  &tvSeries.TotalSeasons,
+			}); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
 
-			return
+				return
+			}
+		} else {
+			if _, err = userListModel.CreateTVSeriesWatchList(uid, requests.CreateTVSeriesWatchList{
+				TvID:          consumeLater.ContentID,
+				TvTmdbID:      tvSeries.TmdbID,
+				Status:        "finished",
+				TimesFinished: &timesFinished,
+				Score:         data.Score,
+			}, tvSeries); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
+
+				return
+			}
 		}
 
 		userInteractionModel.DeleteConsumeLaterByID(uid, data.ID)
