@@ -15,6 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type AnimeModel struct {
@@ -32,6 +33,39 @@ const (
 	animeSearchLimit             = 50
 	animePaginationLimit         = 40
 )
+
+func (animeModel *AnimeModel) GetAnimeFromOpenAI(anime []string) ([]responses.Anime, error) {
+	match := bson.M{
+		"title_original": bson.M{
+			"$in": anime,
+		},
+	}
+
+	sort := bson.M{
+		"mal_score": -1,
+	}
+	options := options.Find().SetSort(sort)
+
+	cursor, err := animeModel.Collection.Find(context.TODO(), match, options)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"anime": anime,
+		}).Error("failed to aggregate anime: ", err)
+
+		return nil, fmt.Errorf("Failed to get anime recommendation.")
+	}
+
+	var animeList []responses.Anime
+	if err := cursor.All(context.TODO(), &animeList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"anime": anime,
+		}).Error("failed to decode animes: ", err)
+
+		return nil, fmt.Errorf("Failed to decode get anime recommendation.")
+	}
+
+	return animeList, nil
+}
 
 func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.Pagination) ([]responses.Anime, p.PaginationData, error) {
 	currentSeason := getSeasonFromMonth()

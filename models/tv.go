@@ -14,6 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type TVModel struct {
@@ -31,6 +32,39 @@ const (
 	tvSeriesSearchLimit             = 50
 	tvSeriesPaginationLimit         = 40
 )
+
+func (tvModel *TVModel) GetTVSeriesFromOpenAI(tvSeries []string) ([]responses.TVSeries, error) {
+	match := bson.M{
+		"title_original": bson.M{
+			"$in": tvSeries,
+		},
+	}
+
+	sort := bson.M{
+		"tmdb_popularity": -1,
+	}
+	options := options.Find().SetSort(sort)
+
+	cursor, err := tvModel.Collection.Find(context.TODO(), match, options)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"tv": tvSeries,
+		}).Error("failed to aggregate tv series: ", err)
+
+		return nil, fmt.Errorf("Failed to get tv series recommendation.")
+	}
+
+	var tvList []responses.TVSeries
+	if err := cursor.All(context.TODO(), &tvList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"tv": tvSeries,
+		}).Error("failed to decode tv series: ", err)
+
+		return nil, fmt.Errorf("Failed to decode get tv series recommendation.")
+	}
+
+	return tvList, nil
+}
 
 func (tvModel *TVModel) GetUpcomingTVSeries(data requests.Pagination) ([]responses.TVSeries, p.PaginationData, error) {
 	match := bson.M{"$match": bson.M{

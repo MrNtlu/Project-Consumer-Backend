@@ -14,6 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type GameModel struct {
@@ -30,6 +31,39 @@ const (
 	gameUpcomingPaginationLimit = 40
 	gamePaginationLimit         = 40
 )
+
+func (gameModel *GameModel) GetGamesFromOpenAI(games []string) ([]responses.Game, error) {
+	match := bson.M{
+		"title_original": bson.M{
+			"$in": games,
+		},
+	}
+
+	sort := bson.M{
+		"rawg_rating": -1,
+	}
+	options := options.Find().SetSort(sort)
+
+	cursor, err := gameModel.Collection.Find(context.TODO(), match, options)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"games": games,
+		}).Error("failed to aggregate games: ", err)
+
+		return nil, fmt.Errorf("Failed to get game recommendation.")
+	}
+
+	var gameList []responses.Game
+	if err := cursor.All(context.TODO(), &gameList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"games": games,
+		}).Error("failed to decode games: ", err)
+
+		return nil, fmt.Errorf("Failed to decode get game recommendation.")
+	}
+
+	return gameList, nil
+}
 
 func (gameModel *GameModel) GetUpcomingGamesBySort(data requests.Pagination) ([]responses.Game, p.PaginationData, error) {
 	match := bson.M{"$match": bson.M{

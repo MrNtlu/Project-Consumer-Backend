@@ -10,19 +10,19 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const prompt = `You are a recommendation system. Recommend 10 movies similar to user's watched/enjoyed. Follow rules strictly:
+const prompt = `You are a recommendation system. Recommend movies, tv series, anime and games similar to user's watched/enjoyed. Follow rules strictly!:
 
-1- Response template, Movie name\n
-2- Suggest 10 movies.
-3- Avoid seen movies.
+1- Use this format: Content Type: Content Name (e.g. Movie: Movie Name)
+2- Suggest 3 movies, 3 TV series, 3 anime, and 3 games.
+3- Avoid seen/played.
 4- Recommend individually, no groups.
-5- Use movie names only.
+5- Use names only.
 6- No extra text.
 
-List of movies user rated,
+List of movies, tv series, anime and games user rated (* means, no score given),
 `
 
-const message = "Recommend movies."
+const message = "Recommend movies, tv series, anime and games."
 
 type OpenAI struct {
 	Client *openai.Client
@@ -42,8 +42,11 @@ type OpenAIResponse struct {
 }
 
 type OpenAIMovieResponse struct {
-	OpenAIResponse OpenAIResponse    `bson:"openai_response" json:"openai_response"`
-	Movies         []responses.Movie `bson:"movies" json:"movies"`
+	OpenAIResponse OpenAIResponse       `bson:"openai_response" json:"openai_response"`
+	Movies         []responses.Movie    `bson:"movies" json:"movies"`
+	TVSeries       []responses.TVSeries `bson:"tv" json:"tv"`
+	Anime          []responses.Anime    `bson:"anime" json:"anime"`
+	Games          []responses.Game     `bson:"game" json:"game"`
 }
 
 func (oa *OpenAI) GetRecommendation(watchList string) (OpenAIResponse, error) {

@@ -648,6 +648,12 @@ func (userListModel *UserListModel) GetMovieListByUserID(uid string) ([]response
 		"user_id": uid,
 	}}
 
+	addFields := bson.M{"$addFields": bson.M{
+		"movie_obj_id": bson.M{
+			"$toObjectId": "$movie_id",
+		},
+	}}
+
 	movieListLookup := bson.M{"$lookup": bson.M{
 		"from": "movies",
 		"let": bson.M{
@@ -688,7 +694,7 @@ func (userListModel *UserListModel) GetMovieListByUserID(uid string) ([]response
 	}}
 
 	cursor, err := userListModel.MovieWatchListCollection.Aggregate(context.TODO(), bson.A{
-		match, movieListLookup, unwind, project,
+		match, addFields, movieListLookup, unwind, project,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -705,6 +711,225 @@ func (userListModel *UserListModel) GetMovieListByUserID(uid string) ([]response
 		}).Error("failed to decode movie watch list: ", err)
 
 		return nil, fmt.Errorf("Failed to decode movie watch list.")
+	}
+
+	return userList, nil
+}
+
+func (userListModel *UserListModel) GetTVSeriesListByUserID(uid string) ([]responses.TVSeriesList, error) {
+	match := bson.M{"$match": bson.M{
+		"user_id": uid,
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"tv_obj_id": bson.M{
+			"$toObjectId": "$movie_id",
+		},
+	}}
+
+	tvListLookup := bson.M{"$lookup": bson.M{
+		"from": "tv-series",
+		"let": bson.M{
+			"tv_obj_id":  "$tv_obj_id",
+			"tv_tmdb_id": "$tv_tmdb_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$or": bson.A{
+							bson.M{
+								"$eq": bson.A{"$_id", "$$tv_obj_id"},
+							},
+							bson.M{
+								"$eq": bson.A{
+									"$tmdb_id",
+									"$$tv_tmdb_id",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"as": "tv",
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$tv",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"title_original": "$tv.title_original",
+		"score":          1,
+	}}
+
+	cursor, err := userListModel.TVSeriesWatchListCollection.Aggregate(context.TODO(), bson.A{
+		match, addFields, tvListLookup, unwind, project,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to aggregate tv watch list: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate tv watch list.")
+	}
+
+	var userList []responses.TVSeriesList
+	if err = cursor.All(context.TODO(), &userList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to decode tv watch list: ", err)
+
+		return nil, fmt.Errorf("Failed to decode tv watch list.")
+	}
+
+	return userList, nil
+}
+
+func (userListModel *UserListModel) GetAnimeListByUserID(uid string) ([]responses.AnimeList, error) {
+	match := bson.M{"$match": bson.M{
+		"user_id": uid,
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"anime_obj_id": bson.M{
+			"$toObjectId": "$anime_id",
+		},
+	}}
+
+	animeListLookup := bson.M{"$lookup": bson.M{
+		"from": "animes",
+		"let": bson.M{
+			"anime_obj_id": "$anime_obj_id",
+			"anime_mal_id": "$anime_mal_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$or": bson.A{
+							bson.M{
+								"$eq": bson.A{"$_id", "$$anime_obj_id"},
+							},
+							bson.M{
+								"$eq": bson.A{
+									"$mal_id",
+									"$$anime_mal_id",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"as": "anime",
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$anime",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"title_original": "$anime.title_original",
+		"score":          1,
+	}}
+
+	cursor, err := userListModel.AnimeListCollection.Aggregate(context.TODO(), bson.A{
+		match, addFields, animeListLookup, unwind, project,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to aggregate anime watch list: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate anime watch list.")
+	}
+
+	var userList []responses.AnimeList
+	if err = cursor.All(context.TODO(), &userList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to decode anime watch list: ", err)
+
+		return nil, fmt.Errorf("Failed to decode anime watch list.")
+	}
+
+	return userList, nil
+}
+
+func (userListModel *UserListModel) GetGameListByUserID(uid string) ([]responses.GameList, error) {
+	match := bson.M{"$match": bson.M{
+		"user_id": uid,
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"game_obj_id": bson.M{
+			"$toObjectId": "$game_id",
+		},
+	}}
+
+	gameListLookup := bson.M{"$lookup": bson.M{
+		"from": "games",
+		"let": bson.M{
+			"game_obj_id":  "$game_obj_id",
+			"game_rawg_id": "$game_rawg_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$or": bson.A{
+							bson.M{
+								"$eq": bson.A{"$_id", "$$game_obj_id"},
+							},
+							bson.M{
+								"$eq": bson.A{
+									"$rawg_id",
+									"$$game_rawg_id",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"as": "game",
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$game",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"title_original": "$game.title_original",
+		"score":          1,
+	}}
+
+	cursor, err := userListModel.AnimeListCollection.Aggregate(context.TODO(), bson.A{
+		match, addFields, gameListLookup, unwind, project,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to aggregate game watch list: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate game watch list.")
+	}
+
+	var userList []responses.GameList
+	if err = cursor.All(context.TODO(), &userList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to decode game watch list: ", err)
+
+		return nil, fmt.Errorf("Failed to decode game watch list.")
 	}
 
 	return userList, nil
