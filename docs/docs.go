@@ -2570,6 +2570,18 @@ const docTemplate = `{
         "models.OpenAIMovieResponse": {
             "type": "object",
             "properties": {
+                "anime": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Anime"
+                    }
+                },
+                "game": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Game"
+                    }
+                },
                 "movies": {
                     "type": "array",
                     "items": {
@@ -2578,6 +2590,12 @@ const docTemplate = `{
                 },
                 "openai_response": {
                     "$ref": "#/definitions/models.OpenAIResponse"
+                },
+                "tv": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.TVSeries"
+                    }
                 }
             }
         },

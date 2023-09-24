@@ -85,12 +85,24 @@ definitions:
     type: object
   models.OpenAIMovieResponse:
     properties:
+      anime:
+        items:
+          $ref: '#/definitions/responses.Anime'
+        type: array
+      game:
+        items:
+          $ref: '#/definitions/responses.Game'
+        type: array
       movies:
         items:
           $ref: '#/definitions/responses.Movie'
         type: array
       openai_response:
         $ref: '#/definitions/models.OpenAIResponse'
+      tv:
+        items:
+          $ref: '#/definitions/responses.TVSeries'
+        type: array
     type: object
   models.OpenAIResponse:
     properties:
