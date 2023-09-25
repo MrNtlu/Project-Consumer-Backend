@@ -157,7 +157,7 @@ func (userModel *UserModel) UpdateUserMembership(uid string, data requests.Chang
 }
 
 // Checks
-func (userModel *UserModel) IsUserPremium(uid string) bool {
+func (userModel *UserModel) IsUserPremium(uid string) (bool, int) {
 	objectUID, _ := primitive.ObjectIDFromHex(uid)
 
 	result := userModel.Collection.FindOne(context.TODO(), bson.M{
@@ -170,10 +170,10 @@ func (userModel *UserModel) IsUserPremium(uid string) bool {
 			"uid": uid,
 		}).Error("failed to find user by uid: ", err)
 
-		return false
+		return false, -1
 	}
 
-	return isUserPremium.IsPremium || isUserPremium.MembershipType == 1 || isUserPremium.MembershipType == 2
+	return isUserPremium.IsPremium || isUserPremium.MembershipType == 1 || isUserPremium.MembershipType == 2, isUserPremium.MembershipType
 }
 
 // Delete

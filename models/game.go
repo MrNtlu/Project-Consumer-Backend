@@ -14,7 +14,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type GameModel struct {
@@ -32,34 +31,90 @@ const (
 	gamePaginationLimit         = 40
 )
 
-func (gameModel *GameModel) GetGamesFromOpenAI(games []string) ([]responses.Game, error) {
-	match := bson.M{
+func (gameModel *GameModel) GetGamesFromOpenAI(uid string, games []string) ([]responses.AISuggestion, error) {
+	match := bson.M{"$match": bson.M{
 		"title_original": bson.M{
 			"$in": games,
 		},
-	}
+	}}
 
-	sort := bson.M{
+	sort := bson.M{"$sort": bson.M{
 		"rawg_rating": -1,
-	}
-	options := options.Find().SetSort(sort)
+	}}
 
-	cursor, err := gameModel.Collection.Find(context.TODO(), match, options)
+	limit := bson.M{"$limit": 3}
+
+	set := bson.M{"$set": bson.M{
+		"game_id": bson.M{
+			"$toString": "$_id",
+		},
+	}}
+
+	lookupWatchLater := bson.M{"$lookup": bson.M{
+		"from": "consume-laters",
+		"let": bson.M{
+			"uid":     uid,
+			"game_id": "$game_id",
+			"rawg_id": "$rawg_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$and": bson.A{
+							bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$content_id", "$$game_id"}},
+									bson.M{"$eq": bson.A{"$content_external_id", "$$rawg_id"}},
+								},
+							},
+							bson.M{"$eq": bson.A{"$user_id", "$$uid"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "watch_later",
+	}}
+
+	unwindWatchLater := bson.M{"$unwind": bson.M{
+		"path":                       "$watch_later",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"content_id": bson.M{
+			"$toString": "$_id",
+		},
+		"content_external_int_id": "$rawg_id",
+		"content_type":            "game",
+		"title_en":                "$title",
+		"title_original":          1,
+		"description":             1,
+		"image_url":               1,
+		"score":                   "$rawg_rating",
+		"watch_later":             1,
+	}}
+
+	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, sort, limit, set, lookupWatchLater, unwindWatchLater, project,
+	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"games": games,
 		}).Error("failed to aggregate games: ", err)
 
-		return nil, fmt.Errorf("Failed to get game recommendation.")
+		return nil, fmt.Errorf("Failed to get game from recommendation.")
 	}
 
-	var gameList []responses.Game
+	var gameList []responses.AISuggestion
 	if err := cursor.All(context.TODO(), &gameList); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"games": games,
 		}).Error("failed to decode games: ", err)
 
-		return nil, fmt.Errorf("Failed to decode get game recommendation.")
+		return nil, fmt.Errorf("Failed to decode get game from recommendation.")
 	}
 
 	return gameList, nil

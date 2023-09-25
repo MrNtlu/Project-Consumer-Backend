@@ -496,6 +496,46 @@ func (userListModel *UserListModel) UpdateTVSeriesListByID(tvList TVSeriesWatchL
 }
 
 //! Get
+func (userListModel *UserListModel) GetUserListCount(uid string) (int64, error) {
+	movieCount, err := userListModel.MovieWatchListCollection.CountDocuments(context.TODO(), bson.M{"user_id": uid})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to count movie list: ", err)
+
+		return -1, err
+	}
+
+	tvCount, err := userListModel.TVSeriesWatchListCollection.CountDocuments(context.TODO(), bson.M{"user_id": uid})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to count tv list: ", err)
+
+		return -1, err
+	}
+
+	animeCount, err := userListModel.AnimeListCollection.CountDocuments(context.TODO(), bson.M{"user_id": uid})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to count anime list: ", err)
+
+		return -1, err
+	}
+
+	gameCount, err := userListModel.GameListCollection.CountDocuments(context.TODO(), bson.M{"user_id": uid})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to count game list: ", err)
+
+		return -1, err
+	}
+
+	return (movieCount + tvCount + animeCount + gameCount), nil
+}
+
 func (userListModel *UserListModel) GetBaseUserListByUserID(uid string) (UserList, error) {
 	result := userListModel.UserListCollection.FindOne(context.TODO(), bson.M{"user_id": uid})
 

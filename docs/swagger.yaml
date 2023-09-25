@@ -83,36 +83,6 @@ definitions:
       user_id:
         type: string
     type: object
-  models.OpenAIMovieResponse:
-    properties:
-      anime:
-        items:
-          $ref: '#/definitions/responses.Anime'
-        type: array
-      game:
-        items:
-          $ref: '#/definitions/responses.Game'
-        type: array
-      movies:
-        items:
-          $ref: '#/definitions/responses.Movie'
-        type: array
-      openai_response:
-        $ref: '#/definitions/models.OpenAIResponse'
-      tv:
-        items:
-          $ref: '#/definitions/responses.TVSeries'
-        type: array
-    type: object
-  models.OpenAIResponse:
-    properties:
-      recommendation:
-        items:
-          type: string
-        type: array
-      total_used_token:
-        type: integer
-    type: object
   models.TVSeriesWatchList:
     properties:
       _id:
@@ -739,6 +709,40 @@ definitions:
     properties:
       is_public:
         type: boolean
+    type: object
+  responses.AISuggestion:
+    properties:
+      _id:
+        type: string
+      content_external_id:
+        type: string
+      content_external_int_id:
+        type: integer
+      content_id:
+        type: string
+      content_type:
+        type: string
+      description:
+        type: string
+      image_url:
+        type: string
+      score:
+        type: number
+      title_en:
+        type: string
+      title_original:
+        type: string
+      watch_later:
+        $ref: '#/definitions/responses.ConsumeLater'
+    type: object
+  responses.AISuggestionResponse:
+    properties:
+      created_at:
+        type: string
+      suggestions:
+        items:
+          $ref: '#/definitions/responses.AISuggestion'
+        type: array
     type: object
   responses.Actor:
     properties:
@@ -2890,25 +2894,23 @@ paths:
       summary: OAuth2 Google Login
       tags:
       - oauth2
-  /openai:
+  /suggestions:
     get:
       consumes:
       - application/json
-      description: Returns movie recommendations from OpenAI
+      description: Returns ai recommendations from OpenAI
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/models.OpenAIMovieResponse'
-            type: array
+            $ref: '#/definitions/responses.AISuggestionResponse'
         "500":
           description: Internal Server Error
           schema:
             type: string
-      summary: Get Movie Recommendations from OpenAI
+      summary: Get AI Recommendations from OpenAI
       tags:
       - openai
   /tv:

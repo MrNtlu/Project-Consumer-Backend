@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"app/controllers"
 	"app/db"
 	"net/http"
 
@@ -20,9 +19,7 @@ func SetupRoutes(router *gin.Engine, jwtToken *jwt.GinJWTMiddleware, mongoDB *db
 	oauth2Router(apiRouter, jwtToken, mongoDB)
 	userListRouter(apiRouter, jwtToken, mongoDB)
 	userInteractionRouter(apiRouter, jwtToken, mongoDB)
-
-	openAiController := controllers.NewOpenAiController(mongoDB)
-	router.Use(jwtToken.MiddlewareFunc()).GET("openai", openAiController.GetRecommendation)
+	aiSuggestionsRouter(apiRouter, jwtToken, mongoDB)
 
 	router.NoRoute(func(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "All routes lead to Rome 🏛️"})

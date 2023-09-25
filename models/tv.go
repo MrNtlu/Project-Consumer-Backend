@@ -14,7 +14,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type TVModel struct {
@@ -33,34 +32,90 @@ const (
 	tvSeriesPaginationLimit         = 40
 )
 
-func (tvModel *TVModel) GetTVSeriesFromOpenAI(tvSeries []string) ([]responses.TVSeries, error) {
-	match := bson.M{
+func (tvModel *TVModel) GetTVSeriesFromOpenAI(uid string, tvSeries []string) ([]responses.AISuggestion, error) {
+	match := bson.M{"$match": bson.M{
 		"title_original": bson.M{
 			"$in": tvSeries,
 		},
-	}
+	}}
 
-	sort := bson.M{
+	sort := bson.M{"$sort": bson.M{
 		"tmdb_popularity": -1,
-	}
-	options := options.Find().SetSort(sort)
+	}}
 
-	cursor, err := tvModel.Collection.Find(context.TODO(), match, options)
+	limit := bson.M{"$limit": 3}
+
+	set := bson.M{"$set": bson.M{
+		"tv_id": bson.M{
+			"$toString": "$_id",
+		},
+	}}
+
+	lookupWatchLater := bson.M{"$lookup": bson.M{
+		"from": "consume-laters",
+		"let": bson.M{
+			"uid":     uid,
+			"tv_id":   "$tv_id",
+			"tmdb_id": "$tmdb_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$and": bson.A{
+							bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$content_id", "$$tv_id"}},
+									bson.M{"$eq": bson.A{"$content_external_id", "$$tmdb_id"}},
+								},
+							},
+							bson.M{"$eq": bson.A{"$user_id", "$$uid"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "watch_later",
+	}}
+
+	unwindWatchLater := bson.M{"$unwind": bson.M{
+		"path":                       "$watch_later",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"content_id": bson.M{
+			"$toString": "$_id",
+		},
+		"content_external_id": "$tmdb_id",
+		"content_type":        "tv",
+		"title_en":            1,
+		"title_original":      1,
+		"description":         1,
+		"image_url":           1,
+		"score":               "$tmdb_vote",
+		"watch_later":         1,
+	}}
+
+	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, sort, limit, set, lookupWatchLater, unwindWatchLater, project,
+	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"tv": tvSeries,
 		}).Error("failed to aggregate tv series: ", err)
 
-		return nil, fmt.Errorf("Failed to get tv series recommendation.")
+		return nil, fmt.Errorf("Failed to get tv series from recommendation.")
 	}
 
-	var tvList []responses.TVSeries
+	var tvList []responses.AISuggestion
 	if err := cursor.All(context.TODO(), &tvList); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"tv": tvSeries,
 		}).Error("failed to decode tv series: ", err)
 
-		return nil, fmt.Errorf("Failed to decode get tv series recommendation.")
+		return nil, fmt.Errorf("Failed to decode get tv series from recommendation.")
 	}
 
 	return tvList, nil

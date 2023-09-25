@@ -15,7 +15,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type AnimeModel struct {
@@ -34,34 +33,90 @@ const (
 	animePaginationLimit         = 40
 )
 
-func (animeModel *AnimeModel) GetAnimeFromOpenAI(anime []string) ([]responses.Anime, error) {
-	match := bson.M{
+func (animeModel *AnimeModel) GetAnimeFromOpenAI(uid string, anime []string) ([]responses.AISuggestion, error) {
+	match := bson.M{"$match": bson.M{
 		"title_original": bson.M{
 			"$in": anime,
 		},
-	}
+	}}
 
-	sort := bson.M{
+	sort := bson.M{"$sort": bson.M{
 		"mal_score": -1,
-	}
-	options := options.Find().SetSort(sort)
+	}}
 
-	cursor, err := animeModel.Collection.Find(context.TODO(), match, options)
+	limit := bson.M{"$limit": 3}
+
+	set := bson.M{"$set": bson.M{
+		"anime_id": bson.M{
+			"$toString": "$_id",
+		},
+	}}
+
+	lookupWatchLater := bson.M{"$lookup": bson.M{
+		"from": "consume-laters",
+		"let": bson.M{
+			"uid":      uid,
+			"anime_id": "$anime_id",
+			"mal_id":   "$mal_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$and": bson.A{
+							bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$content_id", "$$anime_id"}},
+									bson.M{"$eq": bson.A{"$content_external_id", "$$mal_id"}},
+								},
+							},
+							bson.M{"$eq": bson.A{"$user_id", "$$uid"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "watch_later",
+	}}
+
+	unwindWatchLater := bson.M{"$unwind": bson.M{
+		"path":                       "$watch_later",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"content_id": bson.M{
+			"$toString": "$_id",
+		},
+		"content_external_int_id": "$mal_id",
+		"content_type":            "anime",
+		"title_en":                1,
+		"title_original":          1,
+		"description":             1,
+		"image_url":               1,
+		"score":                   "$mal_score",
+		"watch_later":             1,
+	}}
+
+	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, sort, limit, set, lookupWatchLater, unwindWatchLater, project,
+	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"anime": anime,
 		}).Error("failed to aggregate anime: ", err)
 
-		return nil, fmt.Errorf("Failed to get anime recommendation.")
+		return nil, fmt.Errorf("Failed to get anime from recommendation.")
 	}
 
-	var animeList []responses.Anime
+	var animeList []responses.AISuggestion
 	if err := cursor.All(context.TODO(), &animeList); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"anime": anime,
 		}).Error("failed to decode animes: ", err)
 
-		return nil, fmt.Errorf("Failed to decode get anime recommendation.")
+		return nil, fmt.Errorf("Failed to decode get anime from recommendation.")
 	}
 
 	return animeList, nil

@@ -1694,9 +1694,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/openai": {
+        "/suggestions": {
             "get": {
-                "description": "Returns movie recommendations from OpenAI",
+                "description": "Returns ai recommendations from OpenAI",
                 "consumes": [
                     "application/json"
                 ],
@@ -1706,15 +1706,12 @@ const docTemplate = `{
                 "tags": [
                     "openai"
                 ],
-                "summary": "Get Movie Recommendations from OpenAI",
+                "summary": "Get AI Recommendations from OpenAI",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.OpenAIMovieResponse"
-                            }
+                            "$ref": "#/definitions/responses.AISuggestionResponse"
                         }
                     },
                     "500": {
@@ -2564,52 +2561,6 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "string"
-                }
-            }
-        },
-        "models.OpenAIMovieResponse": {
-            "type": "object",
-            "properties": {
-                "anime": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.Anime"
-                    }
-                },
-                "game": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.Game"
-                    }
-                },
-                "movies": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.Movie"
-                    }
-                },
-                "openai_response": {
-                    "$ref": "#/definitions/models.OpenAIResponse"
-                },
-                "tv": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.TVSeries"
-                    }
-                }
-            }
-        },
-        "models.OpenAIResponse": {
-            "type": "object",
-            "properties": {
-                "recommendation": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "total_used_token": {
-                    "type": "integer"
                 }
             }
         },
@@ -3492,6 +3443,58 @@ const docTemplate = `{
             "properties": {
                 "is_public": {
                     "type": "boolean"
+                }
+            }
+        },
+        "responses.AISuggestion": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "content_external_id": {
+                    "type": "string"
+                },
+                "content_external_int_id": {
+                    "type": "integer"
+                },
+                "content_id": {
+                    "type": "string"
+                },
+                "content_type": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "watch_later": {
+                    "$ref": "#/definitions/responses.ConsumeLater"
+                }
+            }
+        },
+        "responses.AISuggestionResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "suggestions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AISuggestion"
+                    }
                 }
             }
         },
