@@ -19,6 +19,7 @@ type TVSeries struct {
 	TotalEpisodes       int                    `bson:"total_episodes" json:"total_episodes"`
 	FirstAirDate        string                 `bson:"first_air_date" json:"first_air_date"`
 	Backdrop            *string                `bson:"backdrop" json:"backdrop"`
+	Recommendations     []Recommendation       `bson:"recommendations" json:"recommendations"`
 	Genres              []string               `bson:"genres" json:"genres"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
 	Seasons             []Season               `bson:"seasons" json:"seasons"`

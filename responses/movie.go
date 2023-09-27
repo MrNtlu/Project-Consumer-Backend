@@ -18,6 +18,7 @@ type Movie struct {
 	TmdbVoteCount       int64                  `bson:"tmdb_vote_count" json:"tmdb_vote_count"`
 	ReleaseDate         string                 `bson:"release_date" json:"release_date"`
 	Backdrop            *string                `bson:"backdrop" json:"backdrop"`
+	Recommendations     []Recommendation       `bson:"recommendations" json:"recommendations"`
 	ProductionCompanies []ProductionAndCompany `bson:"production_companies" json:"production_companies"`
 	Genres              []string               `bson:"genres" json:"genres"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
