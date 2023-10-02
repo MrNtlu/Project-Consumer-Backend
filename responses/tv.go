@@ -1,6 +1,10 @@
 package responses
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type TVSeries struct {
 	ID                  primitive.ObjectID     `bson:"_id,omitempty" json:"_id"`
@@ -21,6 +25,8 @@ type TVSeries struct {
 	Backdrop            *string                `bson:"backdrop" json:"backdrop"`
 	Recommendations     []Recommendation       `bson:"recommendations" json:"recommendations"`
 	Genres              []string               `bson:"genres" json:"genres"`
+	Images              []string               `bson:"images" json:"images"`
+	Videos              []Trailer              `bson:"videos" json:"videos"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
 	Seasons             []Season               `bson:"seasons" json:"seasons"`
 	Networks            []ProductionAndCompany `bson:"networks" json:"networks"`
@@ -44,6 +50,8 @@ type TVSeriesDetails struct {
 	FirstAirDate        string                 `bson:"first_air_date" json:"first_air_date"`
 	Backdrop            *string                `bson:"backdrop" json:"backdrop"`
 	Genres              []string               `bson:"genres" json:"genres"`
+	Images              []string               `bson:"images" json:"images"`
+	Videos              []Trailer              `bson:"videos" json:"videos"`
 	Recommendations     []Recommendation       `bson:"recommendations" json:"recommendations"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
 	Seasons             []Season               `bson:"seasons" json:"seasons"`
@@ -65,6 +73,7 @@ type TVDetailsList struct {
 	WatchedEpisodes int                `bson:"watched_episodes" json:"watched_episodes"`
 	WatchedSeasons  int                `bson:"watched_seasons" json:"watched_seasons"`
 	TimesFinished   int                `bson:"times_finished" json:"times_finished"`
+	CreatedAt       time.Time          `bson:"created_at" json:"created_at"`
 }
 
 type Season struct {

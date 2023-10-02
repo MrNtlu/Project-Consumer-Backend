@@ -1308,6 +1308,7 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 						"status":         "$movie_watch_list.status",
 						"score":          "$movie_watch_list.score",
 						"times_finished": "$movie_watch_list.times_finished",
+						"created_at":     "$movie_watch_list.created_at",
 					},
 					"pipeline": bson.A{
 						bson.M{
@@ -1428,6 +1429,17 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 										},
 									},
 								},
+								"created_at": bson.M{
+									"$arrayElemAt": bson.A{
+										"$$created_at",
+										bson.M{
+											"$indexOfArray": bson.A{
+												"$$movie_id",
+												"$movie_id",
+											},
+										},
+									},
+								},
 							},
 						},
 					},
@@ -1446,6 +1458,7 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 						"times_finished":   "$tv_watch_list.times_finished",
 						"watched_episodes": "$tv_watch_list.watched_episodes",
 						"watched_seasons":  "$tv_watch_list.watched_seasons",
+						"created_at":       "$tv_watch_list.created_at",
 					},
 					"pipeline": bson.A{
 						bson.M{
@@ -1590,6 +1603,17 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 										},
 									},
 								},
+								"created_at": bson.M{
+									"$arrayElemAt": bson.A{
+										"$$created_at",
+										bson.M{
+											"$indexOfArray": bson.A{
+												"$$tv_id",
+												"$tv_id",
+											},
+										},
+									},
+								},
 							},
 						},
 					},
@@ -1607,6 +1631,7 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 						"score":            "$anime_list.score",
 						"times_finished":   "$anime_list.times_finished",
 						"watched_episodes": "$anime_list.watched_episodes",
+						"created_at":       "$anime_list.created_at",
 					},
 					"pipeline": bson.A{
 						bson.M{
@@ -1741,6 +1766,17 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 										},
 									},
 								},
+								"created_at": bson.M{
+									"$arrayElemAt": bson.A{
+										"$$created_at",
+										bson.M{
+											"$indexOfArray": bson.A{
+												"$$anime_id",
+												"$anime_id",
+											},
+										},
+									},
+								},
 							},
 						},
 					},
@@ -1760,6 +1796,7 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 						"times_finished":     "$game_list.times_finished",
 						"achievement_status": "$game_list.achievement_status",
 						"hours_played":       "$game_list.hours_played",
+						"created_at":         "$game_list.created_at",
 					},
 					"pipeline": bson.A{
 						bson.M{
@@ -1894,6 +1931,17 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 								"hours_played": bson.M{
 									"$arrayElemAt": bson.A{
 										"$$hours_played",
+										bson.M{
+											"$indexOfArray": bson.A{
+												"$$game_id",
+												"$game_id",
+											},
+										},
+									},
+								},
+								"created_at": bson.M{
+									"$arrayElemAt": bson.A{
+										"$$created_at",
 										bson.M{
 											"$indexOfArray": bson.A{
 												"$$game_id",

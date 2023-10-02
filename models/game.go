@@ -29,6 +29,7 @@ func NewGameModel(mongoDB *db.MongoDB) *GameModel {
 const (
 	gameUpcomingPaginationLimit = 40
 	gamePaginationLimit         = 40
+	gameSearchLimit             = 50
 )
 
 func (gameModel *GameModel) GetGamesFromOpenAI(uid string, games []string) ([]responses.AISuggestion, error) {
@@ -235,6 +236,39 @@ func (gameModel *GameModel) GetGamesByFilterAndSort(data requests.SortFilterGame
 	for _, raw := range paginatedData.Data {
 		var game *responses.Game
 		if marshalErr := bson.Unmarshal(raw, &game); marshalErr == nil {
+			games = append(games, *game)
+		}
+	}
+
+	return games, paginatedData.Pagination, nil
+}
+
+func (gameModel *GameModel) SearchGameByTitle(data requests.Search) ([]responses.Game, p.PaginationData, error) {
+	search := bson.M{"$search": bson.M{
+		"index": "game_search",
+		"text": bson.M{
+			"query": data.Search,
+			"path":  bson.A{"title", "title_original"},
+			"fuzzy": bson.M{
+				"maxEdits": 1,
+			},
+		},
+	}}
+
+	paginatedData, err := p.New(gameModel.Collection).Context(context.TODO()).Limit(gameSearchLimit).
+		Page(data.Page).Aggregate(search)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"data": data,
+		}).Error("failed to search game by title: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to search game by title.")
+	}
+
+	var games []responses.Game
+	for _, raw := range paginatedData.Data {
+		var game *responses.Game
+		if marshallErr := bson.Unmarshal(raw, &game); marshallErr == nil {
 			games = append(games, *game)
 		}
 	}

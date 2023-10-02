@@ -1,6 +1,10 @@
 package responses
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Movie struct {
 	ID                  primitive.ObjectID     `bson:"_id,omitempty" json:"_id"`
@@ -21,6 +25,8 @@ type Movie struct {
 	Recommendations     []Recommendation       `bson:"recommendations" json:"recommendations"`
 	ProductionCompanies []ProductionAndCompany `bson:"production_companies" json:"production_companies"`
 	Genres              []string               `bson:"genres" json:"genres"`
+	Images              []string               `bson:"images" json:"images"`
+	Videos              []Trailer              `bson:"videos" json:"videos"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
 	Actors              []Actor                `bson:"actors" json:"actors"`
 	Translations        []Translation          `bson:"translations" json:"translations"`
@@ -44,6 +50,8 @@ type MovieDetails struct {
 	Recommendations     []Recommendation       `bson:"recommendations" json:"recommendations"`
 	ProductionCompanies []ProductionAndCompany `bson:"production_companies" json:"production_companies"`
 	Genres              []string               `bson:"genres" json:"genres"`
+	Images              []string               `bson:"images" json:"images"`
+	Videos              []Trailer              `bson:"videos" json:"videos"`
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
 	Actors              []Actor                `bson:"actors" json:"actors"`
 	Translations        []Translation          `bson:"translations" json:"translations"`
@@ -59,6 +67,7 @@ type MovieDetailsWatchList struct {
 	Status        string             `bson:"status" json:"status"`
 	Score         *float32           `bson:"score" json:"score"`
 	TimesFinished int                `bson:"times_finished" json:"times_finished"`
+	CreatedAt     time.Time          `bson:"created_at" json:"created_at"`
 }
 
 type ProductionAndCompany struct {
@@ -77,9 +86,16 @@ type Recommendation struct {
 }
 
 type Actor struct {
+	TmdbID    string  `bson:"tmdb_id" json:"tmdb_id"`
 	Image     *string `bson:"image" json:"image"`
 	Name      string  `bson:"name" json:"name"`
 	Character string  `bson:"character" json:"character"`
+}
+
+type Trailer struct {
+	Name string `bson:"name" json:"name"`
+	Key  string `bson:"key" json:"key"`
+	Type string `bson:"type" json:"title_original"`
 }
 
 type Streaming struct {

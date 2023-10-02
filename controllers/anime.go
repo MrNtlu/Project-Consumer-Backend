@@ -216,17 +216,8 @@ func (a *AnimeController) GetAnimeDetails(c *gin.Context) {
 
 	animeModel := models.NewAnimeModel(a.Database)
 
-	animeDetails, err := animeModel.GetAnimeDetails(data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
 	uid, OK := c.Get("uuid")
-	if OK && uid != nil && animeDetails.TitleOriginal != "" {
+	if OK && uid != nil {
 		animeDetailsWithWatchList, err := animeModel.GetAnimeDetailsWithWatchList(data, uid.(string))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -236,10 +227,29 @@ func (a *AnimeController) GetAnimeDetails(c *gin.Context) {
 			return
 		}
 
+		if animeDetailsWithWatchList.TitleOriginal == "" {
+			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"data": animeDetailsWithWatchList,
 		})
 	} else {
+		animeDetails, err := animeModel.GetAnimeDetails(data)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		if animeDetails.TitleOriginal == "" {
+			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"data": animeDetails,
 		})

@@ -703,6 +703,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/game/search": {
+            "get": {
+                "description": "Search Game",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "game"
+                ],
+                "summary": "Search Game",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ID"
+                        }
+                    },
+                    {
+                        "description": "Search",
+                        "name": "search",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.Search"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Game"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/game/upcoming": {
             "get": {
                 "description": "Returns upcoming games by sort with pagination",
@@ -3509,6 +3561,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "tmdb_id": {
+                    "type": "string"
                 }
             }
         },
@@ -3570,6 +3625,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/responses.AnimeNameURL"
+                    }
+                },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeRecommendation"
                     }
                 },
                 "relations": {
@@ -3734,7 +3795,7 @@ const docTemplate = `{
                 "recommendations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.Recommendation"
+                        "$ref": "#/definitions/responses.AnimeRecommendation"
                     }
                 },
                 "relations": {
@@ -3816,6 +3877,9 @@ const docTemplate = `{
                 "content_status": {
                     "type": "string"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "image_url": {
                     "type": "string"
                 },
@@ -3865,30 +3929,42 @@ const docTemplate = `{
                 }
             }
         },
-        "responses.AnimeRelation": {
+        "responses.AnimeRecommendation": {
             "type": "object",
             "properties": {
-                "relation": {
+                "image_url": {
                     "type": "string"
                 },
-                "source": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.AnimeRelationDetails"
-                    }
-                }
-            }
-        },
-        "responses.AnimeRelationDetails": {
-            "type": "object",
-            "properties": {
                 "mal_id": {
                     "type": "integer"
                 },
-                "name": {
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.AnimeRelation": {
+            "type": "object",
+            "properties": {
+                "_id": {
                     "type": "string"
                 },
-                "redirect_url": {
+                "anime_id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "mal_id": {
+                    "type": "integer"
+                },
+                "relation": {
+                    "type": "string"
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
                     "type": "string"
                 },
                 "type": {
@@ -3907,6 +3983,9 @@ const docTemplate = `{
                 },
                 "anime_mal_id": {
                     "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
                 },
                 "score": {
                     "type": "number"
@@ -4046,6 +4125,12 @@ const docTemplate = `{
                 "release_date": {
                     "type": "string"
                 },
+                "screenshots": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "stores": {
                     "type": "array",
                     "items": {
@@ -4138,6 +4223,12 @@ const docTemplate = `{
                 "release_date": {
                     "type": "string"
                 },
+                "screenshots": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "stores": {
                     "type": "array",
                     "items": {
@@ -4205,6 +4296,9 @@ const docTemplate = `{
                 "content_status": {
                     "type": "string"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "game_id": {
                     "type": "string"
                 },
@@ -4259,6 +4353,9 @@ const docTemplate = `{
                 },
                 "achievement_status": {
                     "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
                 },
                 "game_id": {
                     "type": "string"
@@ -4381,6 +4478,12 @@ const docTemplate = `{
                 "image_url": {
                     "type": "string"
                 },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "imdb_id": {
                     "type": "string"
                 },
@@ -4391,6 +4494,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/responses.ProductionAndCompany"
+                    }
+                },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Recommendation"
                     }
                 },
                 "release_date": {
@@ -4431,6 +4540,12 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/responses.Translation"
                     }
+                },
+                "videos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Trailer"
+                    }
                 }
             }
         },
@@ -4460,6 +4575,12 @@ const docTemplate = `{
                 },
                 "image_url": {
                     "type": "string"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "imdb_id": {
                     "type": "string"
@@ -4515,6 +4636,12 @@ const docTemplate = `{
                         "$ref": "#/definitions/responses.Translation"
                     }
                 },
+                "videos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Trailer"
+                    }
+                },
                 "watch_later": {
                     "$ref": "#/definitions/responses.ConsumeLater"
                 },
@@ -4527,6 +4654,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "_id": {
+                    "type": "string"
+                },
+                "created_at": {
                     "type": "string"
                 },
                 "movie_id": {
@@ -4556,6 +4686,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "content_status": {
+                    "type": "string"
+                },
+                "created_at": {
                     "type": "string"
                 },
                 "image_url": {
@@ -4687,6 +4820,9 @@ const docTemplate = `{
                 "_id": {
                     "type": "string"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "score": {
                     "type": "number"
                 },
@@ -4743,6 +4879,12 @@ const docTemplate = `{
                 "image_url": {
                     "type": "string"
                 },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "networks": {
                     "type": "array",
                     "items": {
@@ -4753,6 +4895,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/responses.ProductionAndCompany"
+                    }
+                },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Recommendation"
                     }
                 },
                 "seasons": {
@@ -4802,6 +4950,12 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/responses.Translation"
                     }
+                },
+                "videos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Trailer"
+                    }
                 }
             }
         },
@@ -4834,6 +4988,12 @@ const docTemplate = `{
                 },
                 "image_url": {
                     "type": "string"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "networks": {
                     "type": "array",
@@ -4901,6 +5061,12 @@ const docTemplate = `{
                 "tv_list": {
                     "$ref": "#/definitions/responses.TVDetailsList"
                 },
+                "videos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Trailer"
+                    }
+                },
                 "watch_later": {
                     "$ref": "#/definitions/responses.ConsumeLater"
                 }
@@ -4913,6 +5079,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "content_status": {
+                    "type": "string"
+                },
+                "created_at": {
                     "type": "string"
                 },
                 "image_url": {
@@ -4953,6 +5122,20 @@ const docTemplate = `{
                 },
                 "watched_seasons": {
                     "type": "integer"
+                }
+            }
+        },
+        "responses.Trailer": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
                 }
             }
         },

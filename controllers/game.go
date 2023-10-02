@@ -168,6 +168,11 @@ func (g *GameController) GetGameDetails(c *gin.Context) {
 			return
 		}
 
+		if gameDetailsWithPlayList.TitleOriginal == "" {
+			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"data": gameDetailsWithPlayList,
 		})
@@ -181,8 +186,48 @@ func (g *GameController) GetGameDetails(c *gin.Context) {
 			return
 		}
 
+		if gameDetails.TitleOriginal == "" {
+			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"data": gameDetails,
 		})
 	}
+}
+
+// Search Game
+// @Summary Search Game
+// @Description Search Game
+// @Tags game
+// @Accept application/json
+// @Produce application/json
+// @Param id body requests.ID true "ID"
+// @Param search body requests.Search true "Search"
+// @Success 200 {array} responses.Game
+// @Failure 500 {string} string
+// @Router /game/search [get]
+func (g *GameController) SearchGameByTitle(c *gin.Context) {
+	var data requests.Search
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	gameModel := models.NewGameModel(g.Database)
+
+	animes, pagination, err := gameModel.SearchGameByTitle(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": animes})
 }

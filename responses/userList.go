@@ -1,6 +1,10 @@
 package responses
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type UserList struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
@@ -29,6 +33,7 @@ type AnimeList struct {
 	TotalEpisodes   *int64             `bson:"total_episodes" json:"total_episodes"`
 	Type            string             `bson:"type" json:"type"`
 	IsAiring        bool               `bson:"is_airing" json:"is_airing"`
+	CreatedAt       time.Time          `bson:"created_at" json:"created_at"`
 }
 
 type GameList struct {
@@ -46,6 +51,7 @@ type GameList struct {
 	TitleOriginal     string             `bson:"title_original" json:"title_original"`
 	ImageURL          *string            `bson:"image_url" json:"image_url"`
 	TBA               bool               `bson:"tba" json:"tba"`
+	CreatedAt         time.Time          `bson:"created_at" json:"created_at"`
 }
 
 type MovieList struct {
@@ -60,6 +66,7 @@ type MovieList struct {
 	TitleEn       string             `bson:"title_en" json:"title_en"`
 	TitleOriginal string             `bson:"title_original" json:"title_original"`
 	ImageURL      *string            `bson:"image_url" json:"image_url"`
+	CreatedAt     time.Time          `bson:"created_at" json:"created_at"`
 }
 
 type TVSeriesList struct {
@@ -78,4 +85,5 @@ type TVSeriesList struct {
 	ImageURL        *string            `bson:"image_url" json:"image_url"`
 	TotalEpisodes   *int64             `bson:"total_episodes" json:"total_episodes"`
 	TotalSeasons    *int64             `bson:"total_seasons" json:"total_seasons"`
+	CreatedAt       time.Time          `bson:"created_at" json:"created_at"`
 }

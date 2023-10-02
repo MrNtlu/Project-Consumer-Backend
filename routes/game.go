@@ -17,5 +17,6 @@ func gameRouter(router *gin.RouterGroup, mongoDB *db.MongoDB) {
 		game.GET("/upcoming", gameController.GetUpcomingGamesBySort)
 		game.GET("", gameController.GetGamesByFilterAndSort)
 		game.Use(helpers.OptionalTokenCheck).GET("/details", gameController.GetGameDetails)
+		game.GET("/search", gameController.SearchGameByTitle)
 	}
 }

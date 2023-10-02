@@ -700,6 +700,58 @@
                 }
             }
         },
+        "/game/search": {
+            "get": {
+                "description": "Search Game",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "game"
+                ],
+                "summary": "Search Game",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ID"
+                        }
+                    },
+                    {
+                        "description": "Search",
+                        "name": "search",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.Search"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Game"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/game/upcoming": {
             "get": {
                 "description": "Returns upcoming games by sort with pagination",
@@ -3506,6 +3558,9 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "tmdb_id": {
+                    "type": "string"
                 }
             }
         },
@@ -3567,6 +3622,12 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/responses.AnimeNameURL"
+                    }
+                },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeRecommendation"
                     }
                 },
                 "relations": {
@@ -3731,7 +3792,7 @@
                 "recommendations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/responses.Recommendation"
+                        "$ref": "#/definitions/responses.AnimeRecommendation"
                     }
                 },
                 "relations": {
@@ -3813,6 +3874,9 @@
                 "content_status": {
                     "type": "string"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "image_url": {
                     "type": "string"
                 },
@@ -3862,30 +3926,42 @@
                 }
             }
         },
-        "responses.AnimeRelation": {
+        "responses.AnimeRecommendation": {
             "type": "object",
             "properties": {
-                "relation": {
+                "image_url": {
                     "type": "string"
                 },
-                "source": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.AnimeRelationDetails"
-                    }
-                }
-            }
-        },
-        "responses.AnimeRelationDetails": {
-            "type": "object",
-            "properties": {
                 "mal_id": {
                     "type": "integer"
                 },
-                "name": {
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.AnimeRelation": {
+            "type": "object",
+            "properties": {
+                "_id": {
                     "type": "string"
                 },
-                "redirect_url": {
+                "anime_id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "mal_id": {
+                    "type": "integer"
+                },
+                "relation": {
+                    "type": "string"
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
                     "type": "string"
                 },
                 "type": {
@@ -3904,6 +3980,9 @@
                 },
                 "anime_mal_id": {
                     "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
                 },
                 "score": {
                     "type": "number"
@@ -4043,6 +4122,12 @@
                 "release_date": {
                     "type": "string"
                 },
+                "screenshots": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "stores": {
                     "type": "array",
                     "items": {
@@ -4135,6 +4220,12 @@
                 "release_date": {
                     "type": "string"
                 },
+                "screenshots": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "stores": {
                     "type": "array",
                     "items": {
@@ -4202,6 +4293,9 @@
                 "content_status": {
                     "type": "string"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "game_id": {
                     "type": "string"
                 },
@@ -4256,6 +4350,9 @@
                 },
                 "achievement_status": {
                     "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
                 },
                 "game_id": {
                     "type": "string"
@@ -4378,6 +4475,12 @@
                 "image_url": {
                     "type": "string"
                 },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "imdb_id": {
                     "type": "string"
                 },
@@ -4388,6 +4491,12 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/responses.ProductionAndCompany"
+                    }
+                },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Recommendation"
                     }
                 },
                 "release_date": {
@@ -4428,6 +4537,12 @@
                     "items": {
                         "$ref": "#/definitions/responses.Translation"
                     }
+                },
+                "videos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Trailer"
+                    }
                 }
             }
         },
@@ -4457,6 +4572,12 @@
                 },
                 "image_url": {
                     "type": "string"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "imdb_id": {
                     "type": "string"
@@ -4512,6 +4633,12 @@
                         "$ref": "#/definitions/responses.Translation"
                     }
                 },
+                "videos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Trailer"
+                    }
+                },
                 "watch_later": {
                     "$ref": "#/definitions/responses.ConsumeLater"
                 },
@@ -4524,6 +4651,9 @@
             "type": "object",
             "properties": {
                 "_id": {
+                    "type": "string"
+                },
+                "created_at": {
                     "type": "string"
                 },
                 "movie_id": {
@@ -4553,6 +4683,9 @@
                     "type": "string"
                 },
                 "content_status": {
+                    "type": "string"
+                },
+                "created_at": {
                     "type": "string"
                 },
                 "image_url": {
@@ -4684,6 +4817,9 @@
                 "_id": {
                     "type": "string"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "score": {
                     "type": "number"
                 },
@@ -4740,6 +4876,12 @@
                 "image_url": {
                     "type": "string"
                 },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "networks": {
                     "type": "array",
                     "items": {
@@ -4750,6 +4892,12 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/responses.ProductionAndCompany"
+                    }
+                },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Recommendation"
                     }
                 },
                 "seasons": {
@@ -4799,6 +4947,12 @@
                     "items": {
                         "$ref": "#/definitions/responses.Translation"
                     }
+                },
+                "videos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Trailer"
+                    }
                 }
             }
         },
@@ -4831,6 +4985,12 @@
                 },
                 "image_url": {
                     "type": "string"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "networks": {
                     "type": "array",
@@ -4898,6 +5058,12 @@
                 "tv_list": {
                     "$ref": "#/definitions/responses.TVDetailsList"
                 },
+                "videos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Trailer"
+                    }
+                },
                 "watch_later": {
                     "$ref": "#/definitions/responses.ConsumeLater"
                 }
@@ -4910,6 +5076,9 @@
                     "type": "string"
                 },
                 "content_status": {
+                    "type": "string"
+                },
+                "created_at": {
                     "type": "string"
                 },
                 "image_url": {
@@ -4950,6 +5119,20 @@
                 },
                 "watched_seasons": {
                     "type": "integer"
+                }
+            }
+        },
+        "responses.Trailer": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
                 }
             }
         },

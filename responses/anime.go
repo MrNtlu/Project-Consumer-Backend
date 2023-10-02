@@ -1,6 +1,10 @@
 package responses
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type CurrentlyAiringAnimeResponse struct {
 	ID   int     `bson:"_id" json:"_id"`
@@ -81,6 +85,7 @@ type AnimeWatchList struct {
 	WatchedEpisodes int                `bson:"watched_episodes" json:"watched_episodes"`
 	Score           *float32           `bson:"score" json:"score"`
 	TimesFinished   int                `bson:"times_finished" json:"times_finished"`
+	CreatedAt       time.Time          `bson:"created_at" json:"created_at"`
 }
 
 type AnimeNameURL struct {
@@ -118,6 +123,17 @@ type AnimeGenre struct {
 }
 
 type AnimeRelation struct {
+	ID            primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	MalID         int64              `bson:"mal_id" json:"mal_id"`
+	AnimeID       string             `bson:"anime_id" json:"anime_id"`
+	ImageURL      string             `bson:"image_url" json:"image_url"`
+	TitleEn       string             `bson:"title_en" json:"title_en"`
+	TitleOriginal string             `bson:"title_original" json:"title_original"`
+	Relation      string             `bson:"relation" json:"relation"`
+	Type          string             `bson:"type" json:"type"`
+}
+
+type OldAnimeRelation struct {
 	Relation string                 `bson:"relation" json:"relation"`
 	Source   []AnimeRelationDetails `bson:"source" json:"source"`
 }

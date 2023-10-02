@@ -169,6 +169,11 @@ func (m *MovieController) GetMovieDetails(c *gin.Context) {
 			return
 		}
 
+		if movieDetailsWithWatchList.TitleOriginal == "" {
+			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"data": movieDetailsWithWatchList,
 		})
@@ -179,6 +184,11 @@ func (m *MovieController) GetMovieDetails(c *gin.Context) {
 				"error": err.Error(),
 			})
 
+			return
+		}
+
+		if movieDetails.TitleOriginal == "" {
+			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
 			return
 		}
 

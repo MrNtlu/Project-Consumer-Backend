@@ -271,17 +271,8 @@ func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
 
 	tvModel := models.NewTVModel(tv.Database)
 
-	tvSeriesDetails, err := tvModel.GetTVSeriesDetails(data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
 	uuid, OK := c.Get("uuid")
-	if OK && uuid != nil && tvSeriesDetails.TitleOriginal != "" {
+	if OK && uuid != nil {
 		tvSeriesDetailsWithWatchList, err := tvModel.GetTVSeriesDetailsWithWatchListAndWatchLater(data, uuid.(string))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -291,10 +282,29 @@ func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
 			return
 		}
 
+		if tvSeriesDetailsWithWatchList.TitleOriginal == "" {
+			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"data": tvSeriesDetailsWithWatchList,
 		})
 	} else {
+		tvSeriesDetails, err := tvModel.GetTVSeriesDetails(data)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		if tvSeriesDetails.TitleOriginal == "" {
+			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"data": tvSeriesDetails,
 		})

@@ -431,7 +431,7 @@ func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 	malID, _ := strconv.Atoi(data.ID)
 
-	result := animeModel.Collection.FindOne(context.TODO(), bson.M{
+	match := bson.M{"$match": bson.M{
 		"$or": bson.A{
 			bson.M{
 				"_id": objectID,
@@ -440,18 +440,187 @@ func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime
 				"mal_id": malID,
 			},
 		},
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"anime_id": bson.M{
+			"$toString": "$_id",
+		},
+	}}
+
+	unwindRelations := bson.M{"$unwind": bson.M{
+		"path":                       "$relations",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	unwindSource := bson.M{"$unwind": bson.M{
+		"path":                       "$relations.source",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	setRelation := bson.M{"$set": bson.M{
+		"relations.mal_id": "$relations.source.mal_id",
+		"relations.type":   "$relations.source.type",
+	}}
+
+	relationLookup := bson.M{"$lookup": bson.M{
+		"from": "animes",
+		"let": bson.M{
+			"mal_id":   "$relations.mal_id",
+			"relation": "$relations.relation",
+			"type":     "$relations.type",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$eq": bson.A{"$mal_id", "$$mal_id"},
+					},
+				},
+			},
+			bson.M{
+				"$project": bson.M{
+					"_id": 1,
+					"anime_id": bson.M{
+						"$toString": "$_id",
+					},
+					"mal_id":         1,
+					"title_en":       1,
+					"title_original": 1,
+					"image_url":      1,
+					"relation":       "$$relation",
+					"type":           "$$type",
+				},
+			},
+		},
+		"as": "relation",
+	}}
+
+	unwindRelation := bson.M{"$unwind": bson.M{
+		"path":                       "$relation",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$_id",
+		"title_original": bson.M{
+			"$first": "$title_original",
+		},
+		"title_en": bson.M{
+			"$first": "$title_en",
+		},
+		"title_jp": bson.M{
+			"$first": "$title_jp",
+		},
+		"description": bson.M{
+			"$first": "$description",
+		},
+		"image_url": bson.M{
+			"$first": "$image_url",
+		},
+		"mal_id": bson.M{
+			"$first": "$mal_id",
+		},
+		"mal_score": bson.M{
+			"$first": "$mal_score",
+		},
+		"mal_scored_by": bson.M{
+			"$first": "$mal_scored_by",
+		},
+		"trailer": bson.M{
+			"$first": "$trailer",
+		},
+		"type": bson.M{
+			"$first": "$type",
+		},
+		"source": bson.M{
+			"$first": "$source",
+		},
+		"episodes": bson.M{
+			"$first": "$episodes",
+		},
+		"season": bson.M{
+			"$first": "$season",
+		},
+		"year": bson.M{
+			"$first": "$year",
+		},
+		"status": bson.M{
+			"$first": "$status",
+		},
+		"is_airing": bson.M{
+			"$first": "$is_airing",
+		},
+		"age_rating": bson.M{
+			"$first": "$age_rating",
+		},
+		"aired": bson.M{
+			"$first": "$aired",
+		},
+		"recommendations": bson.M{
+			"$first": "$recommendations",
+		},
+		"streaming": bson.M{
+			"$first": "$streaming",
+		},
+		"producers": bson.M{
+			"$first": "$producers",
+		},
+		"studios": bson.M{
+			"$first": "$studios",
+		},
+		"genres": bson.M{
+			"$first": "$genres",
+		},
+		"themes": bson.M{
+			"$first": "$themes",
+		},
+		"demographics": bson.M{
+			"$first": "$demographics",
+		},
+		"relations": bson.M{
+			"$addToSet": "$relation",
+		},
+		"characters": bson.M{
+			"$first": "$characters",
+		},
+		"anime_list": bson.M{
+			"$first": "$anime_list",
+		},
+		"watch_later": bson.M{
+			"$first": "$watch_later",
+		},
+	}}
+
+	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, set, unwindRelations, unwindSource,
+		setRelation, relationLookup, unwindRelation, group,
 	})
-
-	var anime responses.Anime
-	if err := result.Decode(&anime); err != nil {
+	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"anime_id": data.ID,
-		}).Error("failed to find anime details by id: ", err)
+			"id": data.ID,
+		}).Error("failed to aggregate anime details: ", err)
 
-		return responses.Anime{}, fmt.Errorf("Failed to find anime by id.")
+		return responses.Anime{}, fmt.Errorf("Failed to aggregate anime details with watch list.")
 	}
 
-	return anime, nil
+	var animeDetails []responses.Anime
+	if err = cursor.All(context.TODO(), &animeDetails); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": data.ID,
+		}).Error("failed to decode anime details: ", err)
+
+		return responses.Anime{}, fmt.Errorf("Failed to decode anime details.")
+	}
+
+	if len(animeDetails) > 0 {
+		return animeDetails[0], nil
+	}
+
+	return responses.Anime{}, nil
 }
 
 func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uuid string) (responses.AnimeDetails, error) {
@@ -541,8 +710,156 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 		"preserveNullAndEmptyArrays": true,
 	}}
 
+	unwindRelations := bson.M{"$unwind": bson.M{
+		"path":                       "$relations",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	unwindSource := bson.M{"$unwind": bson.M{
+		"path":                       "$relations.source",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	setRelation := bson.M{"$set": bson.M{
+		"relations.mal_id": "$relations.source.mal_id",
+		"relations.type":   "$relations.source.type",
+	}}
+
+	relationLookup := bson.M{"$lookup": bson.M{
+		"from": "animes",
+		"let": bson.M{
+			"mal_id":   "$relations.mal_id",
+			"relation": "$relations.relation",
+			"type":     "$relations.type",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$eq": bson.A{"$mal_id", "$$mal_id"},
+					},
+				},
+			},
+			bson.M{
+				"$project": bson.M{
+					"_id": 1,
+					"anime_id": bson.M{
+						"$toString": "$_id",
+					},
+					"mal_id":         1,
+					"title_en":       1,
+					"title_original": 1,
+					"image_url":      1,
+					"relation":       "$$relation",
+					"type":           "$$type",
+				},
+			},
+		},
+		"as": "relation",
+	}}
+
+	unwindRelation := bson.M{"$unwind": bson.M{
+		"path":                       "$relation",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$_id",
+		"title_original": bson.M{
+			"$first": "$title_original",
+		},
+		"title_en": bson.M{
+			"$first": "$title_en",
+		},
+		"title_jp": bson.M{
+			"$first": "$title_jp",
+		},
+		"description": bson.M{
+			"$first": "$description",
+		},
+		"image_url": bson.M{
+			"$first": "$image_url",
+		},
+		"mal_id": bson.M{
+			"$first": "$mal_id",
+		},
+		"mal_score": bson.M{
+			"$first": "$mal_score",
+		},
+		"mal_scored_by": bson.M{
+			"$first": "$mal_scored_by",
+		},
+		"trailer": bson.M{
+			"$first": "$trailer",
+		},
+		"type": bson.M{
+			"$first": "$type",
+		},
+		"source": bson.M{
+			"$first": "$source",
+		},
+		"episodes": bson.M{
+			"$first": "$episodes",
+		},
+		"season": bson.M{
+			"$first": "$season",
+		},
+		"year": bson.M{
+			"$first": "$year",
+		},
+		"status": bson.M{
+			"$first": "$status",
+		},
+		"is_airing": bson.M{
+			"$first": "$is_airing",
+		},
+		"age_rating": bson.M{
+			"$first": "$age_rating",
+		},
+		"aired": bson.M{
+			"$first": "$aired",
+		},
+		"recommendations": bson.M{
+			"$first": "$recommendations",
+		},
+		"streaming": bson.M{
+			"$first": "$streaming",
+		},
+		"producers": bson.M{
+			"$first": "$producers",
+		},
+		"studios": bson.M{
+			"$first": "$studios",
+		},
+		"genres": bson.M{
+			"$first": "$genres",
+		},
+		"themes": bson.M{
+			"$first": "$themes",
+		},
+		"demographics": bson.M{
+			"$first": "$demographics",
+		},
+		"relations": bson.M{
+			"$addToSet": "$relation",
+		},
+		"characters": bson.M{
+			"$first": "$characters",
+		},
+		"anime_list": bson.M{
+			"$first": "$anime_list",
+		},
+		"watch_later": bson.M{
+			"$first": "$watch_later",
+		},
+	}}
+
 	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
 		match, set, lookup, unwindWatchList, lookupWatchLater, unwindWatchLater,
+		unwindRelations, unwindSource, setRelation, relationLookup, unwindRelation, group,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{

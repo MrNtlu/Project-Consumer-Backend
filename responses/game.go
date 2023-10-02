@@ -1,6 +1,10 @@
 package responses
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Game struct {
 	ID                        primitive.ObjectID            `bson:"_id,omitempty" json:"_id"`
@@ -19,6 +23,7 @@ type Game struct {
 	AgeRating                 *string                       `bson:"age_rating" json:"age_rating"`
 	RelatedGames              []GameRelation                `bson:"related_games" json:"related_games"`
 	Genres                    []string                      `bson:"genres" json:"genres"`
+	Screenshots               []string                      `bson:"screenshots" json:"screenshots"`
 	Tags                      []string                      `bson:"tags" json:"tags"`
 	Platforms                 []string                      `bson:"platforms" json:"platforms"`
 	Developers                []string                      `bson:"developers" json:"developers"`
@@ -42,6 +47,7 @@ type GameDetails struct {
 	AgeRating                 *string                       `bson:"age_rating" json:"age_rating"`
 	RelatedGames              []GameDetailsRelation         `bson:"related_games" json:"related_games"`
 	Genres                    []string                      `bson:"genres" json:"genres"`
+	Screenshots               []string                      `bson:"screenshots" json:"screenshots"`
 	Tags                      []string                      `bson:"tags" json:"tags"`
 	Platforms                 []string                      `bson:"platforms" json:"platforms"`
 	Developers                []string                      `bson:"developers" json:"developers"`
@@ -61,6 +67,7 @@ type GamePlayList struct {
 	Score             *float32           `bson:"score" json:"score"`
 	AchievementStatus *float32           `bson:"achievement_status" json:"achievement_status"`
 	TimesFinished     int                `bson:"times_finished" json:"times_finished"`
+	CreatedAt         time.Time          `bson:"created_at" json:"created_at"`
 }
 
 type GameMetacriticScorePlatform struct {
