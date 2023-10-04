@@ -451,13 +451,13 @@ func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime
 	unwindRelations := bson.M{"$unwind": bson.M{
 		"path":                       "$relations",
 		"includeArrayIndex":          "index",
-		"preserveNullAndEmptyArrays": false,
+		"preserveNullAndEmptyArrays": true,
 	}}
 
 	unwindSource := bson.M{"$unwind": bson.M{
 		"path":                       "$relations.source",
 		"includeArrayIndex":          "index",
-		"preserveNullAndEmptyArrays": false,
+		"preserveNullAndEmptyArrays": true,
 	}}
 
 	setRelation := bson.M{"$set": bson.M{
@@ -501,7 +501,7 @@ func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime
 	unwindRelation := bson.M{"$unwind": bson.M{
 		"path":                       "$relation",
 		"includeArrayIndex":          "index",
-		"preserveNullAndEmptyArrays": false,
+		"preserveNullAndEmptyArrays": true,
 	}}
 
 	group := bson.M{"$group": bson.M{
@@ -713,13 +713,13 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 	unwindRelations := bson.M{"$unwind": bson.M{
 		"path":                       "$relations",
 		"includeArrayIndex":          "index",
-		"preserveNullAndEmptyArrays": false,
+		"preserveNullAndEmptyArrays": true,
 	}}
 
 	unwindSource := bson.M{"$unwind": bson.M{
 		"path":                       "$relations.source",
 		"includeArrayIndex":          "index",
-		"preserveNullAndEmptyArrays": false,
+		"preserveNullAndEmptyArrays": true,
 	}}
 
 	setRelation := bson.M{"$set": bson.M{
@@ -763,7 +763,7 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 	unwindRelation := bson.M{"$unwind": bson.M{
 		"path":                       "$relation",
 		"includeArrayIndex":          "index",
-		"preserveNullAndEmptyArrays": false,
+		"preserveNullAndEmptyArrays": true,
 	}}
 
 	group := bson.M{"$group": bson.M{
