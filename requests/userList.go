@@ -72,6 +72,11 @@ type UpdateMovieList struct {
 	Status          *string  `json:"status" binding:"omitempty,oneof=active finished dropped planto"`
 }
 
+type IncrementTVSeriesList struct {
+	ID        string `json:"id" binding:"required"`
+	IsEpisode *bool  `json:"is_episode" binding:"required"`
+}
+
 type UpdateTVSeriesList struct {
 	ID              string   `json:"id" binding:"required"`
 	IsUpdatingScore bool     `json:"is_updating_score"`

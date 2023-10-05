@@ -25,12 +25,14 @@ func userListRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mon
 		{
 			anime.POST("", userListController.CreateAnimeList)
 			anime.PATCH("", userListController.UpdateAnimeListByID)
+			anime.PATCH("/inc", userListController.IncrementAnimeListEpisodeByID)
 		}
 
 		game := baseRoute.Group("/game").Use(jwtToken.MiddlewareFunc())
 		{
 			game.POST("", userListController.CreateGameList)
 			game.PATCH("", userListController.UpdateGameListByID)
+			game.PATCH("/inc", userListController.IncrementGameListHourByID)
 		}
 
 		movie := baseRoute.Group("/movie").Use(jwtToken.MiddlewareFunc())
@@ -43,6 +45,7 @@ func userListRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mon
 		{
 			tv.POST("", userListController.CreateTVSeriesWatchList)
 			tv.PATCH("", userListController.UpdateTVSeriesListByID)
+			tv.PATCH("/inc", userListController.IncrementTVSeriesListEpisodeSeasonByID)
 		}
 	}
 }

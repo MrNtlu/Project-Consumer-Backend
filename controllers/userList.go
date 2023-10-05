@@ -337,6 +337,77 @@ func (u *UserListController) UpdateUserListPublicVisibility(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User list visibility updated."})
 }
 
+// Increment Anime List Episode
+// @Summary Increment Anime List
+// @Description Increment anime list episode
+// @Tags user_list
+// @Accept application/json
+// @Produce application/json
+// @Param id body requests.ID true "ID"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {object} models.AnimeList
+// @Failure 403 {string} string "Unauthorized update"
+// @Failure 404 {string} string "Could not found"
+// @Failure 500 {string} string
+// @Router /list/anime/inc [patch]
+func (u *UserListController) IncrementAnimeListEpisodeByID(c *gin.Context) {
+	var data requests.ID
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	var (
+		updatedAnimeList models.AnimeList
+		err              error
+	)
+
+	userListModel := models.NewUserListModel(u.Database)
+	animeList, err := userListModel.GetBaseAnimeListByID(data.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if animeList.UserID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	if uid != animeList.UserID {
+		c.JSON(http.StatusForbidden, gin.H{"error": ErrUnauthorized})
+		return
+	}
+
+	animeModel := models.NewAnimeModel(u.Database)
+	anime, _ := animeModel.GetAnimeDetails(requests.ID{
+		ID: animeList.AnimeID,
+	})
+
+	if updatedAnimeList, err = userListModel.IncrementAnimeListEpisodeByID(animeList, data); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	logModel := models.NewLogsModel(u.Database)
+
+	go logModel.CreateLog(uid, requests.CreateLog{
+		LogType:          models.UserListLogType,
+		LogAction:        models.UpdateLogAction,
+		LogActionDetails: updatedAnimeList.Status,
+		ContentTitle:     anime.TitleOriginal,
+		ContentImage:     anime.ImageURL,
+		ContentType:      "anime",
+		ContentID:        updatedAnimeList.AnimeID,
+	})
+
+	c.JSON(http.StatusOK, gin.H{"message": "Anime list updated.", "data": updatedAnimeList})
+}
+
 // Update Anime List
 // @Summary Update Anime List
 // @Description Updates anime list
@@ -410,6 +481,77 @@ func (u *UserListController) UpdateAnimeListByID(c *gin.Context) {
 	})
 
 	c.JSON(http.StatusOK, gin.H{"message": "Anime list updated.", "data": updatedAnimeList})
+}
+
+// Increment Game List
+// @Summary Increment Game List
+// @Description Increment game list hours played
+// @Tags user_list
+// @Accept application/json
+// @Produce application/json
+// @Param id body requests.ID true "ID"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {object} models.GameList
+// @Failure 403 {string} string "Unauthorized update"
+// @Failure 404 {string} string "Could not found"
+// @Failure 500 {string} string
+// @Router /list/game [patch]
+func (u *UserListController) IncrementGameListHourByID(c *gin.Context) {
+	var data requests.ID
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	var (
+		updatedGameList models.GameList
+		err             error
+	)
+
+	userListModel := models.NewUserListModel(u.Database)
+	gameList, err := userListModel.GetBaseGameListByID(data.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if gameList.UserID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	if uid != gameList.UserID {
+		c.JSON(http.StatusForbidden, gin.H{"error": ErrUnauthorized})
+		return
+	}
+
+	if updatedGameList, err = userListModel.IncrementGameListHourByID(gameList, data); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	gameModel := models.NewGameModel(u.Database)
+	game, _ := gameModel.GetGameDetails(requests.ID{
+		ID: gameList.GameID,
+	})
+
+	logModel := models.NewLogsModel(u.Database)
+
+	go logModel.CreateLog(uid, requests.CreateLog{
+		LogType:          models.UserListLogType,
+		LogAction:        models.UpdateLogAction,
+		LogActionDetails: updatedGameList.Status,
+		ContentTitle:     game.Title,
+		ContentImage:     game.ImageUrl,
+		ContentType:      "game",
+		ContentID:        updatedGameList.GameID,
+	})
+
+	c.JSON(http.StatusOK, gin.H{"message": "Game list updated.", "data": updatedGameList})
 }
 
 // Update Game List
@@ -552,6 +694,77 @@ func (u *UserListController) UpdateMovieListByID(c *gin.Context) {
 	})
 
 	c.JSON(http.StatusOK, gin.H{"message": "Movie list updated.", "data": updatedWatchList})
+}
+
+// Increment TV Series List
+// @Summary Increment TV Series List
+// @Description Increment tv series list episode or season
+// @Tags user_list
+// @Accept application/json
+// @Produce application/json
+// @Param incrementtvserieslist body requests.IncrementTVSeriesList true "Increment TV Series List"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {object} models.TVSeriesWatchList
+// @Failure 403 {string} string "Unauthorized update"
+// @Failure 404 {string} string "Could not found"
+// @Failure 500 {string} string
+// @Router /list/tv [patch]
+func (u *UserListController) IncrementTVSeriesListEpisodeSeasonByID(c *gin.Context) {
+	var data requests.IncrementTVSeriesList
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	var (
+		updatedTVList models.TVSeriesWatchList
+		err           error
+	)
+
+	userListModel := models.NewUserListModel(u.Database)
+	tvList, err := userListModel.GetBaseTVSeriesListByID(data.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if tvList.UserID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	if uid != tvList.UserID {
+		c.JSON(http.StatusForbidden, gin.H{"error": ErrUnauthorized})
+		return
+	}
+
+	tvSeriesModel := models.NewTVModel(u.Database)
+	tvSeries, _ := tvSeriesModel.GetTVSeriesDetails(requests.ID{
+		ID: tvList.TvID,
+	})
+
+	if updatedTVList, err = userListModel.IncrementTVSeriesListEpisodeSeasonByID(tvList, data); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	logModel := models.NewLogsModel(u.Database)
+
+	go logModel.CreateLog(uid, requests.CreateLog{
+		LogType:          models.UserListLogType,
+		LogAction:        models.UpdateLogAction,
+		LogActionDetails: updatedTVList.Status,
+		ContentTitle:     tvSeries.TitleEn,
+		ContentImage:     tvSeries.ImageURL,
+		ContentType:      "tv",
+		ContentID:        updatedTVList.TvID,
+	})
+
+	c.JSON(http.StatusOK, gin.H{"message": "TV series watch list updated.", "data": updatedTVList})
 }
 
 // Update TV Series List

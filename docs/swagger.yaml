@@ -367,6 +367,16 @@ definitions:
     required:
     - id
     type: object
+  requests.IncrementTVSeriesList:
+    properties:
+      id:
+        type: string
+      is_episode:
+        type: boolean
+    required:
+    - id
+    - is_episode
+    type: object
   requests.MarkConsumeLater:
     properties:
       id:
@@ -2585,6 +2595,47 @@ paths:
       security:
       - BearerAuth: []
       summary: Create Anime List
+      tags:
+      - user_list
+  /list/anime/inc:
+    patch:
+      consumes:
+      - application/json
+      description: Increment anime list episode
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ID'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AnimeList'
+        "403":
+          description: Unauthorized update
+          schema:
+            type: string
+        "404":
+          description: Could not found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Increment Anime List
       tags:
       - user_list
   /list/game:

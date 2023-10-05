@@ -1083,6 +1083,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/list/anime/inc": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Increment anime list episode",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_list"
+                ],
+                "summary": "Increment Anime List",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ID"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.AnimeList"
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized update",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Could not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/list/game": {
             "post": {
                 "security": [
@@ -3018,6 +3082,21 @@ const docTemplate = `{
             "properties": {
                 "id": {
                     "type": "string"
+                }
+            }
+        },
+        "requests.IncrementTVSeriesList": {
+            "type": "object",
+            "required": [
+                "id",
+                "is_episode"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "is_episode": {
+                    "type": "boolean"
                 }
             }
         },

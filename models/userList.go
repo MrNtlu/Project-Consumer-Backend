@@ -330,6 +330,24 @@ func (userListModel *UserListModel) UpdateUserListPublicVisibility(userList User
 	return nil
 }
 
+func (userListModel *UserListModel) IncrementAnimeListEpisodeByID(animeList AnimeList, data requests.ID) (AnimeList, error) {
+	animeList.WatchedEpisodes = animeList.WatchedEpisodes + 1
+
+	if _, err := userListModel.AnimeListCollection.UpdateOne(context.TODO(), bson.M{
+		"_id": animeList.ID,
+	}, bson.M{"$inc": bson.M{
+		"watched_episodes": 1,
+	}}); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"anime_list_id": animeList.ID,
+		}).Error("failed to increment anime list episode: ", err)
+
+		return AnimeList{}, fmt.Errorf("Failed to increment anime list episode.")
+	}
+
+	return animeList, nil
+}
+
 func (userListModel *UserListModel) UpdateAnimeListByID(animeList AnimeList, data requests.UpdateAnimeList) (AnimeList, error) {
 	if data.IsUpdatingScore || data.TimesFinished != nil ||
 		data.Status != nil || data.WatchedEpisodes != nil {
@@ -368,6 +386,37 @@ func (userListModel *UserListModel) UpdateAnimeListByID(animeList AnimeList, dat
 	}
 
 	return animeList, nil
+}
+
+func (userListModel *UserListModel) IncrementGameListHourByID(gameList GameList, data requests.ID) (GameList, error) {
+	var (
+		hoursPlayed     int
+		updateOperation string
+	)
+
+	if gameList.HoursPlayed != nil {
+		hoursPlayed = *gameList.HoursPlayed + 1
+		updateOperation = "$inc"
+	} else {
+		hoursPlayed = 1
+		updateOperation = "$set"
+	}
+
+	gameList.HoursPlayed = &hoursPlayed
+
+	if _, err := userListModel.GameListCollection.UpdateOne(context.TODO(), bson.M{
+		"_id": gameList.ID,
+	}, bson.M{updateOperation: bson.M{
+		"hours_played": 1,
+	}}); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"game_list_id": gameList.ID,
+		}).Error("failed to increment game list hours played: ", err)
+
+		return GameList{}, fmt.Errorf("Failed to increment game list hours played.")
+	}
+
+	return gameList, nil
 }
 
 func (userListModel *UserListModel) UpdateGameListByID(gameList GameList, data requests.UpdateGameList) (GameList, error) {
@@ -447,6 +496,33 @@ func (userListModel *UserListModel) UpdateMovieListByID(movieList MovieWatchList
 	}
 
 	return movieList, nil
+}
+
+func (userListModel *UserListModel) IncrementTVSeriesListEpisodeSeasonByID(tvList TVSeriesWatchList, data requests.IncrementTVSeriesList) (TVSeriesWatchList, error) {
+	var updateField string
+
+	if *data.IsEpisode {
+		tvList.WatchedEpisodes = tvList.WatchedEpisodes + 1
+		updateField = "watched_episodes"
+	} else {
+		tvList.WatchedSeasons = tvList.WatchedSeasons + 1
+		updateField = "watched_seasons"
+	}
+
+	if _, err := userListModel.TVSeriesWatchListCollection.UpdateOne(context.TODO(), bson.M{
+		"_id": tvList.ID,
+	}, bson.M{"$inc": bson.M{
+		updateField: 1,
+	}}); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"tv_list_id": tvList.ID,
+			"data":       data,
+		}).Error("failed to increment tv list: ", err)
+
+		return TVSeriesWatchList{}, fmt.Errorf("Failed to update tv series watch list.")
+	}
+
+	return tvList, nil
 }
 
 func (userListModel *UserListModel) UpdateTVSeriesListByID(tvList TVSeriesWatchList, data requests.UpdateTVSeriesList) (TVSeriesWatchList, error) {
