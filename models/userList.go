@@ -1738,7 +1738,7 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 								"title_en":       1,
 								"status":         1,
 								"type":           1,
-								"total_episodes": 1,
+								"total_episodes": "$episodes",
 								"anime_id":       1,
 								"mal_id":         1,
 								"is_airing":      1,
