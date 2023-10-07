@@ -20,6 +20,8 @@ func NewUserInteractionController(mongoDB *db.MongoDB) UserInteractionController
 	}
 }
 
+const errConsumeLaterPremium = "Free members can add up to 50 content to their watch later, you can get premium membership for unlimited access."
+
 // Create Consume Later
 // @Summary Create Consume Later
 // @Description Creates Consume Later
@@ -132,8 +134,19 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 	}
 
 	uid := jwt.ExtractClaims(c)["id"].(string)
-
+	userModel := models.NewUserModel(ui.Database)
 	userInteractionModel := models.NewUserInteractionModel(ui.Database)
+
+	isPremium, _ := userModel.IsUserPremium(uid)
+	count := userInteractionModel.GetConsumeLaterCount(uid)
+
+	if !isPremium && count >= models.ConsumeLaterLimit {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": errConsumeLaterPremium,
+		})
+
+		return
+	}
 
 	var (
 		createdConsumeLater models.ConsumeLaterList
@@ -206,7 +219,19 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 		return
 	}
 
+	userModel := models.NewUserModel(ui.Database)
 	userListModel := models.NewUserListModel(ui.Database)
+
+	isPremium, _ := userModel.IsUserPremium(uid)
+	count, _ := userListModel.GetUserListCount(uid)
+
+	if !isPremium && count >= models.UserListLimit {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": errUserListPremium,
+		})
+
+		return
+	}
 
 	var timesFinished = 1
 	var status = "finished"

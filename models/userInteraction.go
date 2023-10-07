@@ -85,6 +85,19 @@ func (userInteractionModel *UserInteractionModel) CreateConsumeLater(uid string,
 	return *consumeLater, nil
 }
 
+func (userInteractionModel *UserInteractionModel) GetConsumeLaterCount(uid string) int64 {
+	consumeLaterCount, err := userInteractionModel.ConsumeLaterCollection.CountDocuments(context.TODO(), bson.M{"user_id": uid})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to count consume later list: ", err)
+
+		return -1
+	}
+
+	return consumeLaterCount
+}
+
 func (userInteractionModel *UserInteractionModel) GetBaseConsumeLater(uid, id string) (ConsumeLaterList, error) {
 	objectID, _ := primitive.ObjectIDFromHex(id)
 

@@ -12,6 +12,7 @@
 # below:
 .git
 .gitignore
+heroku.yml
 
 # Binaries for programs and plugins
 *.exe

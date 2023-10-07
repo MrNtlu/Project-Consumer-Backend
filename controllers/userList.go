@@ -20,6 +20,8 @@ func NewUserListController(mongoDB *db.MongoDB) UserListController {
 	}
 }
 
+const errUserListPremium = "Free members can add up to 125 content to their list, you can get premium membership for unlimited access."
+
 // Create Anime List
 // @Summary Create Anime List
 // @Description Creates Anime List
@@ -62,8 +64,19 @@ func (u *UserListController) CreateAnimeList(c *gin.Context) {
 	}
 
 	uid := jwt.ExtractClaims(c)["id"].(string)
-
+	userModel := models.NewUserModel(u.Database)
 	userListModel := models.NewUserListModel(u.Database)
+
+	isPremium, _ := userModel.IsUserPremium(uid)
+	count, _ := userListModel.GetUserListCount(uid)
+
+	if !isPremium && count >= models.UserListLimit {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": errUserListPremium,
+		})
+
+		return
+	}
 
 	if createdAnimeList, err = userListModel.CreateAnimeList(uid, data, anime); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -130,8 +143,19 @@ func (u *UserListController) CreateGameList(c *gin.Context) {
 	}
 
 	uid := jwt.ExtractClaims(c)["id"].(string)
-
+	userModel := models.NewUserModel(u.Database)
 	userListModel := models.NewUserListModel(u.Database)
+
+	isPremium, _ := userModel.IsUserPremium(uid)
+	count, _ := userListModel.GetUserListCount(uid)
+
+	if !isPremium && count >= models.UserListLimit {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": errUserListPremium,
+		})
+
+		return
+	}
 
 	if createdGameList, err = userListModel.CreateGameList(uid, data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -198,8 +222,19 @@ func (u *UserListController) CreateMovieWatchList(c *gin.Context) {
 	}
 
 	uid := jwt.ExtractClaims(c)["id"].(string)
-
+	userModel := models.NewUserModel(u.Database)
 	userListModel := models.NewUserListModel(u.Database)
+
+	isPremium, _ := userModel.IsUserPremium(uid)
+	count, _ := userListModel.GetUserListCount(uid)
+
+	if !isPremium && count >= models.UserListLimit {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": errUserListPremium,
+		})
+
+		return
+	}
 
 	if createdWatchList, err = userListModel.CreateMovieWatchList(uid, data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -266,8 +301,19 @@ func (u *UserListController) CreateTVSeriesWatchList(c *gin.Context) {
 	}
 
 	uid := jwt.ExtractClaims(c)["id"].(string)
-
+	userModel := models.NewUserModel(u.Database)
 	userListModel := models.NewUserListModel(u.Database)
+
+	isPremium, _ := userModel.IsUserPremium(uid)
+	count, _ := userListModel.GetUserListCount(uid)
+
+	if !isPremium && count >= models.UserListLimit {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": errUserListPremium,
+		})
+
+		return
+	}
 
 	if createdTVSeriesWatchList, err = userListModel.CreateTVSeriesWatchList(uid, data, tvSeries); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

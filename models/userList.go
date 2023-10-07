@@ -15,6 +15,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+const (
+	UserListLimit     = 125
+	ConsumeLaterLimit = 50
+)
+
 type UserListModel struct {
 	UserListCollection          *mongo.Collection
 	AnimeListCollection         *mongo.Collection
@@ -33,16 +38,6 @@ func NewUserListModel(mongoDB *db.MongoDB) *UserListModel {
 	}
 }
 
-/**
-* !Features
-* Combination of all lists.
-* Calculate total amount of episodes/games/movies watched etc.
-* Mean/Median etc. scores
-* Create slug for sharing
-*
-* !Premium Features
-* ? - Not decided yet
-**/
 type UserList struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	UserID   string             `bson:"user_id" json:"user_id"`
