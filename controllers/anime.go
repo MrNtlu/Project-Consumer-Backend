@@ -4,7 +4,9 @@ import (
 	"app/db"
 	"app/models"
 	"app/requests"
+	"app/responses"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -64,7 +66,25 @@ func (a *AnimeController) GetPreviewAnimes(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"upcoming": upcomingAnimes, "top": topRatedAnimes, "popular": popularAnimes})
+	dayOfWeekAnime, err := animeModel.GetCurrentlyAiringAnimesByDayOfWeek()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	dayOfWeek := int16(time.Now().UTC().Weekday()) + 1
+
+	var dayOfWeekAnimeList responses.DayOfWeekAnime
+	for _, item := range dayOfWeekAnime {
+		if item.DayOfWeek == dayOfWeek {
+			dayOfWeekAnimeList = item
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"upcoming": upcomingAnimes, "top": topRatedAnimes, "popular": popularAnimes, "extra": dayOfWeekAnimeList.Data})
 }
 
 // Get Upcoming Animes
@@ -141,9 +161,9 @@ func (a *AnimeController) GetAnimesByYearAndSeason(c *gin.Context) {
 // @Tags anime
 // @Accept application/json
 // @Produce application/json
-// @Success 200 {array} responses.Anime
+// @Success 200 {array} responses.DayOfWeekAnime
 // @Failure 500 {string} string
-// @Router /anime/upcoming [get]
+// @Router /anime/airing [get]
 func (a *AnimeController) GetCurrentlyAiringAnimesByDayOfWeek(c *gin.Context) {
 	animeModel := models.NewAnimeModel(a.Database)
 

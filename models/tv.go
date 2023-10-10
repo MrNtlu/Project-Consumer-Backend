@@ -4,7 +4,6 @@ import (
 	"app/db"
 	"app/requests"
 	"app/responses"
-	"app/utils"
 	"context"
 	"fmt"
 	"strconv"
@@ -160,67 +159,83 @@ func (tvModel *TVModel) GetUpcomingTVSeries(data requests.Pagination) ([]respons
 	return upcomingTVSeries, paginatedData.Pagination, nil
 }
 
-//TODO Get the latest season and sort by that.
-func (tvModel *TVModel) GetUpcomingSeasonTVSeries(data requests.SortUpcoming) ([]responses.TVSeries, p.PaginationData, error) {
-	var (
-		sortType        string
-		sortOrder       int8
-		hasAirDateOrder int8
-	)
-
-	switch data.Sort {
-	case "popularity":
-		sortType = "tmdb_popularity"
-		sortOrder = -1
-		hasAirDateOrder = -1
-	case "soon":
-		sortType = "release_date"
-		sortOrder = 1
-		hasAirDateOrder = -1
-	case "later":
-		sortType = "release_date"
-		sortOrder = -1
-		hasAirDateOrder = 1
-	}
-
+func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek() ([]responses.DayOfWeekTVSeries, error) {
 	match := bson.M{"$match": bson.M{
-		"seasons.air_date": bson.M{
-			"$gte": utils.GetCurrentDate(),
+		"streaming.country_code": "US",
+		"status":                 "Returning Series",
+		"streaming.streaming_platforms": bson.M{
+			"$ne": nil,
+		},
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"latest_season": bson.M{
+			"$arrayElemAt": bson.A{"$seasons", -1},
+		},
+	}}
+
+	airDateNotNull := bson.M{"$match": bson.M{
+		"latest_season.air_date": bson.M{
+			"$ne": nil,
 		},
 	}}
 
 	addFields := bson.M{"$addFields": bson.M{
-		"has_release_date": bson.M{
-			"$or": bson.A{
-				bson.M{
-					"$ne": bson.A{"$release_date", ""},
-				},
-				bson.M{
-					"$ne": bson.A{"$release_date", nil},
+		"dayOfWeek": bson.M{
+			"$dayOfWeek": bson.M{
+				"$dateFromString": bson.M{
+					"dateString": "$latest_season.air_date",
 				},
 			},
 		},
 	}}
 
-	paginatedData, err := p.New(tvModel.Collection).Context(context.TODO()).Limit(tvSeriesUpcomingPaginationLimit).
-		Page(data.Page).Sort("has_release_date", hasAirDateOrder).Sort(sortType, sortOrder).Sort("_id", 1).Aggregate(match, addFields)
+	group := bson.M{"$group": bson.M{
+		"_id": "$dayOfWeek",
+		"data": bson.M{
+			"$push": "$$ROOT",
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"_id": 1,
+	}}
+
+	setSlice := bson.M{"$set": bson.M{
+		"day_of_week": "$_id",
+		"data": bson.M{
+			"$slice": bson.A{"$data", 25},
+		},
+	}}
+
+	sortArray := bson.M{"$set": bson.M{
+		"data": bson.M{
+			"$sortArray": bson.M{
+				"input": "$data",
+				"sortBy": bson.M{
+					"tmdb_popularity": -1,
+				},
+			},
+		},
+	}}
+
+	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, set, airDateNotNull, addFields, group, sort, setSlice, sortArray,
+	})
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"request": data,
-		}).Error("failed to aggregate upcoming tv series: ", err)
+		logrus.Error("failed to aggregate currently airing tv series: ", err)
 
-		return nil, p.PaginationData{}, fmt.Errorf("Failed to get upcoming tv series.")
+		return nil, fmt.Errorf("Failed to get currently airing tv series.")
 	}
 
-	var upcomingTVSeries []responses.TVSeries
-	for _, raw := range paginatedData.Data {
-		var tvSeries *responses.TVSeries
-		if marshalErr := bson.Unmarshal(raw, &tvSeries); marshalErr == nil {
-			upcomingTVSeries = append(upcomingTVSeries, *tvSeries)
-		}
+	var tvSeriesList []responses.DayOfWeekTVSeries
+	if err := cursor.All(context.TODO(), &tvSeriesList); err != nil {
+		logrus.Error("failed to decode tv series by user id: ", err)
+
+		return nil, fmt.Errorf("Failed to decode tv series by user id.")
 	}
 
-	return upcomingTVSeries, paginatedData.Pagination, nil
+	return tvSeriesList, nil
 }
 
 func (tvModel *TVModel) GetTVSeriesBySortAndFilter(data requests.SortFilterTVSeries) ([]responses.TVSeries, p.PaginationData, error) {

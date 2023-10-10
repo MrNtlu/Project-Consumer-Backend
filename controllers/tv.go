@@ -4,7 +4,9 @@ import (
 	"app/db"
 	"app/models"
 	"app/requests"
+	"app/responses"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -64,7 +66,25 @@ func (tv *TVController) GetPreviewTVSeries(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"upcoming": upcomingTVSeries, "popular": popularTVSeries, "top": topTVSeries})
+	dayOfWeekTVSeries, err := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	dayOfWeek := int16(time.Now().UTC().Weekday()) + 1
+
+	var dayOfWeekTVSeriesList responses.DayOfWeekTVSeries
+	for _, item := range dayOfWeekTVSeries {
+		if item.DayOfWeek == dayOfWeek {
+			dayOfWeekTVSeriesList = item
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"upcoming": upcomingTVSeries, "popular": popularTVSeries, "top": topTVSeries, "extra": dayOfWeekTVSeriesList.Data})
 }
 
 // Get Upcoming TV Series
@@ -101,29 +121,19 @@ func (tv *TVController) GetUpcomingTVSeries(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": upcomingTVSeries})
 }
 
-// Get Upcoming Seasons for TV Series
-// @Summary Get Upcoming Seasons for TV Series by Sort
-// @Description Returns upcoming tv series by sort with pagination
+// Get Currently Airing TV Series
+// @Summary Get Currently Airing TV Series by day of week and country code
+// @Description Returns list of tv series by day of week
 // @Tags tv
 // @Accept application/json
 // @Produce application/json
-// @Param sortupcoming body requests.SortUpcoming true "Sort Upcoming"
-// @Success 200 {array} responses.TVSeries
+// @Success 200 {array} responses.DayOfWeekTVSeries
 // @Failure 500 {string} string
-// @Router /tv/upcoming/season [get]
-func (tv *TVController) GetUpcomingSeasonTVSeries(c *gin.Context) {
-	var data requests.SortUpcoming
-	if err := c.ShouldBindQuery(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": validatorErrorHandler(err),
-		})
-
-		return
-	}
-
+// @Router /tv/airing [get]
+func (tv *TVController) GetCurrentlyAiringTVSeriesByDayOfWeek(c *gin.Context) {
 	tvModel := models.NewTVModel(tv.Database)
 
-	upcomingTVSeries, pagination, err := tvModel.GetUpcomingSeasonTVSeries(data)
+	tvSeriesList, err := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -132,7 +142,7 @@ func (tv *TVController) GetUpcomingSeasonTVSeries(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": upcomingTVSeries})
+	c.JSON(http.StatusOK, gin.H{"data": tvSeriesList})
 }
 
 // Get TV Series
@@ -158,85 +168,6 @@ func (tv *TVController) GetTVSeriesBySortAndFilter(c *gin.Context) {
 	tvModel := models.NewTVModel(tv.Database)
 
 	tvSeries, pagination, err := tvModel.GetTVSeriesBySortAndFilter(data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": tvSeries})
-}
-
-// Get Popular TV Series by Decade
-// @Summary Get Popular TV Series by decade
-// @Description Returns popular tv series by decade with pagination
-// @Tags tv
-// @Accept application/json
-// @Produce application/json
-// @Param filterbydecade body requests.FilterByDecade true "Filter by Decade"
-// @Success 200 {array} responses.TVSeries
-// @Failure 500 {string} string
-// @Router /tv/decade [get]
-func (tv *TVController) GetPopularTVSeriesByDecade(c *gin.Context) {
-	var data requests.FilterByDecade
-	if err := c.ShouldBindQuery(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": validatorErrorHandler(err),
-		})
-
-		return
-	}
-
-	tvModel := models.NewTVModel(tv.Database)
-
-	var dateTo = data.Decade + 10
-
-	tvSeries, pagination, err := tvModel.GetTVSeriesBySortAndFilter(requests.SortFilterTVSeries{
-		FirstAirDateFrom: &data.Decade,
-		FirstAirDateTo:   &dateTo,
-		Sort:             "popularity",
-		Page:             data.Page,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": tvSeries})
-}
-
-// Get Popular TV Series by Genre
-// @Summary Get Popular TV Series by genre
-// @Description Returns popular tv series by genre with pagination
-// @Tags tv
-// @Accept application/json
-// @Produce application/json
-// @Param filterbygenre body requests.FilterByGenre true "Filter by Genre"
-// @Success 200 {array} responses.TVSeries
-// @Failure 500 {string} string
-// @Router /tv/decade [get]
-func (tv *TVController) GetPopularTVSeriesByGenre(c *gin.Context) {
-	var data requests.FilterByGenre
-	if err := c.ShouldBindQuery(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": validatorErrorHandler(err),
-		})
-
-		return
-	}
-
-	tvModel := models.NewTVModel(tv.Database)
-
-	tvSeries, pagination, err := tvModel.GetTVSeriesBySortAndFilter(requests.SortFilterTVSeries{
-		Genres: &data.Genre,
-		Sort:   "popularity",
-		Page:   data.Page,
-	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

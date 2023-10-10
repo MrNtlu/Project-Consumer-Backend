@@ -64,7 +64,16 @@ func (m *MovieController) GetPreviewMovies(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"upcoming": upcomingMovies, "popular": popularMovies, "top": topMovies})
+	moviesInTheater, _, err := movieModel.GetMoviesInTheater(requests.Pagination{Page: 1})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"upcoming": upcomingMovies, "popular": popularMovies, "top": topMovies, "extra": moviesInTheater})
 }
 
 // Get Upcoming Movies
@@ -99,6 +108,40 @@ func (m *MovieController) GetUpcomingMoviesBySort(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": upcomingMovies})
+}
+
+// Get Movies in Theater
+// @Summary Get Movies that are in theaters
+// @Description Returns movies in theaters
+// @Tags movie
+// @Accept application/json
+// @Produce application/json
+// @Param pagination body requests.Pagination true "Pagination"
+// @Success 200 {array} responses.Movie
+// @Failure 500 {string} string
+// @Router /movie/theaters [get]
+func (m *MovieController) GetMoviesInTheater(c *gin.Context) {
+	var data requests.Pagination
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	movieModel := models.NewMovieModel(m.Database)
+
+	movies, pagination, err := movieModel.GetMoviesInTheater(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": movies})
 }
 
 // Get Movies

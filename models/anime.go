@@ -242,7 +242,7 @@ func (animeModel *AnimeModel) GetAnimesByYearAndSeason(data requests.SortByYearS
 	return animes, paginatedData.Pagination, nil
 }
 
-func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek() ([]responses.CurrentlyAiringAnimeResponse, error) {
+func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek() ([]responses.DayOfWeekAnime, error) {
 	match := bson.M{"$match": bson.M{
 		"$or": bson.A{
 			bson.M{"status": "Currently Airing"},
@@ -269,7 +269,10 @@ func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek() ([]responses
 
 	group := bson.M{"$group": bson.M{
 		"_id": "$dayOfWeek",
-		"animes": bson.M{
+		"day_of_week": bson.M{
+			"$first": "$dayOfWeek",
+		},
+		"data": bson.M{
 			"$push": "$$ROOT",
 		},
 	}}
@@ -287,14 +290,14 @@ func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek() ([]responses
 		return nil, err
 	}
 
-	var currentlyAiringAnimeResponse []responses.CurrentlyAiringAnimeResponse
-	if err = cursor.All(context.TODO(), &currentlyAiringAnimeResponse); err != nil {
+	var animeList []responses.DayOfWeekAnime
+	if err = cursor.All(context.TODO(), &animeList); err != nil {
 		logrus.Error("failed to decode currently airing animes: ", err)
 
 		return nil, err
 	}
 
-	return currentlyAiringAnimeResponse, nil
+	return animeList, nil
 }
 
 func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterAnime) ([]responses.Anime, p.PaginationData, error) {

@@ -330,29 +330,6 @@ definitions:
     - id
     - type
     type: object
-  requests.FilterByDecade:
-    properties:
-      decade:
-        maximum: 2050
-        minimum: 1900
-        type: integer
-      page:
-        minimum: 1
-        type: integer
-    required:
-    - decade
-    - page
-    type: object
-  requests.FilterByGenre:
-    properties:
-      genre:
-        type: string
-      page:
-        minimum: 1
-        type: integer
-    required:
-    - page
-    type: object
   requests.ForgotPassword:
     properties:
       email_address:
@@ -588,21 +565,6 @@ definitions:
         - production
         - ended
         - airing
-        type: string
-    required:
-    - page
-    - sort
-    type: object
-  requests.SortUpcoming:
-    properties:
-      page:
-        minimum: 1
-        type: integer
-      sort:
-        enum:
-        - popularity
-        - soon
-        - later
         type: string
     required:
     - page
@@ -1086,6 +1048,24 @@ definitions:
         type: string
       title_original:
         type: string
+    type: object
+  responses.DayOfWeekAnime:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/responses.Anime'
+        type: array
+      day_of_week:
+        type: integer
+    type: object
+  responses.DayOfWeekTVSeries:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/responses.TVSeries'
+        type: array
+      day_of_week:
+        type: integer
     type: object
   responses.Game:
     properties:
@@ -1940,6 +1920,27 @@ paths:
       summary: Get Animes by Sort and Filter
       tags:
       - anime
+  /anime/airing:
+    get:
+      consumes:
+      - application/json
+      description: Returns upcoming animes by day of week
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.DayOfWeekAnime'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Upcoming Animes by Day of Week
+      tags:
+      - anime
   /anime/details:
     get:
       consumes:
@@ -2049,7 +2050,14 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns upcoming animes by day of week
+      description: Returns upcoming animes by sort with pagination
+      parameters:
+      - description: Pagination
+        in: body
+        name: pagination
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Pagination'
       produces:
       - application/json
       responses:
@@ -2063,7 +2071,7 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Get Upcoming Animes by Day of Week
+      summary: Get Upcoming Animes by Sort
       tags:
       - anime
   /auth/register:
@@ -3011,6 +3019,34 @@ paths:
       summary: Search Movie
       tags:
       - movie
+  /movie/theaters:
+    get:
+      consumes:
+      - application/json
+      description: Returns movies in theaters
+      parameters:
+      - description: Pagination
+        in: body
+        name: pagination
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Pagination'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Movie'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Movies that are in theaters
+      tags:
+      - movie
   /movie/upcoming:
     get:
       consumes:
@@ -3113,18 +3149,11 @@ paths:
       summary: Get TV Series by Sort and Filter
       tags:
       - tv
-  /tv/decade:
+  /tv/airing:
     get:
       consumes:
       - application/json
-      description: Returns popular tv series by genre with pagination
-      parameters:
-      - description: Filter by Genre
-        in: body
-        name: filterbygenre
-        required: true
-        schema:
-          $ref: '#/definitions/requests.FilterByGenre'
+      description: Returns list of tv series by day of week
       produces:
       - application/json
       responses:
@@ -3132,13 +3161,13 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/responses.TVSeries'
+              $ref: '#/definitions/responses.DayOfWeekTVSeries'
             type: array
         "500":
           description: Internal Server Error
           schema:
             type: string
-      summary: Get Popular TV Series by genre
+      summary: Get Currently Airing TV Series by day of week and country code
       tags:
       - tv
   /tv/details:
@@ -3244,34 +3273,6 @@ paths:
           schema:
             type: string
       summary: Get Upcoming TV Series by Sort
-      tags:
-      - tv
-  /tv/upcoming/season:
-    get:
-      consumes:
-      - application/json
-      description: Returns upcoming tv series by sort with pagination
-      parameters:
-      - description: Sort Upcoming
-        in: body
-        name: sortupcoming
-        required: true
-        schema:
-          $ref: '#/definitions/requests.SortUpcoming'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.TVSeries'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Upcoming Seasons for TV Series by Sort
       tags:
       - tv
   /user:

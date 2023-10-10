@@ -18,5 +18,6 @@ func movieRouter(router *gin.RouterGroup, mongoDB *db.MongoDB) {
 		movie.GET("", movieController.GetMoviesBySortAndFilter)
 		movie.Use(helpers.OptionalTokenCheck).GET("/details", movieController.GetMovieDetails)
 		movie.GET("/search", movieController.SearchMovieByTitle)
+		movie.GET("/theaters", movieController.GetMoviesInTheater)
 	}
 }

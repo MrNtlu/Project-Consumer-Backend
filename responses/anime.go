@@ -6,9 +6,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type CurrentlyAiringAnimeResponse struct {
-	ID   int     `bson:"_id" json:"_id"`
-	Data []Anime `bson:"data" json:"data"`
+type DayOfWeekAnime struct {
+	Data      []Anime `bson:"data" json:"data"`
+	DayOfWeek int16   `bson:"day_of_week" json:"day_of_week"`
 }
 
 type Anime struct {

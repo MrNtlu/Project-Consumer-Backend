@@ -66,6 +66,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/anime/airing": {
+            "get": {
+                "description": "Returns upcoming animes by day of week",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "anime"
+                ],
+                "summary": "Get Upcoming Animes by Day of Week",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.DayOfWeekAnime"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/anime/details": {
             "get": {
                 "description": "Returns anime details with optional authentication",
@@ -229,7 +261,7 @@ const docTemplate = `{
         },
         "/anime/upcoming": {
             "get": {
-                "description": "Returns upcoming animes by day of week",
+                "description": "Returns upcoming animes by sort with pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -239,7 +271,18 @@ const docTemplate = `{
                 "tags": [
                     "anime"
                 ],
-                "summary": "Get Upcoming Animes by Day of Week",
+                "summary": "Get Upcoming Animes by Sort",
+                "parameters": [
+                    {
+                        "description": "Pagination",
+                        "name": "pagination",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.Pagination"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1726,6 +1769,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/movie/theaters": {
+            "get": {
+                "description": "Returns movies in theaters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movie"
+                ],
+                "summary": "Get Movies that are in theaters",
+                "parameters": [
+                    {
+                        "description": "Pagination",
+                        "name": "pagination",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.Pagination"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Movie"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/movie/upcoming": {
             "get": {
                 "description": "Returns upcoming movies by sort with pagination",
@@ -1882,9 +1968,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/tv/decade": {
+        "/tv/airing": {
             "get": {
-                "description": "Returns popular tv series by genre with pagination",
+                "description": "Returns list of tv series by day of week",
                 "consumes": [
                     "application/json"
                 ],
@@ -1894,25 +1980,14 @@ const docTemplate = `{
                 "tags": [
                     "tv"
                 ],
-                "summary": "Get Popular TV Series by genre",
-                "parameters": [
-                    {
-                        "description": "Filter by Genre",
-                        "name": "filterbygenre",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.FilterByGenre"
-                        }
-                    }
-                ],
+                "summary": "Get Currently Airing TV Series by day of week and country code",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/responses.TVSeries"
+                                "$ref": "#/definitions/responses.DayOfWeekTVSeries"
                             }
                         }
                     },
@@ -2064,49 +2139,6 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/requests.Pagination"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.TVSeries"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/tv/upcoming/season": {
-            "get": {
-                "description": "Returns upcoming tv series by sort with pagination",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tv"
-                ],
-                "summary": "Get Upcoming Seasons for TV Series by Sort",
-                "parameters": [
-                    {
-                        "description": "Sort Upcoming",
-                        "name": "sortupcoming",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.SortUpcoming"
                         }
                     }
                 ],
@@ -3030,39 +3062,6 @@ const docTemplate = `{
                 }
             }
         },
-        "requests.FilterByDecade": {
-            "type": "object",
-            "required": [
-                "decade",
-                "page"
-            ],
-            "properties": {
-                "decade": {
-                    "type": "integer",
-                    "maximum": 2050,
-                    "minimum": 1900
-                },
-                "page": {
-                    "type": "integer",
-                    "minimum": 1
-                }
-            }
-        },
-        "requests.FilterByGenre": {
-            "type": "object",
-            "required": [
-                "page"
-            ],
-            "properties": {
-                "genre": {
-                    "type": "string"
-                },
-                "page": {
-                    "type": "integer",
-                    "minimum": 1
-                }
-            }
-        },
         "requests.ForgotPassword": {
             "type": "object",
             "required": [
@@ -3396,27 +3395,6 @@ const docTemplate = `{
                         "production",
                         "ended",
                         "airing"
-                    ]
-                }
-            }
-        },
-        "requests.SortUpcoming": {
-            "type": "object",
-            "required": [
-                "page",
-                "sort"
-            ],
-            "properties": {
-                "page": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "sort": {
-                    "type": "string",
-                    "enum": [
-                        "popularity",
-                        "soon",
-                        "later"
                     ]
                 }
             }
@@ -4132,6 +4110,34 @@ const docTemplate = `{
                 },
                 "title_original": {
                     "type": "string"
+                }
+            }
+        },
+        "responses.DayOfWeekAnime": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Anime"
+                    }
+                },
+                "day_of_week": {
+                    "type": "integer"
+                }
+            }
+        },
+        "responses.DayOfWeekTVSeries": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.TVSeries"
+                    }
+                },
+                "day_of_week": {
+                    "type": "integer"
                 }
             }
         },

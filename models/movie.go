@@ -123,6 +123,29 @@ func (movieModel *MovieModel) GetMoviesFromOpenAI(uid string, movies []string) (
 	return movieList, nil
 }
 
+func (movieModel *MovieModel) GetMoviesInTheater(data requests.Pagination) ([]responses.Movie, p.PaginationData, error) {
+	match := bson.M{
+		"status": "Released",
+		"release_date": bson.M{
+			"$gte": utils.GetCustomDate(0, -1, 0),
+			"$lte": utils.GetCurrentDate(),
+		},
+	}
+
+	var movies []responses.Movie
+	paginatedData, err := p.New(movieModel.Collection).Context(context.TODO()).Limit(moviePaginationLimit).
+		Page(data.Page).Sort("tmdb_popularity", -1).Filter(match).Decode(&movies).Find()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate movies in theater: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get movies in theater.")
+	}
+
+	return movies, paginatedData.Pagination, nil
+}
+
 func (movieModel *MovieModel) GetUpcomingMoviesBySort(data requests.Pagination) ([]responses.Movie, p.PaginationData, error) {
 	match := bson.M{"$match": bson.M{
 		"$or": bson.A{

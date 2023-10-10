@@ -6,6 +6,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type DayOfWeekTVSeries struct {
+	Data      []TVSeries `bson:"data" json:"data"`
+	DayOfWeek int16      `bson:"day_of_week" json:"day_of_week"`
+}
+
 type TVSeries struct {
 	ID                  primitive.ObjectID     `bson:"_id,omitempty" json:"_id"`
 	TitleEn             string                 `bson:"title_en" json:"title_en"`
