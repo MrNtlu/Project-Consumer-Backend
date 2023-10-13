@@ -6,3 +6,8 @@ docker-compose down //shutdown
 
 gcloud app logs read
 gcloud app deploy
+
+//Heroku
+
+git push heroku master
+heroku logs --tail

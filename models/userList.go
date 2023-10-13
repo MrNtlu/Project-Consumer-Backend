@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	UserListLimit     = 125
+	UserListLimit     = 175
 	ConsumeLaterLimit = 50
 )
 

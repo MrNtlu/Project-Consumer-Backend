@@ -20,7 +20,7 @@ func NewUserListController(mongoDB *db.MongoDB) UserListController {
 	}
 }
 
-const errUserListPremium = "Free members can add up to 125 content to their list, you can get premium membership for unlimited access."
+const errUserListPremium = "Free members can add up to 175 content to their list, you can get premium membership for unlimited access."
 
 // Create Anime List
 // @Summary Create Anime List
