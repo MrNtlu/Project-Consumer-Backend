@@ -26,11 +26,11 @@ func NewUserModel(mongoDB *db.MongoDB) *UserModel {
 	}
 }
 
-const legendMovieThreshold = 4
+const legendMovieThreshold = 7
 const legendTVThreshold = 2
 const legendAnimeThreshold = 3
 const legendGameThreshold = 3
-const legendGameHoursPlayedThreshold = 300
+const legendGameHoursPlayedThreshold = 350
 
 type User struct {
 	ID                 primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
