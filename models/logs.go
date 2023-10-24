@@ -27,6 +27,7 @@ func NewLogsModel(mongoDB *db.MongoDB) *LogsModel {
 const (
 	UserListLogType     = "userlist"
 	ConsumeLaterLogType = "later"
+	ReviewLogType       = "review"
 
 	AddLogAction    = "add"
 	UpdateLogAction = "update"

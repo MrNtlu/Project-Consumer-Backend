@@ -3,11 +3,14 @@ package models
 import (
 	"app/db"
 	"app/requests"
+	"app/responses"
 	"context"
 	"fmt"
 	"time"
 
+	p "github.com/gobeam/mongo-go-pagination"
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -82,4 +85,86 @@ func (reviewModel *ReviewModel) CreateReview(uid string, data requests.CreateRev
 	review.ID = insertedID.InsertedID.(primitive.ObjectID)
 
 	return *review, nil
+}
+
+func (reviewModel *ReviewModel) GetReviewsByContentID(
+	uid, contentID string, contentExternalID *string,
+	contentExternalIntID *int64, data requests.SortUpcoming,
+) ([]responses.Review, p.PaginationData, error) {
+	// TODO Aggregation, get author lookup
+	// if author is uid, mark it with a boolean
+	// get like dislikes
+	// get current user with uid liked/disliked ?
+
+	return nil, p.PaginationData{}, nil
+}
+
+func (reviewModel *ReviewModel) GetReviewsByUserID(
+	uid string, data requests.SortUpcoming,
+) ([]responses.Review, p.PaginationData, error) {
+	// TODO Aggregation
+	// if author return true
+	// get like dislikes
+	// get current user with uid liked/disliked ?
+
+	return nil, p.PaginationData{}, nil
+}
+
+func (reviewModel *ReviewModel) GetBaseReview(reviewID string) (Review, error) {
+	objectID, _ := primitive.ObjectIDFromHex(reviewID)
+
+	result := reviewModel.ReviewCollection.FindOne(context.TODO(), bson.M{"_id": objectID})
+
+	var review Review
+	if err := result.Decode(&review); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": reviewID,
+		}).Error("failed to find review by id: ", err)
+
+		return Review{}, fmt.Errorf("Failed to find review by id.")
+	}
+
+	return review, nil
+}
+
+func (reviewModel *ReviewModel) UpdateReview(data requests.UpdateReview, review Review) error {
+	objectReviewID, _ := primitive.ObjectIDFromHex(data.ID)
+
+	review.Review = data.Review
+
+	if data.Star != nil {
+		review.Star = *data.Star
+	}
+
+	if _, err := reviewModel.ReviewCollection.UpdateOne(context.TODO(), bson.M{
+		"_id": objectReviewID,
+	}, bson.M{"$set": review}); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"_id":  objectReviewID,
+			"data": data,
+		}).Error("failed to update review: ", err)
+
+		return fmt.Errorf("Failed to update review.")
+	}
+
+	return nil
+}
+
+func (reviewModel *ReviewModel) DeleteReviewByID(uid, reviewID string) (bool, error) {
+	objectReviewID, _ := primitive.ObjectIDFromHex(reviewID)
+
+	count, err := reviewModel.ReviewCollection.DeleteOne(context.TODO(), bson.M{
+		"_id":     objectReviewID,
+		"user_id": uid,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":       uid,
+			"review_id": reviewID,
+		}).Error("failed to delete review: ", err)
+
+		return false, fmt.Errorf("Failed to delete review.")
+	}
+
+	return count.DeletedCount > 0, nil
 }
