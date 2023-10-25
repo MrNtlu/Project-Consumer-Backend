@@ -41,6 +41,7 @@ type Anime struct {
 	Demographics    []AnimeGenre          `bson:"demographics" json:"demographics"`
 	Relations       []AnimeRelation       `bson:"relations" json:"relations"`
 	Characters      []AnimeCharacter      `bson:"characters" json:"characters"`
+	Review          ReviewSummary         `bson:"reviews" json:"reviews"`
 }
 
 type AnimeDetails struct {
@@ -74,6 +75,7 @@ type AnimeDetails struct {
 	Characters      []AnimeCharacter      `bson:"characters" json:"characters"`
 	AnimeList       *AnimeWatchList       `bson:"anime_list" json:"anime_list"`
 	WatchLater      *ConsumeLater         `bson:"watch_later" json:"watch_later"`
+	Review          ReviewSummary         `bson:"reviews" json:"reviews"`
 }
 
 type AnimeWatchList struct {

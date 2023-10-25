@@ -200,6 +200,7 @@ func (m *MovieController) GetMovieDetails(c *gin.Context) {
 	}
 
 	movieModel := models.NewMovieModel(m.Database)
+	reviewModel := models.NewReviewModel(m.Database)
 
 	uuid, OK := c.Get("uuid")
 	if OK && uuid != nil {
@@ -216,6 +217,17 @@ func (m *MovieController) GetMovieDetails(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
 			return
 		}
+
+		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, &movieDetailsWithWatchList.TmdbID, nil)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		movieDetailsWithWatchList.Review = reviewSummary
 
 		c.JSON(http.StatusOK, gin.H{
 			"data": movieDetailsWithWatchList,
@@ -234,6 +246,17 @@ func (m *MovieController) GetMovieDetails(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
 			return
 		}
+
+		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, &movieDetails.TmdbID, nil)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		movieDetails.Review = reviewSummary
 
 		c.JSON(http.StatusOK, gin.H{
 			"data": movieDetails,

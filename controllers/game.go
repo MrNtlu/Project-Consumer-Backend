@@ -156,6 +156,7 @@ func (g *GameController) GetGameDetails(c *gin.Context) {
 	}
 
 	gameModel := models.NewGameModel(g.Database)
+	reviewModel := models.NewReviewModel(g.Database)
 
 	uid, OK := c.Get("uuid")
 	if OK && uid != nil {
@@ -172,6 +173,17 @@ func (g *GameController) GetGameDetails(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
 			return
 		}
+
+		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, nil, &gameDetailsWithPlayList.RawgID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		gameDetailsWithPlayList.Review = reviewSummary
 
 		c.JSON(http.StatusOK, gin.H{
 			"data": gameDetailsWithPlayList,
@@ -190,6 +202,17 @@ func (g *GameController) GetGameDetails(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
 			return
 		}
+
+		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, nil, &gameDetails.RawgID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		gameDetails.Review = reviewSummary
 
 		c.JSON(http.StatusOK, gin.H{
 			"data": gameDetails,

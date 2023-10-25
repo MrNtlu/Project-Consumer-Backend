@@ -83,6 +83,35 @@ definitions:
       user_id:
         type: string
     type: object
+  models.Review:
+    properties:
+      _id:
+        type: string
+      content_external_id:
+        type: string
+      content_external_int_id:
+        type: integer
+      content_id:
+        type: string
+      created_at:
+        type: string
+      dislikes:
+        items:
+          type: string
+        type: array
+      likes:
+        items:
+          type: string
+        type: array
+      review:
+        type: string
+      star:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
   models.TVSeriesWatchList:
     properties:
       _id:
@@ -281,6 +310,34 @@ definitions:
     - movie_id
     - movie_tmdb_id
     - status
+    type: object
+  requests.CreateReview:
+    properties:
+      content_external_id:
+        type: string
+      content_external_int_id:
+        type: integer
+      content_id:
+        type: string
+      content_type:
+        enum:
+        - anime
+        - game
+        - movie
+        - tv
+        type: string
+      review:
+        maxLength: 1000
+        minLength: 6
+        type: string
+      star:
+        maximum: 5
+        minimum: 1
+        type: integer
+    required:
+    - content_id
+    - content_type
+    - star
     type: object
   requests.CreateTVSeriesWatchList:
     properties:
@@ -570,6 +627,28 @@ definitions:
     - page
     - sort
     type: object
+  requests.SortReviewByContentID:
+    properties:
+      contentExternalID:
+        type: string
+      contentExternalIntID:
+        type: integer
+      contentID:
+        type: string
+      page:
+        minimum: 1
+        type: integer
+      sort:
+        enum:
+        - popularity
+        - latest
+        - oldest
+        type: string
+    required:
+    - contentID
+    - page
+    - sort
+    type: object
   requests.UpdateAnimeList:
     properties:
       id:
@@ -682,6 +761,16 @@ definitions:
       is_public:
         type: boolean
     type: object
+  requests.VoteReview:
+    properties:
+      id:
+        type: string
+      is_like:
+        type: boolean
+    required:
+    - id
+    - is_like
+    type: object
   responses.AISuggestion:
     properties:
       _id:
@@ -775,6 +864,8 @@ definitions:
         items:
           $ref: '#/definitions/responses.AnimeRelation'
         type: array
+      reviews:
+        $ref: '#/definitions/responses.ReviewSummary'
       season:
         type: string
       source:
@@ -884,6 +975,8 @@ definitions:
         items:
           $ref: '#/definitions/responses.AnimeRelation'
         type: array
+      reviews:
+        $ref: '#/definitions/responses.ReviewSummary'
       season:
         type: string
       source:
@@ -1015,6 +1108,19 @@ definitions:
       watched_episodes:
         type: integer
     type: object
+  responses.Author:
+    properties:
+      _id:
+        type: string
+      email:
+        type: string
+      image:
+        type: string
+      is_premium:
+        type: boolean
+      username:
+        type: string
+    type: object
   responses.ConsumeLater:
     properties:
       _id:
@@ -1113,6 +1219,8 @@ definitions:
         type: array
       release_date:
         type: string
+      reviews:
+        $ref: '#/definitions/responses.ReviewSummary'
       screenshots:
         items:
           type: string
@@ -1178,6 +1286,8 @@ definitions:
         type: array
       release_date:
         type: string
+      reviews:
+        $ref: '#/definitions/responses.ReviewSummary'
       screenshots:
         items:
           type: string
@@ -1363,6 +1473,8 @@ definitions:
         type: array
       release_date:
         type: string
+      reviews:
+        $ref: '#/definitions/responses.ReviewSummary'
       status:
         type: string
       streaming:
@@ -1428,6 +1540,8 @@ definitions:
         type: array
       release_date:
         type: string
+      reviews:
+        $ref: '#/definitions/responses.ReviewSummary'
       status:
         type: string
       streaming:
@@ -1529,6 +1643,48 @@ definitions:
       tmdb_id:
         type: string
     type: object
+  responses.Review:
+    properties:
+      _id:
+        type: string
+      author:
+        $ref: '#/definitions/responses.Author'
+      content_external_id:
+        type: string
+      content_external_int_id:
+        type: integer
+      content_id:
+        type: string
+      created_at:
+        type: string
+      dislikes:
+        items:
+          type: string
+        type: array
+      is_author:
+        type: boolean
+      likes:
+        items:
+          type: string
+        type: array
+      review:
+        type: string
+      star:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  responses.ReviewSummary:
+    properties:
+      avg_star:
+        type: number
+      star_counts:
+        $ref: '#/definitions/responses.StarCounts'
+      total_votes:
+        type: integer
+    type: object
   responses.Season:
     properties:
       air_date:
@@ -1540,6 +1696,19 @@ definitions:
       name:
         type: string
       season_num:
+        type: integer
+    type: object
+  responses.StarCounts:
+    properties:
+      five_star:
+        type: integer
+      four_star:
+        type: integer
+      one_star:
+        type: integer
+      three_star:
+        type: integer
+      two_star:
         type: integer
     type: object
   responses.Streaming:
@@ -1625,6 +1794,8 @@ definitions:
         items:
           $ref: '#/definitions/responses.Recommendation'
         type: array
+      reviews:
+        $ref: '#/definitions/responses.ReviewSummary'
       seasons:
         items:
           $ref: '#/definitions/responses.Season'
@@ -1698,6 +1869,8 @@ definitions:
         items:
           $ref: '#/definitions/responses.Recommendation'
         type: array
+      reviews:
+        $ref: '#/definitions/responses.ReviewSummary'
       seasons:
         items:
           $ref: '#/definitions/responses.Season'
@@ -3102,6 +3275,194 @@ paths:
       summary: OAuth2 Google Login
       tags:
       - oauth2
+  /review:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes Review
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ID'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete Review
+      tags:
+      - review
+    get:
+      consumes:
+      - application/json
+      description: Get Reviews with or without authentication
+      parameters:
+      - description: Sort Review by Content ID
+        in: body
+        name: sortreviewbycontentid
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortReviewByContentID'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Review'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Review
+      tags:
+      - review
+    patch:
+      consumes:
+      - application/json
+      description: Update Review
+      parameters:
+      - description: Create Review
+        in: body
+        name: createreview
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CreateReview'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Review'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Update Review
+      tags:
+      - review
+    post:
+      consumes:
+      - application/json
+      description: Creates Review
+      parameters:
+      - description: Create Review
+        in: body
+        name: createreview
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CreateReview'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Review'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create Review
+      tags:
+      - review
+  /review/vote:
+    patch:
+      consumes:
+      - application/json
+      description: Like or Dislike Review
+      parameters:
+      - description: Vote Review
+        in: body
+        name: votereview
+        required: true
+        schema:
+          $ref: '#/definitions/requests.VoteReview'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Review'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Vote Review
+      tags:
+      - review
   /suggestions:
     get:
       consumes:

@@ -201,6 +201,7 @@ func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
 	}
 
 	tvModel := models.NewTVModel(tv.Database)
+	reviewModel := models.NewReviewModel(tv.Database)
 
 	uuid, OK := c.Get("uuid")
 	if OK && uuid != nil {
@@ -217,6 +218,17 @@ func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
 			return
 		}
+
+		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, &tvSeriesDetailsWithWatchList.TmdbID, nil)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		tvSeriesDetailsWithWatchList.Review = reviewSummary
 
 		c.JSON(http.StatusOK, gin.H{
 			"data": tvSeriesDetailsWithWatchList,
@@ -235,6 +247,17 @@ func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
 			return
 		}
+
+		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, &tvSeriesDetails.TmdbID, nil)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		tvSeriesDetails.Review = reviewSummary
 
 		c.JSON(http.StatusOK, gin.H{
 			"data": tvSeriesDetails,

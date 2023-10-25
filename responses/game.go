@@ -29,6 +29,7 @@ type Game struct {
 	Developers                []string                      `bson:"developers" json:"developers"`
 	Publishers                []string                      `bson:"publishers" json:"publishers"`
 	Stores                    []GameStore                   `bson:"stores" json:"stores"`
+	Review                    ReviewSummary                 `bson:"reviews" json:"reviews"`
 }
 
 type GameDetails struct {
@@ -55,6 +56,7 @@ type GameDetails struct {
 	Stores                    []GameStore                   `bson:"stores" json:"stores"`
 	GameList                  *GamePlayList                 `bson:"game_list" json:"game_list"`
 	WatchLater                *ConsumeLater                 `bson:"watch_later" json:"watch_later"`
+	Review                    ReviewSummary                 `bson:"reviews" json:"reviews"`
 }
 
 type GamePlayList struct {

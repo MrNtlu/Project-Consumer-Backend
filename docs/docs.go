@@ -1896,6 +1896,299 @@ const docTemplate = `{
                 }
             }
         },
+        "/review": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get Reviews with or without authentication",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "review"
+                ],
+                "summary": "Get Review",
+                "parameters": [
+                    {
+                        "description": "Sort Review by Content ID",
+                        "name": "sortreviewbycontentid",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortReviewByContentID"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Review"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates Review",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "review"
+                ],
+                "summary": "Create Review",
+                "parameters": [
+                    {
+                        "description": "Create Review",
+                        "name": "createreview",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.CreateReview"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Review"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes Review",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "review"
+                ],
+                "summary": "Delete Review",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ID"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update Review",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "review"
+                ],
+                "summary": "Update Review",
+                "parameters": [
+                    {
+                        "description": "Create Review",
+                        "name": "createreview",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.CreateReview"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Review"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/review/vote": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Like or Dislike Review",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "review"
+                ],
+                "summary": "Vote Review",
+                "parameters": [
+                    {
+                        "description": "Vote Review",
+                        "name": "votereview",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.VoteReview"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Review"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/suggestions": {
             "get": {
                 "description": "Returns ai recommendations from OpenAI",
@@ -2712,6 +3005,50 @@ const docTemplate = `{
                 }
             }
         },
+        "models.Review": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "content_external_id": {
+                    "type": "string"
+                },
+                "content_external_int_id": {
+                    "type": "integer"
+                },
+                "content_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "dislikes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "likes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "review": {
+                    "type": "string"
+                },
+                "star": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "models.TVSeriesWatchList": {
             "type": "object",
             "properties": {
@@ -2994,6 +3331,44 @@ const docTemplate = `{
                 "times_finished": {
                     "type": "integer",
                     "minimum": 0
+                }
+            }
+        },
+        "requests.CreateReview": {
+            "type": "object",
+            "required": [
+                "content_id",
+                "content_type",
+                "star"
+            ],
+            "properties": {
+                "content_external_id": {
+                    "type": "string"
+                },
+                "content_external_int_id": {
+                    "type": "integer"
+                },
+                "content_id": {
+                    "type": "string"
+                },
+                "content_type": {
+                    "type": "string",
+                    "enum": [
+                        "anime",
+                        "game",
+                        "movie",
+                        "tv"
+                    ]
+                },
+                "review": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 6
+                },
+                "star": {
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
                 }
             }
         },
@@ -3399,6 +3774,37 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.SortReviewByContentID": {
+            "type": "object",
+            "required": [
+                "contentID",
+                "page",
+                "sort"
+            ],
+            "properties": {
+                "contentExternalID": {
+                    "type": "string"
+                },
+                "contentExternalIntID": {
+                    "type": "integer"
+                },
+                "contentID": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "latest",
+                        "oldest"
+                    ]
+                }
+            }
+        },
         "requests.UpdateAnimeList": {
             "type": "object",
             "required": [
@@ -3555,6 +3961,21 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.VoteReview": {
+            "type": "object",
+            "required": [
+                "id",
+                "is_like"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "is_like": {
+                    "type": "boolean"
+                }
+            }
+        },
         "responses.AISuggestion": {
             "type": "object",
             "properties": {
@@ -3695,6 +4116,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/responses.AnimeRelation"
                     }
+                },
+                "reviews": {
+                    "$ref": "#/definitions/responses.ReviewSummary"
                 },
                 "season": {
                     "type": "string"
@@ -3860,6 +4284,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/responses.AnimeRelation"
                     }
+                },
+                "reviews": {
+                    "$ref": "#/definitions/responses.ReviewSummary"
                 },
                 "season": {
                     "type": "string"
@@ -4061,6 +4488,26 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.Author": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "is_premium": {
+                    "type": "boolean"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "responses.ConsumeLater": {
             "type": "object",
             "properties": {
@@ -4210,6 +4657,9 @@ const docTemplate = `{
                 "release_date": {
                     "type": "string"
                 },
+                "reviews": {
+                    "$ref": "#/definitions/responses.ReviewSummary"
+                },
                 "screenshots": {
                     "type": "array",
                     "items": {
@@ -4307,6 +4757,9 @@ const docTemplate = `{
                 },
                 "release_date": {
                     "type": "string"
+                },
+                "reviews": {
+                    "$ref": "#/definitions/responses.ReviewSummary"
                 },
                 "screenshots": {
                     "type": "array",
@@ -4590,6 +5043,9 @@ const docTemplate = `{
                 "release_date": {
                     "type": "string"
                 },
+                "reviews": {
+                    "$ref": "#/definitions/responses.ReviewSummary"
+                },
                 "status": {
                     "type": "string"
                 },
@@ -4687,6 +5143,9 @@ const docTemplate = `{
                 },
                 "release_date": {
                     "type": "string"
+                },
+                "reviews": {
+                    "$ref": "#/definitions/responses.ReviewSummary"
                 },
                 "status": {
                     "type": "string"
@@ -4842,6 +5301,70 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.Review": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "author": {
+                    "$ref": "#/definitions/responses.Author"
+                },
+                "content_external_id": {
+                    "type": "string"
+                },
+                "content_external_int_id": {
+                    "type": "integer"
+                },
+                "content_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "dislikes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "is_author": {
+                    "type": "boolean"
+                },
+                "likes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "review": {
+                    "type": "string"
+                },
+                "star": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.ReviewSummary": {
+            "type": "object",
+            "properties": {
+                "avg_star": {
+                    "type": "number"
+                },
+                "star_counts": {
+                    "$ref": "#/definitions/responses.StarCounts"
+                },
+                "total_votes": {
+                    "type": "integer"
+                }
+            }
+        },
         "responses.Season": {
             "type": "object",
             "properties": {
@@ -4858,6 +5381,26 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "season_num": {
+                    "type": "integer"
+                }
+            }
+        },
+        "responses.StarCounts": {
+            "type": "object",
+            "properties": {
+                "five_star": {
+                    "type": "integer"
+                },
+                "four_star": {
+                    "type": "integer"
+                },
+                "one_star": {
+                    "type": "integer"
+                },
+                "three_star": {
+                    "type": "integer"
+                },
+                "two_star": {
                     "type": "integer"
                 }
             }
@@ -4988,6 +5531,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/responses.Recommendation"
                     }
                 },
+                "reviews": {
+                    "$ref": "#/definitions/responses.ReviewSummary"
+                },
                 "seasons": {
                     "type": "array",
                     "items": {
@@ -5097,6 +5643,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/responses.Recommendation"
                     }
+                },
+                "reviews": {
+                    "$ref": "#/definitions/responses.ReviewSummary"
                 },
                 "seasons": {
                     "type": "array",

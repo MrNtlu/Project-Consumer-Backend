@@ -20,6 +20,7 @@ func SetupRoutes(router *gin.Engine, jwtToken *jwt.GinJWTMiddleware, mongoDB *db
 	userListRouter(apiRouter, jwtToken, mongoDB)
 	userInteractionRouter(apiRouter, jwtToken, mongoDB)
 	aiSuggestionsRouter(apiRouter, jwtToken, mongoDB)
+	reviewRouter(apiRouter, jwtToken, mongoDB)
 
 	router.NoRoute(func(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "All routes lead to Rome 🏛️"})

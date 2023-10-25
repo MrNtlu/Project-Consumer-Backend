@@ -30,6 +30,7 @@ type Movie struct {
 	Streaming           []Streaming            `bson:"streaming" json:"streaming"`
 	Actors              []Actor                `bson:"actors" json:"actors"`
 	Translations        []Translation          `bson:"translations" json:"translations"`
+	Review              ReviewSummary          `bson:"reviews" json:"reviews"`
 }
 
 type MovieDetails struct {
@@ -57,6 +58,7 @@ type MovieDetails struct {
 	Translations        []Translation          `bson:"translations" json:"translations"`
 	WatchList           *MovieDetailsWatchList `bson:"watch_list" json:"watch_list"`
 	WatchLater          *ConsumeLater          `bson:"watch_later" json:"watch_later"`
+	Review              ReviewSummary          `bson:"reviews" json:"reviews"`
 }
 
 type MovieDetailsWatchList struct {
