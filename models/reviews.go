@@ -89,7 +89,7 @@ func (reviewModel *ReviewModel) CreateReview(uid string, data requests.CreateRev
 	return *review, nil
 }
 
-func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID string, contentExternalID *string, contentExternalIntID *int64) (responses.ReviewSummary, error) {
+func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID string, uid, contentExternalID *string, contentExternalIntID *int64) (responses.ReviewSummary, error) {
 	match := bson.M{"$match": bson.M{
 		"$or": bson.A{
 			bson.M{
@@ -104,6 +104,13 @@ func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID string, con
 		},
 	}}
 
+	var userID string
+	if uid != nil {
+		userID = *uid
+	} else {
+		userID = "-1"
+	}
+
 	group := bson.M{"$group": bson.M{
 		"_id": "$content_id",
 		"avg_star": bson.M{
@@ -111,6 +118,15 @@ func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID string, con
 		},
 		"total_votes": bson.M{
 			"$sum": 1,
+		},
+		"is_reviewed": bson.M{
+			"$sum": bson.M{
+				"$cond": bson.M{
+					"if":   bson.M{"$eq": bson.A{"$user_id", userID}},
+					"then": 1,
+					"else": 0,
+				},
+			},
 		},
 		"one_star": bson.M{
 			"$sum": bson.M{
@@ -162,6 +178,13 @@ func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID string, con
 	project := bson.M{"$project": bson.M{
 		"avg_star":    1,
 		"total_votes": 1,
+		"is_reviewed": bson.M{
+			"$cond": bson.M{
+				"if":   bson.M{"$eq": bson.A{"$is_reviewed", 1}},
+				"then": true,
+				"else": false,
+			},
+		},
 		"star_counts": bson.M{
 			"one_star":   "$one_star",
 			"two_star":   "$two_star",

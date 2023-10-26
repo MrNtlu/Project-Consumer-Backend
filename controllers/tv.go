@@ -203,9 +203,9 @@ func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
 	tvModel := models.NewTVModel(tv.Database)
 	reviewModel := models.NewReviewModel(tv.Database)
 
-	uuid, OK := c.Get("uuid")
-	if OK && uuid != nil {
-		tvSeriesDetailsWithWatchList, err := tvModel.GetTVSeriesDetailsWithWatchListAndWatchLater(data, uuid.(string))
+	uid, OK := c.Get("uuid")
+	if OK && uid != nil {
+		tvSeriesDetailsWithWatchList, err := tvModel.GetTVSeriesDetailsWithWatchListAndWatchLater(data, uid.(string))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -219,7 +219,7 @@ func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
 			return
 		}
 
-		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, &tvSeriesDetailsWithWatchList.TmdbID, nil)
+		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, uid, &tvSeriesDetailsWithWatchList.TmdbID, nil)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -248,7 +248,7 @@ func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
 			return
 		}
 
-		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, &tvSeriesDetails.TmdbID, nil)
+		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, nil, &tvSeriesDetails.TmdbID, nil)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),

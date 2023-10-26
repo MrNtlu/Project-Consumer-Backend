@@ -5357,6 +5357,9 @@ const docTemplate = `{
                 "avg_star": {
                     "type": "number"
                 },
+                "is_reviewed": {
+                    "type": "boolean"
+                },
                 "star_counts": {
                     "$ref": "#/definitions/responses.StarCounts"
                 },

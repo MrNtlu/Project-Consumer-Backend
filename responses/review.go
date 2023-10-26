@@ -33,6 +33,7 @@ type Author struct {
 type ReviewSummary struct {
 	AverageStar float64    `bson:"avg_star" json:"avg_star"`
 	TotalVotes  int32      `bson:"total_votes" json:"total_votes"`
+	IsReviewed  bool       `bson:"is_reviewed" json:"is_reviewed"`
 	StarCounts  StarCounts `bson:"star_counts" json:"star_counts"`
 }
 
