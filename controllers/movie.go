@@ -218,7 +218,7 @@ func (m *MovieController) GetMovieDetails(c *gin.Context) {
 			return
 		}
 
-		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, uid, &movieDetailsWithWatchList.TmdbID, nil)
+		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, uid.(string), &movieDetailsWithWatchList.TmdbID, nil)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),

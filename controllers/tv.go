@@ -219,7 +219,7 @@ func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
 			return
 		}
 
-		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, uid, &tvSeriesDetailsWithWatchList.TmdbID, nil)
+		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, uid.(string), &tvSeriesDetailsWithWatchList.TmdbID, nil)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
