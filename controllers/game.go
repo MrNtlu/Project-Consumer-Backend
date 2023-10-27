@@ -203,7 +203,7 @@ func (g *GameController) GetGameDetails(c *gin.Context) {
 			return
 		}
 
-		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, nil, nil, &gameDetails.RawgID)
+		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, "-1", nil, &gameDetails.RawgID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),

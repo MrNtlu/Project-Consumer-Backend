@@ -282,7 +282,7 @@ func (a *AnimeController) GetAnimeDetails(c *gin.Context) {
 			return
 		}
 
-		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, nil, nil, &animeDetails.MalID)
+		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, "-1", nil, &animeDetails.MalID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),

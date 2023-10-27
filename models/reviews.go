@@ -89,7 +89,7 @@ func (reviewModel *ReviewModel) CreateReview(uid string, data requests.CreateRev
 	return *review, nil
 }
 
-func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID string, uid, contentExternalID *string, contentExternalIntID *int64) (responses.ReviewSummary, error) {
+func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID, uid string, contentExternalID *string, contentExternalIntID *int64) (responses.ReviewSummary, error) {
 	match := bson.M{"$match": bson.M{
 		"$or": bson.A{
 			bson.M{
@@ -104,13 +104,6 @@ func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID string, uid
 		},
 	}}
 
-	var userID string
-	if uid != nil {
-		userID = *uid
-	} else {
-		userID = "-1"
-	}
-
 	group := bson.M{"$group": bson.M{
 		"_id": "$content_id",
 		"avg_star": bson.M{
@@ -122,7 +115,7 @@ func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID string, uid
 		"is_reviewed": bson.M{
 			"$sum": bson.M{
 				"$cond": bson.M{
-					"if":   bson.M{"$eq": bson.A{"$user_id", userID}},
+					"if":   bson.M{"$eq": bson.A{"$user_id", uid}},
 					"then": 1,
 					"else": 0,
 				},
