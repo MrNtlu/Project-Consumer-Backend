@@ -90,16 +90,33 @@ func (reviewModel *ReviewModel) CreateReview(uid string, data requests.CreateRev
 }
 
 func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID, uid string, contentExternalID *string, contentExternalIntID *int64) (responses.ReviewSummary, error) {
+	var (
+		cID  string
+		ceID int64
+	)
+
+	if contentExternalID != nil {
+		cID = *contentExternalID
+	} else {
+		cID = "-1"
+	}
+
+	if contentExternalIntID != nil {
+		ceID = *contentExternalIntID
+	} else {
+		ceID = -1
+	}
+
 	match := bson.M{"$match": bson.M{
 		"$or": bson.A{
 			bson.M{
 				"content_id": contentID,
 			},
 			bson.M{
-				"content_external_id": contentExternalID,
+				"content_external_id": cID,
 			},
 			bson.M{
-				"content_external_int_id": contentExternalIntID,
+				"content_external_int_id": ceID,
 			},
 		},
 	}}
