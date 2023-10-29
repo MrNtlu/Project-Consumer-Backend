@@ -93,6 +93,9 @@ definitions:
         type: integer
       content_id:
         type: string
+      content_type:
+        description: anime, movie, tv or game
+        type: string
       created_at:
         type: string
       dislikes:
@@ -635,6 +638,13 @@ definitions:
         type: integer
       contentID:
         type: string
+      contentType:
+        enum:
+        - anime
+        - game
+        - movie
+        - tv
+        type: string
       page:
         minimum: 1
         type: integer
@@ -646,6 +656,7 @@ definitions:
         type: string
     required:
     - contentID
+    - contentType
     - page
     - sort
     type: object

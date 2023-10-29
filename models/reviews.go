@@ -33,6 +33,7 @@ type Review struct {
 	ContentID            string             `bson:"content_id" json:"content_id"`
 	ContentExternalID    *string            `bson:"content_external_id" json:"content_external_id"`
 	ContentExternalIntID *int64             `bson:"content_external_int_id" json:"content_external_int_id"`
+	ContentType          string             `bson:"content_type" json:"content_type"` // anime, movie, tv or game
 	Star                 int8               `bson:"star" json:"star"`
 	Review               *string            `bson:"review" json:"review"`
 	Likes                []string           `bson:"likes" json:"likes"`
@@ -42,7 +43,7 @@ type Review struct {
 }
 
 func createReviewObject(
-	userID, contentID string, contentExternalID, review *string,
+	userID, contentID, contentType string, contentExternalID, review *string,
 	contentExternalIntID *int64, star int8,
 ) *Review {
 	emptyList := []string{}
@@ -52,6 +53,7 @@ func createReviewObject(
 		ContentID:            contentID,
 		ContentExternalID:    contentExternalID,
 		ContentExternalIntID: contentExternalIntID,
+		ContentType:          contentType,
 		Star:                 star,
 		Review:               review,
 		Likes:                emptyList,
@@ -65,6 +67,7 @@ func (reviewModel *ReviewModel) CreateReview(uid string, data requests.CreateRev
 	review := createReviewObject(
 		uid,
 		data.ContentID,
+		data.ContentType,
 		data.ContentExternalID,
 		data.Review,
 		data.ContentExternalIntID,

@@ -3020,6 +3020,10 @@ const docTemplate = `{
                 "content_id": {
                     "type": "string"
                 },
+                "content_type": {
+                    "description": "anime, movie, tv or game",
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -3778,6 +3782,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "contentID",
+                "contentType",
                 "page",
                 "sort"
             ],
@@ -3790,6 +3795,15 @@ const docTemplate = `{
                 },
                 "contentID": {
                     "type": "string"
+                },
+                "contentType": {
+                    "type": "string",
+                    "enum": [
+                        "anime",
+                        "game",
+                        "movie",
+                        "tv"
+                    ]
                 },
                 "page": {
                     "type": "integer",
