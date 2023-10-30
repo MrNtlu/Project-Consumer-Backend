@@ -83,38 +83,6 @@ definitions:
       user_id:
         type: string
     type: object
-  models.Review:
-    properties:
-      _id:
-        type: string
-      content_external_id:
-        type: string
-      content_external_int_id:
-        type: integer
-      content_id:
-        type: string
-      content_type:
-        description: anime, movie, tv or game
-        type: string
-      created_at:
-        type: string
-      dislikes:
-        items:
-          type: string
-        type: array
-      likes:
-        items:
-          type: string
-        type: array
-      review:
-        type: string
-      star:
-        type: integer
-      updated_at:
-        type: string
-      user_id:
-        type: string
-    type: object
   models.TVSeriesWatchList:
     properties:
       _id:
@@ -771,16 +739,6 @@ definitions:
     properties:
       is_public:
         type: boolean
-    type: object
-  requests.VoteReview:
-    properties:
-      id:
-        type: string
-      is_like:
-        type: boolean
-    required:
-    - id
-    - is_like
     type: object
   responses.AISuggestion:
     properties:
@@ -1668,16 +1626,16 @@ definitions:
         type: string
       created_at:
         type: string
-      dislikes:
-        items:
-          type: string
-        type: array
       is_author:
+        type: boolean
+      is_liked:
         type: boolean
       likes:
         items:
           type: string
         type: array
+      popularity:
+        type: integer
       review:
         type: string
       star:
@@ -3385,7 +3343,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Review'
+            $ref: '#/definitions/responses.Review'
         "404":
           description: Not Found
           schema:
@@ -3421,7 +3379,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.Review'
+            $ref: '#/definitions/responses.Review'
         "404":
           description: Not Found
           schema:
@@ -3439,14 +3397,14 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Like or Dislike Review
+      description: Like Review
       parameters:
-      - description: Vote Review
+      - description: ID
         in: body
-        name: votereview
+        name: id
         required: true
         schema:
-          $ref: '#/definitions/requests.VoteReview'
+          $ref: '#/definitions/requests.ID'
       - description: Authentication header
         in: header
         name: Authorization
@@ -3458,7 +3416,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Review'
+            $ref: '#/definitions/responses.Review'
         "400":
           description: Bad Request
           schema:

@@ -16,8 +16,9 @@ type Review struct {
 	ContentExternalIntID *int64             `bson:"content_external_int_id" json:"content_external_int_id"`
 	Star                 int8               `bson:"star" json:"star"`
 	Review               *string            `bson:"review" json:"review"`
+	Popularity           int64              `bson:"popularity" json:"popularity"`
+	IsLiked              bool               `bson:"is_liked" json:"is_liked"`
 	Likes                []string           `bson:"likes" json:"likes"`
-	Dislikes             []string           `bson:"dislikes" json:"dislikes"`
 	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt            time.Time          `bson:"updated_at" json:"updated_at"`
 }

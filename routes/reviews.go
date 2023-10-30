@@ -16,8 +16,9 @@ func reviewRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongo
 	{
 		review.POST("", reviewController.CreateReview)
 		review.PATCH("", reviewController.UpdateReview)
-		review.Use(helpers.OptionalTokenCheck).GET("", reviewController.GetReviewsByContentID)
 		review.DELETE("", reviewController.DeleteReviewByID)
-		review.PATCH("/vote", reviewController.VoteReview)
+		review.PATCH("/like", reviewController.VoteReview)
 	}
+
+	router.Group("/review").Use(helpers.OptionalTokenCheck).GET("", reviewController.GetReviewsByContentID)
 }

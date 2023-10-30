@@ -1995,7 +1995,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.Review"
+                            "$ref": "#/definitions/responses.Review"
                         }
                     },
                     "404": {
@@ -2107,7 +2107,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Review"
+                            "$ref": "#/definitions/responses.Review"
                         }
                     },
                     "404": {
@@ -2132,7 +2132,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Like or Dislike Review",
+                "description": "Like Review",
                 "consumes": [
                     "application/json"
                 ],
@@ -2145,12 +2145,12 @@ const docTemplate = `{
                 "summary": "Vote Review",
                 "parameters": [
                     {
-                        "description": "Vote Review",
-                        "name": "votereview",
+                        "description": "ID",
+                        "name": "id",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/requests.VoteReview"
+                            "$ref": "#/definitions/requests.ID"
                         }
                     },
                     {
@@ -2165,7 +2165,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Review"
+                            "$ref": "#/definitions/responses.Review"
                         }
                     },
                     "400": {
@@ -2999,54 +2999,6 @@ const docTemplate = `{
                 },
                 "times_finished": {
                     "type": "integer"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.Review": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "type": "string"
-                },
-                "content_external_id": {
-                    "type": "string"
-                },
-                "content_external_int_id": {
-                    "type": "integer"
-                },
-                "content_id": {
-                    "type": "string"
-                },
-                "content_type": {
-                    "description": "anime, movie, tv or game",
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "dislikes": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "likes": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "review": {
-                    "type": "string"
-                },
-                "star": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
                 },
                 "user_id": {
                     "type": "string"
@@ -3971,21 +3923,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "is_public": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "requests.VoteReview": {
-            "type": "object",
-            "required": [
-                "id",
-                "is_like"
-            ],
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "is_like": {
                     "type": "boolean"
                 }
             }
@@ -5336,13 +5273,10 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "dislikes": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "is_author": {
+                    "type": "boolean"
+                },
+                "is_liked": {
                     "type": "boolean"
                 },
                 "likes": {
@@ -5350,6 +5284,9 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "popularity": {
+                    "type": "integer"
                 },
                 "review": {
                     "type": "string"

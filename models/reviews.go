@@ -37,7 +37,6 @@ type Review struct {
 	Star                 int8               `bson:"star" json:"star"`
 	Review               *string            `bson:"review" json:"review"`
 	Likes                []string           `bson:"likes" json:"likes"`
-	Dislikes             []string           `bson:"dislikes" json:"dislikes"`
 	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt            time.Time          `bson:"updated_at" json:"updated_at"`
 }
@@ -46,8 +45,6 @@ func createReviewObject(
 	userID, contentID, contentType string, contentExternalID, review *string,
 	contentExternalIntID *int64, star int8,
 ) *Review {
-	emptyList := []string{}
-
 	return &Review{
 		UserID:               userID,
 		ContentID:            contentID,
@@ -56,14 +53,46 @@ func createReviewObject(
 		ContentType:          contentType,
 		Star:                 star,
 		Review:               review,
-		Likes:                emptyList,
-		Dislikes:             emptyList,
+		Likes:                []string{},
 		CreatedAt:            time.Now().UTC(),
 		UpdatedAt:            time.Now().UTC(),
 	}
 }
 
-func (reviewModel *ReviewModel) CreateReview(uid string, data requests.CreateReview) (Review, error) {
+func convertReviewModelToResponse(review Review) responses.Review {
+	return responses.Review{
+		ID:                   review.ID,
+		UserID:               review.UserID,
+		ContentID:            review.ContentID,
+		ContentExternalID:    review.ContentExternalID,
+		ContentExternalIntID: review.ContentExternalIntID,
+		Star:                 review.Star,
+		IsAuthor:             true,
+		IsLiked:              false,
+		Review:               review.Review,
+		Popularity:           int64(len(review.Likes)),
+		Likes:                review.Likes,
+		CreatedAt:            review.CreatedAt,
+		UpdatedAt:            review.UpdatedAt,
+	}
+}
+
+func convertReviewResponseToModel(review responses.Review) Review {
+	return Review{
+		ID:                   review.ID,
+		UserID:               review.UserID,
+		ContentID:            review.ContentID,
+		ContentExternalID:    review.ContentExternalID,
+		ContentExternalIntID: review.ContentExternalIntID,
+		Star:                 review.Star,
+		Review:               review.Review,
+		Likes:                review.Likes,
+		CreatedAt:            review.CreatedAt,
+		UpdatedAt:            review.UpdatedAt,
+	}
+}
+
+func (reviewModel *ReviewModel) CreateReview(uid string, data requests.CreateReview) (responses.Review, error) {
 	review := createReviewObject(
 		uid,
 		data.ContentID,
@@ -84,12 +113,12 @@ func (reviewModel *ReviewModel) CreateReview(uid string, data requests.CreateRev
 			"review": review,
 		}).Error("failed to create new review: ", err)
 
-		return Review{}, fmt.Errorf("Failed to create review.")
+		return responses.Review{}, fmt.Errorf("Failed to create review.")
 	}
 
 	review.ID = insertedID.InsertedID.(primitive.ObjectID)
 
-	return *review, nil
+	return convertReviewModelToResponse(*review), nil
 }
 
 func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID, uid string, contentExternalID *string, contentExternalIntID *int64) (responses.ReviewSummary, error) {
@@ -272,17 +301,8 @@ func (reviewModel *ReviewModel) GetReviewsByContentID(data requests.SortReviewBy
 		"obj_user_id": bson.M{
 			"$toObjectId": "$user_id",
 		},
-		"like_count": bson.M{
-			"$size": "$likes",
-		},
-		"dislike_count": bson.M{
-			"$size": "$dislikes",
-		},
-	}}
-
-	setPopularity := bson.M{"$set": bson.M{
 		"popularity": bson.M{
-			"$sum": bson.A{"$like_count", "$dislike_count"},
+			"$size": "$likes",
 		},
 	}}
 
@@ -301,7 +321,7 @@ func (reviewModel *ReviewModel) GetReviewsByContentID(data requests.SortReviewBy
 
 	paginatedData, err := p.New(reviewModel.ReviewCollection).Context(context.TODO()).Limit(reviewPagination).
 		Page(data.Page).Sort(sortType, sortOrder).Aggregate(
-		match, set, setPopularity, lookup, unwind,
+		match, set, lookup, unwind,
 	)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -365,17 +385,8 @@ func (reviewModel *ReviewModel) GetReviewsByContentIDAndUserID(
 		"obj_user_id": bson.M{
 			"$toObjectId": "$user_id",
 		},
-		"like_count": bson.M{
-			"$size": "$likes",
-		},
-		"dislike_count": bson.M{
-			"$size": "$dislikes",
-		},
-	}}
-
-	setPopularity := bson.M{"$set": bson.M{
 		"popularity": bson.M{
-			"$sum": bson.A{"$like_count", "$dislike_count"},
+			"$size": "$likes",
 		},
 	}}
 
@@ -394,7 +405,7 @@ func (reviewModel *ReviewModel) GetReviewsByContentIDAndUserID(
 
 	paginatedData, err := p.New(reviewModel.ReviewCollection).Context(context.TODO()).Limit(reviewPagination).
 		Page(data.Page).Sort("is_author", -1).Sort(sortType, sortOrder).Aggregate(
-		match, set, setPopularity, lookup, unwind,
+		match, set, lookup, unwind,
 	)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -448,13 +459,73 @@ func (reviewModel *ReviewModel) GetBaseReview(uid, reviewID string) (Review, err
 	return review, nil
 }
 
-func (reviewModel *ReviewModel) VoteReview(uid string, data requests.VoteReview, review Review) (Review, error) {
+func (reviewModel *ReviewModel) GetBaseReviewResponse(uid, reviewID string) (responses.Review, error) {
+	objectID, _ := primitive.ObjectIDFromHex(reviewID)
+
+	match := bson.M{"$match": bson.M{
+		"_id": objectID,
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"is_author": bson.M{
+			"$eq": bson.A{
+				"$user_id", uid,
+			},
+		},
+		"obj_user_id": bson.M{
+			"$toObjectId": "$user_id",
+		},
+		"popularity": bson.M{
+			"$size": "$likes",
+		},
+	}}
+
+	lookup := bson.M{"$lookup": bson.M{
+		"from":         "users",
+		"localField":   "obj_user_id",
+		"foreignField": "_id",
+		"as":           "author",
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$author",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	cursor, err := reviewModel.ReviewCollection.Aggregate(context.TODO(), bson.A{
+		match, set, lookup, unwind,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id":  reviewID,
+			"uid": uid,
+		}).Error("failed to aggregate review: ", err)
+
+		return responses.Review{}, fmt.Errorf("Failed to aggregate review.")
+	}
+
+	var review []responses.Review
+	if err = cursor.All(context.TODO(), &review); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id":  reviewID,
+			"uid": uid,
+		}).Error("failed to decode review: ", err)
+
+		return responses.Review{}, fmt.Errorf("Failed to decode review.")
+	}
+
+	if len(review) > 0 {
+		return review[0], nil
+	}
+
+	return responses.Review{}, nil
+}
+
+func (reviewModel *ReviewModel) VoteReview(uid string, data requests.ID, review responses.Review) (responses.Review, error) {
 	objectReviewID, _ := primitive.ObjectIDFromHex(data.ID)
 
-	var (
-		isAlreadyLiked    bool
-		isAlreadyDisliked bool
-	)
+	var isAlreadyLiked bool
 
 	for _, like := range review.Likes {
 		if like == uid {
@@ -463,43 +534,27 @@ func (reviewModel *ReviewModel) VoteReview(uid string, data requests.VoteReview,
 		}
 	}
 
-	for _, dislike := range review.Dislikes {
-		if dislike == uid {
-			isAlreadyDisliked = true
-			review.Dislikes = removeElement(review.Dislikes, uid)
-		}
+	if !isAlreadyLiked {
+		review.Likes = append(review.Likes, uid)
 	}
 
-	if isAlreadyLiked || isAlreadyDisliked {
-		if isAlreadyLiked && !data.IsLike {
-			review.Dislikes = append(review.Dislikes, uid)
-		} else if isAlreadyDisliked && data.IsLike {
-			review.Likes = append(review.Likes, uid)
-		}
-	} else {
-		if data.IsLike {
-			review.Likes = append(review.Likes, uid)
-		} else {
-			review.Dislikes = append(review.Dislikes, uid)
-		}
-	}
-
+	updatedReview := convertReviewResponseToModel(review)
 	if _, err := reviewModel.ReviewCollection.UpdateOne(context.TODO(), bson.M{
 		"_id":     objectReviewID,
 		"user_id": uid,
-	}, bson.M{"$set": review}); err != nil {
+	}, bson.M{"$set": updatedReview}); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"_id":  objectReviewID,
 			"data": data,
-		}).Error("failed to update review: ", err)
+		}).Error("failed to update like review: ", err)
 
-		return Review{}, fmt.Errorf("Failed to like/dislike.")
+		return responses.Review{}, fmt.Errorf("Failed to like.")
 	}
 
 	return review, nil
 }
 
-func (reviewModel *ReviewModel) UpdateReview(uid string, data requests.UpdateReview, review Review) (Review, error) {
+func (reviewModel *ReviewModel) UpdateReview(uid string, data requests.UpdateReview, review responses.Review) (responses.Review, error) {
 	objectReviewID, _ := primitive.ObjectIDFromHex(data.ID)
 
 	review.Review = data.Review
@@ -508,16 +563,17 @@ func (reviewModel *ReviewModel) UpdateReview(uid string, data requests.UpdateRev
 		review.Star = *data.Star
 	}
 
+	updatedReview := convertReviewResponseToModel(review)
 	if _, err := reviewModel.ReviewCollection.UpdateOne(context.TODO(), bson.M{
 		"_id":     objectReviewID,
 		"user_id": uid,
-	}, bson.M{"$set": review}); err != nil {
+	}, bson.M{"$set": updatedReview}); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"_id":  objectReviewID,
 			"data": data,
 		}).Error("failed to update review: ", err)
 
-		return Review{}, fmt.Errorf("Failed to update review.")
+		return responses.Review{}, fmt.Errorf("Failed to update review.")
 	}
 
 	return review, nil

@@ -15,11 +15,6 @@ type UpdateReview struct {
 	Star   *int8   `json:"star" binding:"required,number,min=1,max=5"`
 }
 
-type VoteReview struct {
-	ID     string `json:"id" binding:"required"`
-	IsLike bool   `json:"is_like" binding:"required"`
-}
-
 type SortReviewByContentID struct {
 	ContentID            string  `form:"content_id" binding:"required"`
 	ContentExternalID    *string `form:"content_external_id"`

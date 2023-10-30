@@ -4,6 +4,7 @@ import (
 	"app/db"
 	"app/models"
 	"app/requests"
+	"app/responses"
 	"net/http"
 
 	jwt "github.com/appleboy/gin-jwt/v2"
@@ -31,7 +32,7 @@ func NewReviewController(mongoDB *db.MongoDB) ReviewController {
 // @Param createreview body requests.CreateReview true "Create Review"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 201 {object} models.Review
+// @Success 201 {object} responses.Review
 // @Failure 404 {string} string
 // @Failure 500 {string} string
 // @Router /review [post]
@@ -135,9 +136,10 @@ func (r *ReviewController) CreateReview(c *gin.Context) {
 
 	uid := jwt.ExtractClaims(c)["id"].(string)
 	reviewModel := models.NewReviewModel(r.Database)
+	userModel := models.NewUserModel(r.Database)
 
 	var (
-		createdReview models.Review
+		createdReview responses.Review
 		err           error
 	)
 
@@ -148,6 +150,22 @@ func (r *ReviewController) CreateReview(c *gin.Context) {
 
 		return
 	}
+
+	author, err := userModel.FindUserByID(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	createdReview.IsAuthor = true
+	createdReview.Author.ID = author.ID
+	createdReview.Author.EmailAddress = author.EmailAddress
+	createdReview.Author.Image = author.Image
+	createdReview.Author.Username = author.Username
+	createdReview.Author.IsPremium = author.IsPremium
 
 	logModel := models.NewLogsModel(r.Database)
 
@@ -224,7 +242,7 @@ func (r *ReviewController) GetReviewsByContentID(c *gin.Context) {
 // @Param createreview body requests.CreateReview true "Create Review"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 200 {object} models.Review
+// @Success 200 {object} responses.Review
 // @Failure 404 {string} string
 // @Failure 500 {string} string
 // @Router /review [patch]
@@ -238,11 +256,11 @@ func (r *ReviewController) UpdateReview(c *gin.Context) {
 	reviewModel := models.NewReviewModel(r.Database)
 
 	var (
-		updatedReview models.Review
+		updatedReview responses.Review
 		err           error
 	)
 
-	review, err := reviewModel.GetBaseReview(uid, data.ID)
+	review, err := reviewModel.GetBaseReviewResponse(uid, data.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -278,20 +296,20 @@ func (r *ReviewController) UpdateReview(c *gin.Context) {
 
 // Vote Review
 // @Summary Vote Review
-// @Description Like or Dislike Review
+// @Description Like Review
 // @Tags review
 // @Accept application/json
 // @Produce application/json
-// @Param votereview body requests.VoteReview true "Vote Review"
+// @Param id body requests.ID true "ID"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 200 {object} models.Review
+// @Success 200 {object} responses.Review
 // @Failure 400 {string} string
 // @Failure 404 {string} string
 // @Failure 500 {string} string
 // @Router /review/vote [patch]
 func (r *ReviewController) VoteReview(c *gin.Context) {
-	var data requests.VoteReview
+	var data requests.ID
 	if shouldReturn := bindJSONData(&data, c); shouldReturn {
 		return
 	}
@@ -300,11 +318,11 @@ func (r *ReviewController) VoteReview(c *gin.Context) {
 	reviewModel := models.NewReviewModel(r.Database)
 
 	var (
-		updatedReview models.Review
+		updatedReview responses.Review
 		err           error
 	)
 
-	review, err := reviewModel.GetBaseReview(uid, data.ID)
+	review, err := reviewModel.GetBaseReviewResponse(uid, data.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -320,7 +338,7 @@ func (r *ReviewController) VoteReview(c *gin.Context) {
 
 	if review.UserID == uid {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "You cannot like/dislike your own review.",
+			"error": "You cannot like your own review.",
 		})
 
 		return
