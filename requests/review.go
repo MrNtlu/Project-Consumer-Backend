@@ -6,7 +6,7 @@ type CreateReview struct {
 	ContentExternalIntID *int64  `json:"content_external_int_id"`
 	ContentType          string  `json:"content_type" binding:"required,oneof=anime game movie tv"`
 	Star                 int8    `json:"star" binding:"required,number,min=1,max=5"`
-	Review               *string `json:"review" binding:"omitempty,min=6,max=1000"`
+	Review               string  `json:"review" binding:"required,min=6,max=1000"`
 }
 
 type UpdateReview struct {

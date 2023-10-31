@@ -35,14 +35,14 @@ type Review struct {
 	ContentExternalIntID *int64             `bson:"content_external_int_id" json:"content_external_int_id"`
 	ContentType          string             `bson:"content_type" json:"content_type"` // anime, movie, tv or game
 	Star                 int8               `bson:"star" json:"star"`
-	Review               *string            `bson:"review" json:"review"`
+	Review               string             `bson:"review" json:"review"`
 	Likes                []string           `bson:"likes" json:"likes"`
 	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt            time.Time          `bson:"updated_at" json:"updated_at"`
 }
 
 func createReviewObject(
-	userID, contentID, contentType string, contentExternalID, review *string,
+	userID, contentID, contentType, review string, contentExternalID *string,
 	contentExternalIntID *int64, star int8,
 ) *Review {
 	return &Review{
@@ -97,8 +97,8 @@ func (reviewModel *ReviewModel) CreateReview(uid string, data requests.CreateRev
 		uid,
 		data.ContentID,
 		data.ContentType,
-		data.ContentExternalID,
 		data.Review,
+		data.ContentExternalID,
 		data.ContentExternalIntID,
 		data.Star,
 	)
@@ -222,7 +222,7 @@ func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID, uid string
 		"total_votes": 1,
 		"is_reviewed": bson.M{
 			"$cond": bson.M{
-				"if":   bson.M{"$eq": bson.A{"$is_reviewed", 1}},
+				"if":   bson.M{"$gte": bson.A{"$is_reviewed", 1}},
 				"then": true,
 				"else": false,
 			},
@@ -388,6 +388,18 @@ func (reviewModel *ReviewModel) GetReviewsByContentIDAndUserID(
 		"popularity": bson.M{
 			"$size": "$likes",
 		},
+		"is_liked": bson.M{
+			"$cond": bson.M{
+				"if": bson.M{
+					"$in": bson.A{
+						uid,
+						"$likes",
+					},
+				},
+				"then": true,
+				"else": false,
+			},
+		},
 	}}
 
 	lookup := bson.M{"$lookup": bson.M{
@@ -478,6 +490,18 @@ func (reviewModel *ReviewModel) GetBaseReviewResponse(uid, reviewID string) (res
 		"popularity": bson.M{
 			"$size": "$likes",
 		},
+		"is_liked": bson.M{
+			"$cond": bson.M{
+				"if": bson.M{
+					"$in": bson.A{
+						uid,
+						"$likes",
+					},
+				},
+				"then": true,
+				"else": false,
+			},
+		},
 	}}
 
 	lookup := bson.M{"$lookup": bson.M{
@@ -525,23 +549,26 @@ func (reviewModel *ReviewModel) GetBaseReviewResponse(uid, reviewID string) (res
 func (reviewModel *ReviewModel) VoteReview(uid string, data requests.ID, review responses.Review) (responses.Review, error) {
 	objectReviewID, _ := primitive.ObjectIDFromHex(data.ID)
 
-	var isAlreadyLiked bool
+	var isAlreadyLiked = false
 
 	for _, like := range review.Likes {
 		if like == uid {
 			isAlreadyLiked = true
+			review.IsLiked = false
+			review.Popularity = review.Popularity - 1
 			review.Likes = removeElement(review.Likes, uid)
 		}
 	}
 
 	if !isAlreadyLiked {
 		review.Likes = append(review.Likes, uid)
+		review.Popularity = review.Popularity + 1
+		review.IsLiked = true
 	}
 
 	updatedReview := convertReviewResponseToModel(review)
 	if _, err := reviewModel.ReviewCollection.UpdateOne(context.TODO(), bson.M{
-		"_id":     objectReviewID,
-		"user_id": uid,
+		"_id": objectReviewID,
 	}, bson.M{"$set": updatedReview}); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"_id":  objectReviewID,
@@ -557,7 +584,9 @@ func (reviewModel *ReviewModel) VoteReview(uid string, data requests.ID, review 
 func (reviewModel *ReviewModel) UpdateReview(uid string, data requests.UpdateReview, review responses.Review) (responses.Review, error) {
 	objectReviewID, _ := primitive.ObjectIDFromHex(data.ID)
 
-	review.Review = data.Review
+	if data.Review != nil {
+		review.Review = *data.Review
+	}
 
 	if data.Star != nil {
 		review.Star = *data.Star

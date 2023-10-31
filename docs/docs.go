@@ -3295,6 +3295,7 @@ const docTemplate = `{
             "required": [
                 "content_id",
                 "content_type",
+                "review",
                 "star"
             ],
             "properties": {

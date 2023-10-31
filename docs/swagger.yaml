@@ -308,6 +308,7 @@ definitions:
     required:
     - content_id
     - content_type
+    - review
     - star
     type: object
   requests.CreateTVSeriesWatchList:
