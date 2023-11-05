@@ -7,7 +7,9 @@ import (
 	"context"
 	"fmt"
 	"time"
+	"unicode"
 
+	goaway "github.com/TwiN/go-away"
 	p "github.com/gobeam/mongo-go-pagination"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -39,6 +41,15 @@ type Review struct {
 	Likes                []string           `bson:"likes" json:"likes"`
 	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt            time.Time          `bson:"updated_at" json:"updated_at"`
+}
+
+func containsNonASCII(s string) bool {
+	for _, r := range s {
+		if r > unicode.MaxASCII {
+			return true
+		}
+	}
+	return false
 }
 
 func createReviewObject(
@@ -93,11 +104,18 @@ func convertReviewResponseToModel(review responses.Review) Review {
 }
 
 func (reviewModel *ReviewModel) CreateReview(uid string, data requests.CreateReview) (responses.Review, error) {
+	var reviewStr string
+	if containsNonASCII(data.Review) {
+		reviewStr = data.Review
+	} else {
+		reviewStr = goaway.Censor(data.Review)
+	}
+
 	review := createReviewObject(
 		uid,
 		data.ContentID,
 		data.ContentType,
-		data.Review,
+		reviewStr,
 		data.ContentExternalID,
 		data.ContentExternalIntID,
 		data.Star,
@@ -267,8 +285,10 @@ func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID, uid string
 
 func (reviewModel *ReviewModel) GetReviewsByContentID(data requests.SortReviewByContentID) ([]responses.Review, p.PaginationData, error) {
 	var (
-		sortType  string
-		sortOrder int8
+		sortType             string
+		sortOrder            int8
+		contentExternalID    string
+		contentExternalIntID int64
 	)
 
 	switch data.Sort {
@@ -283,16 +303,32 @@ func (reviewModel *ReviewModel) GetReviewsByContentID(data requests.SortReviewBy
 		sortOrder = 1
 	}
 
+	if data.ContentExternalID != nil {
+		contentExternalID = *data.ContentExternalID
+	} else {
+		contentExternalID = "-1"
+	}
+
+	if data.ContentExternalIntID != nil {
+		contentExternalIntID = *data.ContentExternalIntID
+	} else {
+		contentExternalIntID = -1
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"request": data,
+	}).Info("Request")
+
 	match := bson.M{"$match": bson.M{
 		"$or": bson.A{
 			bson.M{
 				"content_id": data.ContentID,
 			},
 			bson.M{
-				"content_external_id": data.ContentExternalID,
+				"content_external_id": contentExternalID,
 			},
 			bson.M{
-				"content_external_int_id": data.ContentExternalIntID,
+				"content_external_int_id": contentExternalIntID,
 			},
 		},
 	}}
@@ -471,6 +507,27 @@ func (reviewModel *ReviewModel) GetBaseReview(uid, reviewID string) (Review, err
 	return review, nil
 }
 
+func (reviewModel *ReviewModel) GetBaseReviewResponseByUserIDAndContentID(contentID, uid string) (responses.Review, error) {
+	objectID, _ := primitive.ObjectIDFromHex(contentID)
+
+	result := reviewModel.ReviewCollection.FindOne(context.TODO(), bson.M{
+		"_id":     objectID,
+		"user_id": uid,
+	})
+
+	var review responses.Review
+	if err := result.Decode(&review); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"user_id": uid,
+			"id":      contentID,
+		}).Error("failed to find review by id: ", err)
+
+		return responses.Review{}, fmt.Errorf("Failed to find review by id.")
+	}
+
+	return review, nil
+}
+
 func (reviewModel *ReviewModel) GetBaseReviewResponse(uid, reviewID string) (responses.Review, error) {
 	objectID, _ := primitive.ObjectIDFromHex(reviewID)
 
@@ -585,7 +642,11 @@ func (reviewModel *ReviewModel) UpdateReview(uid string, data requests.UpdateRev
 	objectReviewID, _ := primitive.ObjectIDFromHex(data.ID)
 
 	if data.Review != nil {
-		review.Review = *data.Review
+		if containsNonASCII(*data.Review) {
+			review.Review = *data.Review
+		} else {
+			review.Review = goaway.Censor(*data.Review)
+		}
 	}
 
 	if data.Star != nil {

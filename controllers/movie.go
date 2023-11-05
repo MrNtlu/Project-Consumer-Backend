@@ -204,7 +204,9 @@ func (m *MovieController) GetMovieDetails(c *gin.Context) {
 
 	uid, OK := c.Get("uuid")
 	if OK && uid != nil {
-		movieDetailsWithWatchList, err := movieModel.GetMovieDetailsWithWatchListAndWatchLater(data, uid.(string))
+		userID := uid.(string)
+
+		movieDetailsWithWatchList, err := movieModel.GetMovieDetailsWithWatchListAndWatchLater(data, userID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -218,7 +220,7 @@ func (m *MovieController) GetMovieDetails(c *gin.Context) {
 			return
 		}
 
-		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, uid.(string), &movieDetailsWithWatchList.TmdbID, nil)
+		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, userID, &movieDetailsWithWatchList.TmdbID, nil)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -227,6 +229,9 @@ func (m *MovieController) GetMovieDetails(c *gin.Context) {
 			return
 		}
 
+		review, _ := reviewModel.GetBaseReviewResponseByUserIDAndContentID(data.ID, userID)
+
+		reviewSummary.Review = &review
 		movieDetailsWithWatchList.Review = reviewSummary
 
 		c.JSON(http.StatusOK, gin.H{

@@ -36,6 +36,7 @@ type ReviewSummary struct {
 	TotalVotes  int32      `bson:"total_votes" json:"total_votes"`
 	IsReviewed  bool       `bson:"is_reviewed" json:"is_reviewed"`
 	StarCounts  StarCounts `bson:"star_counts" json:"star_counts"`
+	Review      *Review    `bson:"review" json:"review"`
 }
 
 type StarCounts struct {

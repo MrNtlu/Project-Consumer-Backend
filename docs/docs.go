@@ -5312,6 +5312,9 @@ const docTemplate = `{
                 "is_reviewed": {
                     "type": "boolean"
                 },
+                "review": {
+                    "$ref": "#/definitions/responses.Review"
+                },
                 "star_counts": {
                     "$ref": "#/definitions/responses.StarCounts"
                 },

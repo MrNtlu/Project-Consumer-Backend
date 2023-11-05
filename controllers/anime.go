@@ -239,7 +239,9 @@ func (a *AnimeController) GetAnimeDetails(c *gin.Context) {
 
 	uid, OK := c.Get("uuid")
 	if OK && uid != nil {
-		animeDetailsWithWatchList, err := animeModel.GetAnimeDetailsWithWatchList(data, uid.(string))
+		userID := uid.(string)
+
+		animeDetailsWithWatchList, err := animeModel.GetAnimeDetailsWithWatchList(data, userID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -253,7 +255,7 @@ func (a *AnimeController) GetAnimeDetails(c *gin.Context) {
 			return
 		}
 
-		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, uid.(string), nil, &animeDetailsWithWatchList.MalID)
+		reviewSummary, err := reviewModel.GetReviewSummaryForDetails(data.ID, userID, nil, &animeDetailsWithWatchList.MalID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -262,6 +264,9 @@ func (a *AnimeController) GetAnimeDetails(c *gin.Context) {
 			return
 		}
 
+		review, _ := reviewModel.GetBaseReviewResponseByUserIDAndContentID(data.ID, userID)
+
+		reviewSummary.Review = &review
 		animeDetailsWithWatchList.Review = reviewSummary
 
 		c.JSON(http.StatusOK, gin.H{
