@@ -4,6 +4,7 @@ import (
 	"app/db"
 	"app/models"
 	"app/requests"
+	"app/responses"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -185,9 +186,16 @@ func (g *GameController) GetGameDetails(c *gin.Context) {
 			return
 		}
 
-		review, _ := reviewModel.GetBaseReviewResponseByUserIDAndContentID(data.ID, userID)
+		var review *responses.Review
 
-		reviewSummary.Review = &review
+		if reviewSummary.IsReviewed {
+			reviewResponse, _ := reviewModel.GetBaseReviewResponseByUserIDAndContentID(data.ID, userID)
+			review = &reviewResponse
+		} else {
+			review = nil
+		}
+
+		reviewSummary.Review = review
 		gameDetailsWithPlayList.Review = reviewSummary
 
 		c.JSON(http.StatusOK, gin.H{

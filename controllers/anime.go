@@ -264,9 +264,16 @@ func (a *AnimeController) GetAnimeDetails(c *gin.Context) {
 			return
 		}
 
-		review, _ := reviewModel.GetBaseReviewResponseByUserIDAndContentID(data.ID, userID)
+		var review *responses.Review
 
-		reviewSummary.Review = &review
+		if reviewSummary.IsReviewed {
+			reviewResponse, _ := reviewModel.GetBaseReviewResponseByUserIDAndContentID(data.ID, userID)
+			review = &reviewResponse
+		} else {
+			review = nil
+		}
+
+		reviewSummary.Review = review
 		animeDetailsWithWatchList.Review = reviewSummary
 
 		c.JSON(http.StatusOK, gin.H{

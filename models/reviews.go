@@ -382,8 +382,10 @@ func (reviewModel *ReviewModel) GetReviewsByContentIDAndUserID(
 	uid string, data requests.SortReviewByContentID,
 ) ([]responses.Review, p.PaginationData, error) {
 	var (
-		sortType  string
-		sortOrder int8
+		sortType             string
+		sortOrder            int8
+		contentExternalID    string
+		contentExternalIntID int64
 	)
 
 	switch data.Sort {
@@ -398,16 +400,28 @@ func (reviewModel *ReviewModel) GetReviewsByContentIDAndUserID(
 		sortOrder = 1
 	}
 
+	if data.ContentExternalID != nil {
+		contentExternalID = *data.ContentExternalID
+	} else {
+		contentExternalID = "-1"
+	}
+
+	if data.ContentExternalIntID != nil {
+		contentExternalIntID = *data.ContentExternalIntID
+	} else {
+		contentExternalIntID = -1
+	}
+
 	match := bson.M{"$match": bson.M{
 		"$or": bson.A{
 			bson.M{
 				"content_id": data.ContentID,
 			},
 			bson.M{
-				"content_external_id": data.ContentExternalID,
+				"content_external_id": contentExternalID,
 			},
 			bson.M{
-				"content_external_int_id": data.ContentExternalIntID,
+				"content_external_int_id": contentExternalIntID,
 			},
 		},
 	}}
@@ -508,14 +522,12 @@ func (reviewModel *ReviewModel) GetBaseReview(uid, reviewID string) (Review, err
 }
 
 func (reviewModel *ReviewModel) GetBaseReviewResponseByUserIDAndContentID(contentID, uid string) (responses.Review, error) {
-	objectID, _ := primitive.ObjectIDFromHex(contentID)
-
 	result := reviewModel.ReviewCollection.FindOne(context.TODO(), bson.M{
-		"_id":     objectID,
-		"user_id": uid,
+		"content_id": contentID,
+		"user_id":    uid,
 	})
 
-	var review responses.Review
+	var review Review
 	if err := result.Decode(&review); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"user_id": uid,
@@ -525,7 +537,7 @@ func (reviewModel *ReviewModel) GetBaseReviewResponseByUserIDAndContentID(conten
 		return responses.Review{}, fmt.Errorf("Failed to find review by id.")
 	}
 
-	return review, nil
+	return convertReviewModelToResponse(review), nil
 }
 
 func (reviewModel *ReviewModel) GetBaseReviewResponse(uid, reviewID string) (responses.Review, error) {

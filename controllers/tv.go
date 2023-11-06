@@ -230,9 +230,16 @@ func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
 			return
 		}
 
-		review, _ := reviewModel.GetBaseReviewResponseByUserIDAndContentID(data.ID, userID)
+		var review *responses.Review
 
-		reviewSummary.Review = &review
+		if reviewSummary.IsReviewed {
+			reviewResponse, _ := reviewModel.GetBaseReviewResponseByUserIDAndContentID(data.ID, userID)
+			review = &reviewResponse
+		} else {
+			review = nil
+		}
+
+		reviewSummary.Review = review
 		tvSeriesDetailsWithWatchList.Review = reviewSummary
 
 		c.JSON(http.StatusOK, gin.H{
