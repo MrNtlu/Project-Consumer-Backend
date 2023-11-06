@@ -11,6 +11,7 @@ import (
 func SetupRoutes(router *gin.Engine, jwtToken *jwt.GinJWTMiddleware, mongoDB *db.MongoDB) {
 	apiRouter := router.Group("/api/v1")
 
+	previewRouter(apiRouter, mongoDB)
 	userRouter(apiRouter, jwtToken, mongoDB)
 	tvRouter(apiRouter, mongoDB)
 	movieRouter(apiRouter, mongoDB)

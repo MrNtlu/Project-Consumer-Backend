@@ -21,8 +21,6 @@ func NewReviewController(mongoDB *db.MongoDB) ReviewController {
 	}
 }
 
-//POST, PUT, DELETE, REVIEWS BY CONTENT
-
 // Create Review
 // @Summary Create Review
 // @Description Creates Review
