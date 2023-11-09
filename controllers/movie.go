@@ -20,63 +20,6 @@ func NewMovieController(mongoDB *db.MongoDB) MovieController {
 	}
 }
 
-// Get Preview Movies
-// @Summary Get Preview Movies
-// @Description Returns preview movies
-// @Tags movie
-// @Accept application/json
-// @Produce application/json
-// @Success 200 {array} responses.Movie
-// @Failure 500 {string} string
-// @Router /movie/preview [get]
-func (m *MovieController) GetPreviewMovies(c *gin.Context) {
-	movieModel := models.NewMovieModel(m.Database)
-
-	upcomingMovies, _, err := movieModel.GetUpcomingMoviesBySort(requests.Pagination{Page: 1})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	popularMovies, _, err := movieModel.GetMoviesBySortAndFilter(requests.SortFilterMovie{
-		Sort: "popularity",
-		Page: 1,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	topMovies, _, err := movieModel.GetMoviesBySortAndFilter(requests.SortFilterMovie{
-		Sort: "top",
-		Page: 1,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	moviesInTheater, _, err := movieModel.GetMoviesInTheater(requests.Pagination{Page: 1})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"upcoming": upcomingMovies, "popular": popularMovies, "top": topMovies, "extra": moviesInTheater})
-}
-
 // Get Upcoming Movies
 // @Summary Get Upcoming Movies by Sort
 // @Description Returns upcoming movies by sort with pagination

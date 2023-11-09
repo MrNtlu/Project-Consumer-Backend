@@ -366,6 +366,13 @@ definitions:
     required:
     - email_address
     type: object
+  requests.GetProfile:
+    properties:
+      username:
+        type: string
+    required:
+    - username
+    type: object
   requests.ID:
     properties:
       id:
@@ -628,6 +635,24 @@ definitions:
     - contentType
     - page
     - sort
+    type: object
+  requests.SortReviewByUserID:
+    properties:
+      page:
+        minimum: 1
+        type: integer
+      sort:
+        enum:
+        - popularity
+        - latest
+        - oldest
+        type: string
+      userID:
+        type: string
+    required:
+    - page
+    - sort
+    - userID
     type: object
   requests.UpdateAnimeList:
     properties:
@@ -1646,6 +1671,15 @@ definitions:
       user_id:
         type: string
     type: object
+  responses.ReviewContent:
+    properties:
+      image_url:
+        type: string
+      title_en:
+        type: string
+      title_original:
+        type: string
+    type: object
   responses.ReviewSummary:
     properties:
       avg_star:
@@ -1658,6 +1692,41 @@ definitions:
         $ref: '#/definitions/responses.StarCounts'
       total_votes:
         type: integer
+    type: object
+  responses.ReviewWithContent:
+    properties:
+      _id:
+        type: string
+      author:
+        $ref: '#/definitions/responses.Author'
+      content:
+        $ref: '#/definitions/responses.ReviewContent'
+      content_external_id:
+        type: string
+      content_external_int_id:
+        type: integer
+      content_id:
+        type: string
+      created_at:
+        type: string
+      is_author:
+        type: boolean
+      is_liked:
+        type: boolean
+      likes:
+        items:
+          type: string
+        type: array
+      popularity:
+        type: integer
+      review:
+        type: string
+      star:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: string
     type: object
   responses.Season:
     properties:
@@ -1943,6 +2012,8 @@ definitions:
     type: object
   responses.UserInfo:
     properties:
+      _id:
+        type: string
       anime_count:
         type: integer
       anime_watched_episodes:
@@ -1975,6 +2046,10 @@ definitions:
         type: integer
       movie_watched_time:
         type: integer
+      reviews:
+        items:
+          $ref: '#/definitions/responses.ReviewWithContent'
+        type: array
       tv_count:
         type: integer
       tv_watched_episodes:
@@ -2114,27 +2189,6 @@ paths:
           schema:
             type: string
       summary: Get Anime Details
-      tags:
-      - anime
-  /anime/preview:
-    get:
-      consumes:
-      - application/json
-      description: Returns preview animes
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.Anime'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Preview Animes
       tags:
       - anime
   /anime/search:
@@ -2484,27 +2538,6 @@ paths:
           schema:
             type: string
       summary: Get Game Details
-      tags:
-      - game
-  /game/preview:
-    get:
-      consumes:
-      - application/json
-      description: Returns preview games
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.Game'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Preview Games
       tags:
       - game
   /game/search:
@@ -3117,27 +3150,6 @@ paths:
       summary: Get Movie Details
       tags:
       - movie
-  /movie/preview:
-    get:
-      consumes:
-      - application/json
-      description: Returns preview movies
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.Movie'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Preview Movies
-      tags:
-      - movie
   /movie/search:
     get:
       consumes:
@@ -3249,6 +3261,27 @@ paths:
       summary: OAuth2 Google Login
       tags:
       - oauth2
+  /preview:
+    get:
+      consumes:
+      - application/json
+      description: Returns previews
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Game'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Previews
+      tags:
+      - preview
   /review:
     delete:
       consumes:
@@ -3289,14 +3322,14 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get Reviews with or without authentication
+      description: Get Reviews by User
       parameters:
-      - description: Sort Review by Content ID
+      - description: Sort Review by User ID
         in: body
-        name: sortreviewbycontentid
+        name: sortreviewbyuserid
         required: true
         schema:
-          $ref: '#/definitions/requests.SortReviewByContentID'
+          $ref: '#/definitions/requests.SortReviewByUserID'
       - description: Authentication header
         in: header
         name: Authorization
@@ -3321,7 +3354,7 @@ paths:
             type: string
       security:
       - BearerAuth: []
-      summary: Get Review
+      summary: Get Reviews by User
       tags:
       - review
     patch:
@@ -3533,27 +3566,6 @@ paths:
       summary: Get TV Series Details
       tags:
       - tv
-  /tv/preview:
-    get:
-      consumes:
-      - application/json
-      description: Returns preview tv series
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.TVSeries'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Preview TV Series
-      tags:
-      - tv
   /tv/search:
     get:
       consumes:
@@ -3723,8 +3735,14 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns users membership & stats
+      description: Returns users stats from username
       parameters:
+      - description: Get Profile
+        in: body
+        name: getprofile
+        required: true
+        schema:
+          $ref: '#/definitions/requests.GetProfile'
       - description: Authentication header
         in: header
         name: Authorization
@@ -3739,7 +3757,7 @@ paths:
             $ref: '#/definitions/responses.UserInfo'
       security:
       - ApiKeyAuth: []
-      summary: User membership info
+      summary: User info from username
       tags:
       - user
   /user/membership:

@@ -141,38 +141,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/anime/preview": {
-            "get": {
-                "description": "Returns preview animes",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "anime"
-                ],
-                "summary": "Get Preview Animes",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.Anime"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/anime/search": {
             "get": {
                 "description": "Search animes",
@@ -702,38 +670,6 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/responses.GameDetails"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/game/preview": {
-            "get": {
-                "description": "Returns preview games",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "game"
-                ],
-                "summary": "Get Preview Games",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.Game"
                             }
                         }
                     },
@@ -1694,38 +1630,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/movie/preview": {
-            "get": {
-                "description": "Returns preview movies",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "movie"
-                ],
-                "summary": "Get Preview Movies",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.Movie"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/movie/search": {
             "get": {
                 "description": "Search movies",
@@ -1896,6 +1800,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/preview": {
+            "get": {
+                "description": "Returns previews",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "preview"
+                ],
+                "summary": "Get Previews",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Game"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/review": {
             "get": {
                 "security": [
@@ -1903,7 +1839,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get Reviews with or without authentication",
+                "description": "Get Reviews by User",
                 "consumes": [
                     "application/json"
                 ],
@@ -1913,15 +1849,15 @@ const docTemplate = `{
                 "tags": [
                     "review"
                 ],
-                "summary": "Get Review",
+                "summary": "Get Reviews by User",
                 "parameters": [
                     {
-                        "description": "Sort Review by Content ID",
-                        "name": "sortreviewbycontentid",
+                        "description": "Sort Review by User ID",
+                        "name": "sortreviewbyuserid",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/requests.SortReviewByContentID"
+                            "$ref": "#/definitions/requests.SortReviewByUserID"
                         }
                     },
                     {
@@ -2336,38 +2272,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/tv/preview": {
-            "get": {
-                "description": "Returns preview tv series",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tv"
-                ],
-                "summary": "Get Preview TV Series",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.TVSeries"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/tv/search": {
             "get": {
                 "description": "Search tv series",
@@ -2633,7 +2537,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Returns users membership \u0026 stats",
+                "description": "Returns users stats from username",
                 "consumes": [
                     "application/json"
                 ],
@@ -2643,8 +2547,17 @@ const docTemplate = `{
                 "tags": [
                     "user"
                 ],
-                "summary": "User membership info",
+                "summary": "User info from username",
                 "parameters": [
+                    {
+                        "description": "Get Profile",
+                        "name": "getprofile",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.GetProfile"
+                        }
+                    },
                     {
                         "type": "string",
                         "description": "Authentication header",
@@ -3405,6 +3318,17 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.GetProfile": {
+            "type": "object",
+            "required": [
+                "username"
+            ],
+            "properties": {
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "requests.ID": {
             "type": "object",
             "required": [
@@ -3769,6 +3693,31 @@ const docTemplate = `{
                         "latest",
                         "oldest"
                     ]
+                }
+            }
+        },
+        "requests.SortReviewByUserID": {
+            "type": "object",
+            "required": [
+                "page",
+                "sort",
+                "userID"
+            ],
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "latest",
+                        "oldest"
+                    ]
+                },
+                "userID": {
+                    "type": "string"
                 }
             }
         },
@@ -5303,6 +5252,20 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.ReviewContent": {
+            "type": "object",
+            "properties": {
+                "image_url": {
+                    "type": "string"
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                }
+            }
+        },
         "responses.ReviewSummary": {
             "type": "object",
             "properties": {
@@ -5320,6 +5283,59 @@ const docTemplate = `{
                 },
                 "total_votes": {
                     "type": "integer"
+                }
+            }
+        },
+        "responses.ReviewWithContent": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "author": {
+                    "$ref": "#/definitions/responses.Author"
+                },
+                "content": {
+                    "$ref": "#/definitions/responses.ReviewContent"
+                },
+                "content_external_id": {
+                    "type": "string"
+                },
+                "content_external_int_id": {
+                    "type": "integer"
+                },
+                "content_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "is_author": {
+                    "type": "boolean"
+                },
+                "is_liked": {
+                    "type": "boolean"
+                },
+                "likes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "popularity": {
+                    "type": "integer"
+                },
+                "review": {
+                    "type": "string"
+                },
+                "star": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
                 }
             }
         },
@@ -5754,6 +5770,9 @@ const docTemplate = `{
         "responses.UserInfo": {
             "type": "object",
             "properties": {
+                "_id": {
+                    "type": "string"
+                },
                 "anime_count": {
                     "type": "integer"
                 },
@@ -5801,6 +5820,12 @@ const docTemplate = `{
                 },
                 "movie_watched_time": {
                     "type": "integer"
+                },
+                "reviews": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.ReviewWithContent"
+                    }
                 },
                 "tv_count": {
                     "type": "integer"

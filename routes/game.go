@@ -13,7 +13,6 @@ func gameRouter(router *gin.RouterGroup, mongoDB *db.MongoDB) {
 
 	game := router.Group("/game")
 	{
-		game.GET("/preview", gameController.GetPreviewGames)
 		game.GET("/upcoming", gameController.GetUpcomingGamesBySort)
 		game.GET("", gameController.GetGamesByFilterAndSort)
 		game.Use(helpers.OptionalTokenCheck).GET("/details", gameController.GetGameDetails)

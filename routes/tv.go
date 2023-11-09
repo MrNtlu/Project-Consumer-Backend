@@ -13,7 +13,6 @@ func tvRouter(router *gin.RouterGroup, mongoDB *db.MongoDB) {
 
 	tv := router.Group("/tv")
 	{
-		tv.GET("/preview", tvController.GetPreviewTVSeries)
 		tv.GET("/upcoming", tvController.GetUpcomingTVSeries)
 		tv.GET("/airing", tvController.GetCurrentlyAiringTVSeriesByDayOfWeek)
 		tv.GET("", tvController.GetTVSeriesBySortAndFilter)

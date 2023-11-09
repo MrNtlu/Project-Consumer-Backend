@@ -5,7 +5,9 @@ import (
 	"app/helpers"
 	"app/models"
 	"app/requests"
+	"app/responses"
 	"app/utils"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -123,7 +125,7 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 	uid := jwt.ExtractClaims(c)["id"].(string)
 
 	userModel := models.NewUserModel(u.Database)
-	userInfo, err := userModel.GetUserInfo(uid)
+	userInfo, err := userModel.GetUserInfo("", uid, false)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -136,7 +138,6 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 	userInfo.Level = userLevel
 
 	userInteractionModel := models.NewUserInteractionModel(u.Database)
-
 	consumeLaterList, err := userInteractionModel.GetConsumeLater(uid, requests.SortFilterConsumeLater{
 		Sort: "new",
 	})
@@ -149,9 +150,129 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 	}
 	userInfo.ConsumeLater = consumeLaterList
 
-	userListModel := models.NewUserListModel(u.Database)
+	reviewsModel := models.NewReviewModel(u.Database)
+	reviews, _, err := reviewsModel.GetReviewsByUserID(&uid, requests.SortReviewByUserID{
+		UserID: uid,
+		Sort:   "popularity",
+		Page:   1,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
 
+		return
+	}
+	userInfo.Reviews = reviews
+
+	userListModel := models.NewUserListModel(u.Database)
 	userStats, err := userListModel.GetUserListStats(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+	userInfo.AnimeCount = userStats.AnimeCount
+	userInfo.GameCount = userStats.GameCount
+	userInfo.MovieCount = userStats.MovieCount
+	userInfo.TVCount = userStats.TVCount
+	userInfo.MovieWatchedTime = userStats.MovieWatchedTime
+	userInfo.AnimeWatchedEpisodes = userStats.AnimeWatchedEpisodes
+	userInfo.TVWatchedEpisodes = userStats.TVWatchedEpisodes
+	userInfo.GameTotalHoursPlayed = userStats.GameTotalHoursPlayed
+
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched user info.", "data": userInfo})
+}
+
+// User Info From Username
+// @Summary User info from username
+// @Description Returns users stats from username
+// @Tags user
+// @Accept application/json
+// @Produce application/json
+// @Security ApiKeyAuth
+// @Param getprofile body requests.GetProfile true "Get Profile"
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {object} responses.UserInfo "User Info"
+// @Router /user/info [get]
+func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
+	var data requests.GetProfile
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	userModel := models.NewUserModel(u.Database)
+	userListModel := models.NewUserListModel(u.Database)
+	reviewsModel := models.NewReviewModel(u.Database)
+
+	var (
+		userInfo responses.UserInfo
+		err      error
+	)
+
+	uid, OK := c.Get("uuid")
+	if OK && uid != nil {
+		userId := uid.(string)
+
+		userInfo, err = userModel.GetUserInfo(data.Username, userId, true)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		reviews, _, err := reviewsModel.GetReviewsByUserID(&userId, requests.SortReviewByUserID{
+			UserID: userInfo.ID.Hex(),
+			Sort:   "popularity",
+			Page:   1,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+		userInfo.Reviews = reviews
+
+		fmt.Println(userInfo.ID.String(), userInfo.ID, userId)
+	} else {
+		userInfo, err = userModel.GetUserInfo(data.Username, "", true)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		reviews, _, err := reviewsModel.GetReviewsByUserID(nil, requests.SortReviewByUserID{
+			UserID: userInfo.ID.Hex(),
+			Sort:   "popularity",
+			Page:   1,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+		userInfo.Reviews = reviews
+	}
+
+	userLevel, _ := userModel.GetUserLevel(userInfo.ID.Hex())
+	userInfo.Level = userLevel
+
+	userStats, err := userListModel.GetUserListStats(userInfo.ID.Hex())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

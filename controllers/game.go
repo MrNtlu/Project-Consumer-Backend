@@ -20,54 +20,6 @@ func NewGameController(mongoDB *db.MongoDB) GameController {
 	}
 }
 
-// Get Preview Games
-// @Summary Get Preview Games
-// @Description Returns preview games
-// @Tags game
-// @Accept application/json
-// @Produce application/json
-// @Success 200 {array} responses.Game
-// @Failure 500 {string} string
-// @Router /game/preview [get]
-func (g *GameController) GetPreviewGames(c *gin.Context) {
-	gameModel := models.NewGameModel(g.Database)
-
-	upcomingGames, _, err := gameModel.GetUpcomingGamesBySort(requests.Pagination{Page: 1})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	topRatedGames, _, err := gameModel.GetGamesByFilterAndSort(requests.SortFilterGame{
-		Sort: "top",
-		Page: 1,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	popularGames, _, err := gameModel.GetGamesByFilterAndSort(requests.SortFilterGame{
-		Sort: "popularity",
-		Page: 1,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"upcoming": upcomingGames, "top": topRatedGames, "popular": popularGames})
-}
-
 // Get Upcoming Games
 // @Summary Get Upcoming Games by Sort
 // @Description Returns upcoming games by sort with pagination

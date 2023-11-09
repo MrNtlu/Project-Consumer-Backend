@@ -13,7 +13,6 @@ func movieRouter(router *gin.RouterGroup, mongoDB *db.MongoDB) {
 
 	movie := router.Group("/movie")
 	{
-		movie.GET("/preview", movieController.GetPreviewMovies)
 		movie.GET("/upcoming", movieController.GetUpcomingMoviesBySort)
 		movie.GET("", movieController.GetMoviesBySortAndFilter)
 		movie.Use(helpers.OptionalTokenCheck).GET("/details", movieController.GetMovieDetails)

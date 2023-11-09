@@ -20,5 +20,9 @@ func reviewRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongo
 		review.PATCH("/like", reviewController.VoteReview)
 	}
 
-	router.Group("/review").Use(helpers.OptionalTokenCheck).GET("", reviewController.GetReviewsByContentID)
+	reviewOptional := router.Group("/review").Use(helpers.OptionalTokenCheck)
+	{
+		reviewOptional.GET("", reviewController.GetReviewsByContentID)
+		reviewOptional.GET("/user", reviewController.GetReviewsByUserID)
+	}
 }

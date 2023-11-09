@@ -21,6 +21,18 @@ func NewPreviewController(mongoDB *db.MongoDB) PreviewController {
 	}
 }
 
+// Get Previews
+// @Summary Get Previews
+// @Description Returns previews
+// @Tags preview
+// @Accept application/json
+// @Produce application/json
+// @Success 200 {array} responses.Movie
+// @Success 200 {array} responses.Anime
+// @Success 200 {array} responses.TVSeries
+// @Success 200 {array} responses.Game
+// @Failure 500 {string} string
+// @Router /preview [get]
 func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 	movieModel := models.NewMovieModel(pr.Database)
 	tvModel := models.NewTVModel(pr.Database)

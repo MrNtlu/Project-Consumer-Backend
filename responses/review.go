@@ -23,6 +23,30 @@ type Review struct {
 	UpdatedAt            time.Time          `bson:"updated_at" json:"updated_at"`
 }
 
+type ReviewWithContent struct {
+	ID                   primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	UserID               string             `bson:"user_id" json:"user_id"`
+	Author               Author             `bson:"author" json:"author"`
+	IsAuthor             bool               `bson:"is_author" json:"is_author"`
+	ContentID            string             `bson:"content_id" json:"content_id"`
+	ContentExternalID    *string            `bson:"content_external_id" json:"content_external_id"`
+	ContentExternalIntID *int64             `bson:"content_external_int_id" json:"content_external_int_id"`
+	Star                 int8               `bson:"star" json:"star"`
+	Review               string             `bson:"review" json:"review"`
+	Popularity           int64              `bson:"popularity" json:"popularity"`
+	IsLiked              bool               `bson:"is_liked" json:"is_liked"`
+	Likes                []string           `bson:"likes" json:"likes"`
+	Content              ReviewContent      `bson:"content" json:"content"`
+	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
+	UpdatedAt            time.Time          `bson:"updated_at" json:"updated_at"`
+}
+
+type ReviewContent struct {
+	TitleEn       string  `bson:"title_en" json:"title_en"`
+	TitleOriginal string  `bson:"title_original" json:"title_original"`
+	ImageURL      *string `bson:"image_url" json:"image_url"`
+}
+
 type Author struct {
 	ID           primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	Image        string             `bson:"image" json:"image"`

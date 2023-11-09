@@ -6,7 +6,6 @@ import (
 	"app/requests"
 	"app/responses"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,72 +18,6 @@ func NewAnimeController(mongoDB *db.MongoDB) AnimeController {
 	return AnimeController{
 		Database: mongoDB,
 	}
-}
-
-// Get Preview Animes
-// @Summary Get Preview Animes
-// @Description Returns preview animes
-// @Tags anime
-// @Accept application/json
-// @Produce application/json
-// @Success 200 {array} responses.Anime
-// @Failure 500 {string} string
-// @Router /anime/preview [get]
-func (a *AnimeController) GetPreviewAnimes(c *gin.Context) {
-	animeModel := models.NewAnimeModel(a.Database)
-
-	upcomingAnimes, _, err := animeModel.GetUpcomingAnimesBySort(requests.Pagination{Page: 1})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	topRatedAnimes, _, err := animeModel.GetAnimesBySortAndFilter(requests.SortFilterAnime{
-		Sort: "top",
-		Page: 1,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	popularAnimes, _, err := animeModel.GetAnimesBySortAndFilter(requests.SortFilterAnime{
-		Sort: "popularity",
-		Page: 1,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	dayOfWeekAnime, err := animeModel.GetCurrentlyAiringAnimesByDayOfWeek()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	dayOfWeek := int16(time.Now().UTC().Weekday()) + 1
-
-	var dayOfWeekAnimeList responses.DayOfWeekAnime
-	for _, item := range dayOfWeekAnime {
-		if item.DayOfWeek == dayOfWeek {
-			dayOfWeekAnimeList = item
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{"upcoming": upcomingAnimes, "top": topRatedAnimes, "popular": popularAnimes, "extra": dayOfWeekAnimeList.Data})
 }
 
 // Get Upcoming Animes

@@ -231,6 +231,59 @@ func (r *ReviewController) GetReviewsByContentID(c *gin.Context) {
 	}
 }
 
+// Get User Reviews
+// @Summary Get Reviews by User
+// @Description Get Reviews by User
+// @Tags review
+// @Accept application/json
+// @Produce application/json
+// @Param sortreviewbyuserid body requests.SortReviewByUserID true "Sort Review by User ID"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} responses.Review
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /review [get]
+func (r *ReviewController) GetReviewsByUserID(c *gin.Context) {
+	var data requests.SortReviewByUserID
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	reviewModel := models.NewReviewModel(r.Database)
+
+	uid, OK := c.Get("uuid")
+	if OK && uid != nil {
+		userId := uid.(string)
+
+		reviews, pagination, err := reviewModel.GetReviewsByUserID(&userId, data)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": reviews})
+	} else {
+		reviews, pagination, err := reviewModel.GetReviewsByUserID(nil, data)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": reviews})
+	}
+}
+
 // Update Review
 // @Summary Update Review
 // @Description Update Review

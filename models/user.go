@@ -573,12 +573,27 @@ func (userModel *UserModel) GetUserLevel(uid string) (int, error) {
 	return 1, nil
 }
 
-func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) {
+func (userModel *UserModel) GetUserInfo(username, uid string, isUserName bool) (responses.UserInfo, error) {
 	objectID, _ := primitive.ObjectIDFromHex(uid)
 
-	match := bson.M{"$match": bson.M{
-		"_id": objectID,
-	}}
+	var match primitive.M
+
+	if isUserName {
+		match = bson.M{"$match": bson.M{
+			"$or": bson.A{
+				bson.M{
+					"username": username,
+				},
+				bson.M{
+					"email": username,
+				},
+			},
+		}}
+	} else {
+		match = bson.M{"$match": bson.M{
+			"_id": objectID,
+		}}
+	}
 
 	addFields := bson.M{"$addFields": bson.M{
 		"user_id": bson.M{
@@ -649,6 +664,7 @@ func (userModel *UserModel) GetUserInfo(uid string) (responses.UserInfo, error) 
 	}}
 
 	project := bson.M{"$project": bson.M{
+		"_id":             "$_id",
 		"username":        "$username",
 		"email":           "$email",
 		"is_premium":      "$is_premium",

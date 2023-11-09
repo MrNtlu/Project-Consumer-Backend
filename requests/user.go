@@ -40,3 +40,7 @@ type ChangeMembership struct {
 type ForgotPassword struct {
 	EmailAddress string `json:"email_address" binding:"required,email"`
 }
+
+type GetProfile struct {
+	Username string `form:"username" binding:"required"`
+}

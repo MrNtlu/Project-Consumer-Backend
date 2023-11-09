@@ -6,7 +6,6 @@ import (
 	"app/requests"
 	"app/responses"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,72 +18,6 @@ func NewTVController(mongoDB *db.MongoDB) TVController {
 	return TVController{
 		Database: mongoDB,
 	}
-}
-
-// Get Preview TV Series
-// @Summary Get Preview TV Series
-// @Description Returns preview tv series
-// @Tags tv
-// @Accept application/json
-// @Produce application/json
-// @Success 200 {array} responses.TVSeries
-// @Failure 500 {string} string
-// @Router /tv/preview [get]
-func (tv *TVController) GetPreviewTVSeries(c *gin.Context) {
-	tvModel := models.NewTVModel(tv.Database)
-
-	upcomingTVSeries, _, err := tvModel.GetUpcomingTVSeries(requests.Pagination{Page: 1})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	popularTVSeries, _, err := tvModel.GetTVSeriesBySortAndFilter(requests.SortFilterTVSeries{
-		Sort: "popularity",
-		Page: 1,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	topTVSeries, _, err := tvModel.GetTVSeriesBySortAndFilter(requests.SortFilterTVSeries{
-		Sort: "top",
-		Page: 1,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	dayOfWeekTVSeries, err := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	dayOfWeek := int16(time.Now().UTC().Weekday()) + 1
-
-	var dayOfWeekTVSeriesList responses.DayOfWeekTVSeries
-	for _, item := range dayOfWeekTVSeries {
-		if item.DayOfWeek == dayOfWeek {
-			dayOfWeekTVSeriesList = item
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{"upcoming": upcomingTVSeries, "popular": popularTVSeries, "top": topTVSeries, "extra": dayOfWeekTVSeriesList.Data})
 }
 
 // Get Upcoming TV Series
