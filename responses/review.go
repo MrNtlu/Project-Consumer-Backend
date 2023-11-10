@@ -17,6 +17,7 @@ type Review struct {
 	Star                 int8               `bson:"star" json:"star"`
 	Review               string             `bson:"review" json:"review"`
 	Popularity           int64              `bson:"popularity" json:"popularity"`
+	ContentType          string             `bson:"content_type" json:"content_type"`
 	IsLiked              bool               `bson:"is_liked" json:"is_liked"`
 	Likes                []string           `bson:"likes" json:"likes"`
 	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
@@ -34,8 +35,28 @@ type ReviewWithContent struct {
 	Star                 int8               `bson:"star" json:"star"`
 	Review               string             `bson:"review" json:"review"`
 	Popularity           int64              `bson:"popularity" json:"popularity"`
+	ContentType          string             `bson:"content_type" json:"content_type"`
 	IsLiked              bool               `bson:"is_liked" json:"is_liked"`
 	Likes                []string           `bson:"likes" json:"likes"`
+	Content              ReviewContent      `bson:"content" json:"content"`
+	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
+	UpdatedAt            time.Time          `bson:"updated_at" json:"updated_at"`
+}
+
+type ReviewDetails struct {
+	ID                   primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	UserID               string             `bson:"user_id" json:"user_id"`
+	Author               Author             `bson:"author" json:"author"`
+	IsAuthor             bool               `bson:"is_author" json:"is_author"`
+	ContentID            string             `bson:"content_id" json:"content_id"`
+	ContentExternalID    *string            `bson:"content_external_id" json:"content_external_id"`
+	ContentExternalIntID *int64             `bson:"content_external_int_id" json:"content_external_int_id"`
+	Star                 int8               `bson:"star" json:"star"`
+	Review               string             `bson:"review" json:"review"`
+	ContentType          string             `bson:"content_type" json:"content_type"`
+	Popularity           int64              `bson:"popularity" json:"popularity"`
+	IsLiked              bool               `bson:"is_liked" json:"is_liked"`
+	Likes                []Author           `bson:"likes" json:"likes"`
 	Content              ReviewContent      `bson:"content" json:"content"`
 	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt            time.Time          `bson:"updated_at" json:"updated_at"`

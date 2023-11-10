@@ -180,6 +180,59 @@ func (r *ReviewController) CreateReview(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdReview})
 }
 
+// Get Review Details
+// @Summary Get Review Details
+// @Description Get Review Details with or without authentication
+// @Tags review
+// @Accept application/json
+// @Produce application/json
+// @Param id body requests.ID true "ID"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} responses.ReviewDetails
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /review/details [get]
+func (r *ReviewController) GetReviewDetails(c *gin.Context) {
+	var data requests.ID
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	reviewModel := models.NewReviewModel(r.Database)
+
+	uid, OK := c.Get("uuid")
+	if OK && uid != nil {
+		userId := uid.(string)
+
+		reviews, err := reviewModel.GetReviewDetails(&userId, data.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": reviews})
+	} else {
+		reviews, err := reviewModel.GetReviewDetails(nil, data.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": reviews})
+	}
+}
+
 // Get Reviews
 // @Summary Get Review
 // @Description Get Reviews with or without authentication

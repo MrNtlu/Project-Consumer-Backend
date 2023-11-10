@@ -2061,6 +2061,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/review/details": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get Review Details with or without authentication",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "review"
+                ],
+                "summary": "Get Review Details",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ID"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.ReviewDetails"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/review/vote": {
             "patch": {
                 "security": [
@@ -5220,6 +5281,9 @@ const docTemplate = `{
                 "content_id": {
                     "type": "string"
                 },
+                "content_type": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -5266,6 +5330,62 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.ReviewDetails": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "author": {
+                    "$ref": "#/definitions/responses.Author"
+                },
+                "content": {
+                    "$ref": "#/definitions/responses.ReviewContent"
+                },
+                "content_external_id": {
+                    "type": "string"
+                },
+                "content_external_int_id": {
+                    "type": "integer"
+                },
+                "content_id": {
+                    "type": "string"
+                },
+                "content_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "is_author": {
+                    "type": "boolean"
+                },
+                "is_liked": {
+                    "type": "boolean"
+                },
+                "likes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Author"
+                    }
+                },
+                "popularity": {
+                    "type": "integer"
+                },
+                "review": {
+                    "type": "string"
+                },
+                "star": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "responses.ReviewSummary": {
             "type": "object",
             "properties": {
@@ -5305,6 +5425,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "content_id": {
+                    "type": "string"
+                },
+                "content_type": {
                     "type": "string"
                 },
                 "created_at": {

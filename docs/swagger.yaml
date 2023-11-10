@@ -1650,6 +1650,8 @@ definitions:
         type: integer
       content_id:
         type: string
+      content_type:
+        type: string
       created_at:
         type: string
       is_author:
@@ -1680,6 +1682,43 @@ definitions:
       title_original:
         type: string
     type: object
+  responses.ReviewDetails:
+    properties:
+      _id:
+        type: string
+      author:
+        $ref: '#/definitions/responses.Author'
+      content:
+        $ref: '#/definitions/responses.ReviewContent'
+      content_external_id:
+        type: string
+      content_external_int_id:
+        type: integer
+      content_id:
+        type: string
+      content_type:
+        type: string
+      created_at:
+        type: string
+      is_author:
+        type: boolean
+      is_liked:
+        type: boolean
+      likes:
+        items:
+          $ref: '#/definitions/responses.Author'
+        type: array
+      popularity:
+        type: integer
+      review:
+        type: string
+      star:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
   responses.ReviewSummary:
     properties:
       avg_star:
@@ -1706,6 +1745,8 @@ definitions:
       content_external_int_id:
         type: integer
       content_id:
+        type: string
+      content_type:
         type: string
       created_at:
         type: string
@@ -3427,6 +3468,45 @@ paths:
       security:
       - BearerAuth: []
       summary: Create Review
+      tags:
+      - review
+  /review/details:
+    get:
+      consumes:
+      - application/json
+      description: Get Review Details with or without authentication
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ID'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.ReviewDetails'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Review Details
       tags:
       - review
   /review/vote:
