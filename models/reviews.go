@@ -125,7 +125,7 @@ func (reviewModel *ReviewModel) CreateReview(uid string, data requests.CreateRev
 		data.ContentExternalID,
 		data.ContentExternalIntID,
 		data.Star,
-		data.IsSpoiler,
+		*data.IsSpoiler,
 	)
 
 	var (
