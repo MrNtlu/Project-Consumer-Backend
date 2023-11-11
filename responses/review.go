@@ -18,6 +18,7 @@ type Review struct {
 	Review               string             `bson:"review" json:"review"`
 	Popularity           int64              `bson:"popularity" json:"popularity"`
 	ContentType          string             `bson:"content_type" json:"content_type"`
+	IsSpoiler            bool               `bson:"is_spoiler" json:"is_spoiler"`
 	IsLiked              bool               `bson:"is_liked" json:"is_liked"`
 	Likes                []string           `bson:"likes" json:"likes"`
 	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
@@ -37,6 +38,7 @@ type ReviewWithContent struct {
 	Popularity           int64              `bson:"popularity" json:"popularity"`
 	ContentType          string             `bson:"content_type" json:"content_type"`
 	IsLiked              bool               `bson:"is_liked" json:"is_liked"`
+	IsSpoiler            bool               `bson:"is_spoiler" json:"is_spoiler"`
 	Likes                []string           `bson:"likes" json:"likes"`
 	Content              ReviewContent      `bson:"content" json:"content"`
 	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
@@ -56,6 +58,7 @@ type ReviewDetails struct {
 	ContentType          string             `bson:"content_type" json:"content_type"`
 	Popularity           int64              `bson:"popularity" json:"popularity"`
 	IsLiked              bool               `bson:"is_liked" json:"is_liked"`
+	IsSpoiler            bool               `bson:"is_spoiler" json:"is_spoiler"`
 	Likes                []Author           `bson:"likes" json:"likes"`
 	Content              ReviewContent      `bson:"content" json:"content"`
 	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`

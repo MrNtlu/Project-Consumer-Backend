@@ -297,6 +297,8 @@ definitions:
         - movie
         - tv
         type: string
+      is_spoiler:
+        type: boolean
       review:
         maxLength: 1000
         minLength: 6
@@ -308,6 +310,7 @@ definitions:
     required:
     - content_id
     - content_type
+    - is_spoiler
     - review
     - star
     type: object
@@ -653,6 +656,24 @@ definitions:
     - page
     - sort
     - userID
+    type: object
+  requests.SortReviewByUsername:
+    properties:
+      page:
+        minimum: 1
+        type: integer
+      sort:
+        enum:
+        - popularity
+        - latest
+        - oldest
+        type: string
+      username:
+        type: string
+    required:
+    - page
+    - sort
+    - username
     type: object
   requests.UpdateAnimeList:
     properties:
@@ -1658,6 +1679,8 @@ definitions:
         type: boolean
       is_liked:
         type: boolean
+      is_spoiler:
+        type: boolean
       likes:
         items:
           type: string
@@ -1703,6 +1726,8 @@ definitions:
       is_author:
         type: boolean
       is_liked:
+        type: boolean
+      is_spoiler:
         type: boolean
       likes:
         items:
@@ -1753,6 +1778,8 @@ definitions:
       is_author:
         type: boolean
       is_liked:
+        type: boolean
+      is_spoiler:
         type: boolean
       likes:
         items:
@@ -3474,14 +3501,14 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get Review Details with or without authentication
+      description: Get Reviews by username with or without authentication
       parameters:
-      - description: ID
+      - description: Sort Review by Username
         in: body
-        name: id
+        name: sortreviewbyusername
         required: true
         schema:
-          $ref: '#/definitions/requests.ID'
+          $ref: '#/definitions/requests.SortReviewByUsername'
       - description: Authentication header
         in: header
         name: Authorization
@@ -3494,7 +3521,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/responses.ReviewDetails'
+              $ref: '#/definitions/responses.ReviewWithContent'
             type: array
         "404":
           description: Not Found
@@ -3506,7 +3533,7 @@ paths:
             type: string
       security:
       - BearerAuth: []
-      summary: Get Review Details
+      summary: Get Reviews by User
       tags:
       - review
   /review/vote:

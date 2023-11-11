@@ -38,6 +38,7 @@ type Review struct {
 	ContentType          string             `bson:"content_type" json:"content_type"` // anime, movie, tv or game
 	Star                 int8               `bson:"star" json:"star"`
 	Review               string             `bson:"review" json:"review"`
+	IsSpoiler            bool               `bson:"is_spoiler" json:"is_spoiler"`
 	Likes                []string           `bson:"likes" json:"likes"`
 	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt            time.Time          `bson:"updated_at" json:"updated_at"`
@@ -54,7 +55,7 @@ func containsNonASCII(s string) bool {
 
 func createReviewObject(
 	userID, contentID, contentType, review string, contentExternalID *string,
-	contentExternalIntID *int64, star int8,
+	contentExternalIntID *int64, star int8, isSpoiler bool,
 ) *Review {
 	return &Review{
 		UserID:               userID,
@@ -64,6 +65,7 @@ func createReviewObject(
 		ContentType:          contentType,
 		Star:                 star,
 		Review:               review,
+		IsSpoiler:            isSpoiler,
 		Likes:                []string{},
 		CreatedAt:            time.Now().UTC(),
 		UpdatedAt:            time.Now().UTC(),
@@ -82,6 +84,7 @@ func convertReviewModelToResponse(review Review) responses.Review {
 		IsAuthor:             true,
 		IsLiked:              false,
 		Review:               review.Review,
+		IsSpoiler:            review.IsSpoiler,
 		Popularity:           int64(len(review.Likes)),
 		Likes:                review.Likes,
 		CreatedAt:            review.CreatedAt,
@@ -99,6 +102,7 @@ func convertReviewResponseToModel(review responses.Review) Review {
 		ContentType:          review.ContentType,
 		Star:                 review.Star,
 		Review:               review.Review,
+		IsSpoiler:            review.IsSpoiler,
 		Likes:                review.Likes,
 		CreatedAt:            review.CreatedAt,
 		UpdatedAt:            review.UpdatedAt,
@@ -121,6 +125,7 @@ func (reviewModel *ReviewModel) CreateReview(uid string, data requests.CreateRev
 		data.ContentExternalID,
 		data.ContentExternalIntID,
 		data.Star,
+		data.IsSpoiler,
 	)
 
 	var (
@@ -455,6 +460,9 @@ func (reviewModel *ReviewModel) GetReviewDetails(uid *string, reviewID string) (
 		},
 		"is_liked": bson.M{
 			"$first": "$is_liked",
+		},
+		"is_spoiler": bson.M{
+			"$first": "$is_spoiler",
 		},
 		"star": bson.M{
 			"$first": "$star",
@@ -1282,6 +1290,10 @@ func (reviewModel *ReviewModel) UpdateReview(uid string, data requests.UpdateRev
 
 	if data.Star != nil {
 		review.Star = *data.Star
+	}
+
+	if data.IsSpoiler != nil {
+		review.IsSpoiler = *data.IsSpoiler
 	}
 
 	updatedReview := convertReviewResponseToModel(review)

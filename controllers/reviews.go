@@ -233,6 +233,85 @@ func (r *ReviewController) GetReviewDetails(c *gin.Context) {
 	}
 }
 
+// Get Reviews by User
+// @Summary Get Reviews by User
+// @Description Get Reviews by username with or without authentication
+// @Tags review
+// @Accept application/json
+// @Produce application/json
+// @Param sortreviewbyusername body requests.SortReviewByUsername true "Sort Review by Username"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} responses.ReviewWithContent
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /review/details [get]
+func (r *ReviewController) GetReviewsByUsername(c *gin.Context) {
+	var data requests.SortReviewByUsername
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	userModel := models.NewUserModel(r.Database)
+	reviewModel := models.NewReviewModel(r.Database)
+
+	userInfo, err := userModel.GetUserInfo(data.Username, "", true)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	if userInfo.EmailAddress == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": errNoUser,
+		})
+
+		return
+	}
+
+	uid, OK := c.Get("uuid")
+	if OK && uid != nil {
+		userId := uid.(string)
+
+		reviews, pagination, err := reviewModel.GetReviewsByUserID(&userId, requests.SortReviewByUserID{
+			UserID: userInfo.ID.Hex(),
+			Sort:   data.Sort,
+			Page:   data.Page,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": reviews})
+	} else {
+		reviews, pagination, err := reviewModel.GetReviewsByUserID(nil, requests.SortReviewByUserID{
+			UserID: userInfo.ID.Hex(),
+			Sort:   data.Sort,
+			Page:   data.Page,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": reviews})
+	}
+}
+
 // Get Reviews
 // @Summary Get Review
 // @Description Get Reviews with or without authentication

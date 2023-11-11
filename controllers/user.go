@@ -7,7 +7,6 @@ import (
 	"app/requests"
 	"app/responses"
 	"app/utils"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -242,8 +241,6 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 			return
 		}
 		userInfo.Reviews = reviews
-
-		fmt.Println(userInfo.ID.String(), userInfo.ID, userId)
 	} else {
 		userInfo, err = userModel.GetUserInfo(data.Username, "", true)
 		if err != nil {

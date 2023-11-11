@@ -2068,7 +2068,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get Review Details with or without authentication",
+                "description": "Get Reviews by username with or without authentication",
                 "consumes": [
                     "application/json"
                 ],
@@ -2078,15 +2078,15 @@ const docTemplate = `{
                 "tags": [
                     "review"
                 ],
-                "summary": "Get Review Details",
+                "summary": "Get Reviews by User",
                 "parameters": [
                     {
-                        "description": "ID",
-                        "name": "id",
+                        "description": "Sort Review by Username",
+                        "name": "sortreviewbyusername",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/requests.ID"
+                            "$ref": "#/definitions/requests.SortReviewByUsername"
                         }
                     },
                     {
@@ -2103,7 +2103,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/responses.ReviewDetails"
+                                "$ref": "#/definitions/responses.ReviewWithContent"
                             }
                         }
                     },
@@ -3269,6 +3269,7 @@ const docTemplate = `{
             "required": [
                 "content_id",
                 "content_type",
+                "is_spoiler",
                 "review",
                 "star"
             ],
@@ -3290,6 +3291,9 @@ const docTemplate = `{
                         "movie",
                         "tv"
                     ]
+                },
+                "is_spoiler": {
+                    "type": "boolean"
                 },
                 "review": {
                     "type": "string",
@@ -3778,6 +3782,31 @@ const docTemplate = `{
                     ]
                 },
                 "userID": {
+                    "type": "string"
+                }
+            }
+        },
+        "requests.SortReviewByUsername": {
+            "type": "object",
+            "required": [
+                "page",
+                "sort",
+                "username"
+            ],
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "latest",
+                        "oldest"
+                    ]
+                },
+                "username": {
                     "type": "string"
                 }
             }
@@ -5293,6 +5322,9 @@ const docTemplate = `{
                 "is_liked": {
                     "type": "boolean"
                 },
+                "is_spoiler": {
+                    "type": "boolean"
+                },
                 "likes": {
                     "type": "array",
                     "items": {
@@ -5361,6 +5393,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "is_liked": {
+                    "type": "boolean"
+                },
+                "is_spoiler": {
                     "type": "boolean"
                 },
                 "likes": {
@@ -5437,6 +5472,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "is_liked": {
+                    "type": "boolean"
+                },
+                "is_spoiler": {
                     "type": "boolean"
                 },
                 "likes": {
