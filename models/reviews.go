@@ -202,7 +202,7 @@ func (reviewModel *ReviewModel) GetReviewDetails(uid *string, reviewID string) (
 		"obj_likes": bson.M{
 			"$map": bson.M{
 				"input": bson.M{
-					"$slice": bson.A{"$likes", 20},
+					"$slice": bson.A{"$likes", 10},
 				},
 				"as": "likes",
 				"in": bson.M{"$toObjectId": "$$likes"},
@@ -517,13 +517,13 @@ func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID, uid string
 	if contentExternalID != nil {
 		cID = *contentExternalID
 	} else {
-		cID = "-1"
+		cID = "-999"
 	}
 
 	if contentExternalIntID != nil {
 		ceID = *contentExternalIntID
 	} else {
-		ceID = -1
+		ceID = -999
 	}
 
 	match := bson.M{"$match": bson.M{
@@ -675,13 +675,13 @@ func (reviewModel *ReviewModel) GetReviewsByContentID(data requests.SortReviewBy
 	if data.ContentExternalID != nil {
 		contentExternalID = *data.ContentExternalID
 	} else {
-		contentExternalID = "-1"
+		contentExternalID = "-999"
 	}
 
 	if data.ContentExternalIntID != nil {
 		contentExternalIntID = *data.ContentExternalIntID
 	} else {
-		contentExternalIntID = -1
+		contentExternalIntID = -999
 	}
 
 	logrus.WithFields(logrus.Fields{
@@ -772,13 +772,13 @@ func (reviewModel *ReviewModel) GetReviewsByContentIDAndUserID(
 	if data.ContentExternalID != nil {
 		contentExternalID = *data.ContentExternalID
 	} else {
-		contentExternalID = "-1"
+		contentExternalID = "-999"
 	}
 
 	if data.ContentExternalIntID != nil {
 		contentExternalIntID = *data.ContentExternalIntID
 	} else {
-		contentExternalIntID = -1
+		contentExternalIntID = -999
 	}
 
 	match := bson.M{"$match": bson.M{
@@ -1157,9 +1157,9 @@ func (reviewModel *ReviewModel) GetBaseReviewResponseByUserIDAndContentID(conten
 	var review Review
 	if err := result.Decode(&review); err != nil {
 		logrus.WithFields(logrus.Fields{
-			"user_id": uid,
-			"id":      contentID,
-		}).Error("failed to find review by id: ", err)
+			"user_id":    uid,
+			"content_id": contentID,
+		}).Error("failed to find review by content id: ", err)
 
 		return responses.Review{}, fmt.Errorf("Failed to find review by id.")
 	}
