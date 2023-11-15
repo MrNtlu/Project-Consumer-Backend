@@ -257,94 +257,58 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 		err      error
 	)
 
-	uid, OK := c.Get("uuid")
-	if OK && uid != nil {
-		userId := uid.(string)
+	userId := jwt.ExtractClaims(c)["id"].(string)
 
-		userInfo, err = userModel.GetUserInfo(data.Username, userId, true)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-
-		if userInfo.Username == "" {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": errNoUser,
-			})
-
-			return
-		}
-
-		reviews, _, err := reviewsModel.GetReviewsByUserID(&userId, requests.SortReviewByUserID{
-			UserID: userInfo.ID.Hex(),
-			Sort:   "popularity",
-			Page:   1,
+	userInfo, err = userModel.GetUserInfo(data.Username, userId, true)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
 		})
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
 
-			return
-		}
-		userInfo.Reviews = reviews
-
-		isFriendsWith, err := userModel.IsFriendsWith(userInfo.ID.Hex(), userId)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-		userInfo.IsFriendsWith = isFriendsWith
-
-		isFriendRequestSent, err := friendModel.IsFriendRequestSent(userId, userInfo.ID.Hex())
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-		userInfo.IsFriendRequestSent = isFriendRequestSent
-	} else {
-		userInfo, err = userModel.GetUserInfo(data.Username, "", true)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-
-		if userInfo.Username == "" {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": errNoUser,
-			})
-
-			return
-		}
-
-		reviews, _, err := reviewsModel.GetReviewsByUserID(nil, requests.SortReviewByUserID{
-			UserID: userInfo.ID.Hex(),
-			Sort:   "popularity",
-			Page:   1,
-		})
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-		userInfo.Reviews = reviews
-		userInfo.IsFriendRequestSent = false
-		userInfo.IsFriendsWith = false
+		return
 	}
+
+	if userInfo.Username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": errNoUser,
+		})
+
+		return
+	}
+
+	reviews, _, err := reviewsModel.GetReviewsByUserID(&userId, requests.SortReviewByUserID{
+		UserID: userInfo.ID.Hex(),
+		Sort:   "popularity",
+		Page:   1,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+	userInfo.Reviews = reviews
+
+	isFriendsWith, err := userModel.IsFriendsWith(userInfo.ID.Hex(), userId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+	userInfo.IsFriendsWith = isFriendsWith
+
+	isFriendRequestSent, err := friendModel.IsFriendRequestSent(userId, userInfo.ID.Hex())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+	userInfo.IsFriendRequestSent = isFriendRequestSent
 
 	userLevel, _ := userModel.GetUserLevel(userInfo.ID.Hex())
 	userInfo.Level = userLevel
