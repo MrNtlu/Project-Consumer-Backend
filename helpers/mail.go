@@ -39,7 +39,7 @@ func SendForgotPasswordEmail(token, mail string) error {
 							</tr>
 							<tr>
 								<td style="text-align:center;">
-									<img width="125" src="https://user-images.githubusercontent.com/25686023/260456776-4729f5b7-3823-49e7-b246-59f51a360786.png" title="logo" alt="logo">
+									<img width="125" src="https://user-images.githubusercontent.com/25686023/269638549-fc57304b-bc39-4e66-ae26-7cfc59408a21.png" title="logo" alt="logo">
 								</td>
 							</tr>
 							<tr>
@@ -127,7 +127,7 @@ func SendPasswordChangedEmail(content, mail string) error {
 							</tr>
 							<tr>
 								<td style="text-align:center;">
-									<img width="125" src="https://user-images.githubusercontent.com/25686023/260456776-4729f5b7-3823-49e7-b246-59f51a360786.png" title="logo" alt="logo">
+									<img width="125" src="https://user-images.githubusercontent.com/25686023/269638549-fc57304b-bc39-4e66-ae26-7cfc59408a21.png" title="logo" alt="logo">
 								</td>
 							</tr>
 							<tr>

@@ -173,6 +173,20 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 
 		return
 	}
+
+	friendModel := models.NewFriendModel(u.Database)
+	friendRequestCount, err := friendModel.FriendRequestCount(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+	userInfo.FriendRequestCount = friendRequestCount
+
+	userInfo.IsFriendRequestSent = false
+	userInfo.IsFriendsWith = false
 	userInfo.AnimeCount = userStats.AnimeCount
 	userInfo.GameCount = userStats.GameCount
 	userInfo.MovieCount = userStats.MovieCount
@@ -183,6 +197,33 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 	userInfo.GameTotalHoursPlayed = userStats.GameTotalHoursPlayed
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched user info.", "data": userInfo})
+}
+
+// Get Friend Requests
+// @Summary Get friend requests
+// @Description Returns friend requests by user id
+// @Tags user
+// @Accept application/json
+// @Produce application/json
+// @Security ApiKeyAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} responses.FriendRequest "Friend Request"
+// @Router /user/requests [get]
+func (u *UserController) GetFriendRequests(c *gin.Context) {
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	friendModel := models.NewFriendModel(u.Database)
+
+	friendRequests, err := friendModel.GetFriendRequests(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": friendRequests})
 }
 
 // User Info From Username
@@ -209,6 +250,7 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 	userModel := models.NewUserModel(u.Database)
 	userListModel := models.NewUserListModel(u.Database)
 	reviewsModel := models.NewReviewModel(u.Database)
+	friendModel := models.NewFriendModel(u.Database)
 
 	var (
 		userInfo responses.UserInfo
@@ -241,6 +283,26 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 			return
 		}
 		userInfo.Reviews = reviews
+
+		isFriendsWith, err := userModel.IsFriendsWith(userInfo.ID.Hex(), userId)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+		userInfo.IsFriendsWith = isFriendsWith
+
+		isFriendRequestSent, err := friendModel.IsFriendRequestSent(userId, userInfo.ID.Hex())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+		userInfo.IsFriendRequestSent = isFriendRequestSent
 	} else {
 		userInfo, err = userModel.GetUserInfo(data.Username, "", true)
 		if err != nil {
@@ -264,6 +326,8 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 			return
 		}
 		userInfo.Reviews = reviews
+		userInfo.IsFriendRequestSent = false
+		userInfo.IsFriendsWith = false
 	}
 
 	userLevel, _ := userModel.GetUserLevel(userInfo.ID.Hex())
@@ -277,6 +341,7 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 
 		return
 	}
+	userInfo.FriendRequestCount = 0
 	userInfo.AnimeCount = userStats.AnimeCount
 	userInfo.GameCount = userStats.GameCount
 	userInfo.MovieCount = userStats.MovieCount
@@ -377,6 +442,130 @@ func (u *UserController) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated image."})
 }
 
+// Send Friend Request
+// @Summary Send Friend Request
+// @Description Creates user request object and send notification
+// @Tags user
+// @Accept application/json
+// @Produce application/json
+// @Param sendfriendrequest body requests.SendFriendRequest true "Send Friend Request"
+// @Security ApiKeyAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {string} string
+// @Failure 500 {string} string
+// @Router /user/request [post]
+func (u *UserController) SendFriendRequest(c *gin.Context) {
+	var data requests.SendFriendRequest
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	userModel := models.NewUserModel(u.Database)
+
+	sender, err := userModel.FindUserByID(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	receiver, err := userModel.FindUserByUsername(data.Username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	if sender.EmailAddress == "" || receiver.EmailAddress == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": errNoUser,
+		})
+
+		return
+	}
+
+	friendModel := models.NewFriendModel(u.Database)
+
+	if err := friendModel.CreateFriendRequest(sender.ID.Hex(), sender.Username, receiver.ID.Hex(), sender.Username); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	if receiver.AppNotification.FriendRequest {
+		go helpers.SendNotification(
+			receiver.FCMToken,
+			"New Friend Request",
+			sender.Username+" has sent you a friend request. Do you want to connect?",
+			"https://watchlistfy.com/friend-requests",
+			nil, nil,
+		)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully sent friend request."})
+}
+
+// Change Username
+// @Summary Change Username
+// @Description Users can change their username
+// @Tags user
+// @Accept application/json
+// @Produce application/json
+// @Param changeusername body requests.ChangeUsername true "Change Username"
+// @Security ApiKeyAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {string} string
+// @Failure 500 {string} string
+// @Router /user/membership [patch]
+func (u *UserController) ChangeUsername(c *gin.Context) {
+	var data requests.ChangeUsername
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	userModel := models.NewUserModel(u.Database)
+	user, err := userModel.FindUserByID(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	if user.CanChangeUsername {
+		user.Username = data.Username
+		user.CanChangeUsername = false
+
+		if err = userModel.UpdateUser(user); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "Successfully updated username."})
+
+		return
+	} else {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{
+			"error": "You are not allowed to change your username.",
+		})
+
+		return
+	}
+}
+
 // Change User Membership
 // @Summary Change User Membership
 // @Description User membership status will be updated depending on subscription status
@@ -439,8 +628,8 @@ func (u *UserController) ChangeNotificationPreference(c *gin.Context) {
 		return
 	}
 
-	user.AppNotification = *data.AppNotification
-	user.MailNotification = *data.MailNotification
+	user.AppNotification.FriendRequest = *data.FriendRequest
+	user.AppNotification.ReviewLikes = *data.ReviewLikes
 
 	if err = userModel.UpdateUser(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

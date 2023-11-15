@@ -37,53 +37,77 @@ type User struct {
 	Username           string             `bson:"username" json:"username"`
 	EmailAddress       string             `bson:"email" json:"email"`
 	Image              string             `bson:"image" json:"image"`
+	Friends            []string           `bson:"friends" json:"friends"`
 	Password           string             `bson:"password" json:"-"`
 	PasswordResetToken string             `bson:"reset_token" json:"-"`
 	CreatedAt          time.Time          `bson:"created_at" json:"-"`
 	UpdatedAt          time.Time          `bson:"updated_at" json:"-"`
 	IsPremium          bool               `bson:"is_premium" json:"is_premium"`
+	IsLifetimePremium  bool               `bson:"is_lifetime_premium" json:"is_lifetime_premium"`
+	IsBanned           bool               `bson:"is_banned" json:"is_banned"`
 	MembershipType     int                `bson:"membership_type" json:"membership_type"` //0 Basic, 1 Premium 2 Premium Supporter
 	IsOAuthUser        bool               `bson:"is_oauth" json:"is_oauth"`
 	OAuthType          *int               `bson:"oauth_type" json:"oauth_type"`
 	RefreshToken       *string            `bson:"refresh_token" json:"-"`
 	FCMToken           string             `bson:"fcm_token" json:"fcm_token"`
-	AppNotification    bool               `bson:"app_notification" json:"app_notification"`
-	MailNotification   bool               `bson:"mail_notification" json:"mail_notification"`
+	CanChangeUsername  bool               `bson:"can_change_username" json:"can_change_username"`
+	AppNotification    Notification       `bson:"app_notification" json:"app_notification"`
+	MailNotification   Notification       `bson:"mail_notification" json:"mail_notification"`
+}
+
+type Notification struct {
+	FriendRequest bool `bson:"friend_request" json:"friend_request"`
+	ReviewLikes   bool `bson:"review_likes" json:"review_likes"`
 }
 
 // Create
 func createUserObject(emailAddress, username, password, fcmToken, image string) *User {
 	return &User{
-		Username:         username,
-		EmailAddress:     emailAddress,
-		Image:            image,
-		Password:         utils.HashPassword(password),
-		CreatedAt:        time.Now().UTC(),
-		UpdatedAt:        time.Now().UTC(),
-		IsPremium:        false,
-		MembershipType:   0,
-		IsOAuthUser:      false,
-		AppNotification:  true,
-		MailNotification: true,
-		FCMToken:         fcmToken,
+		Username:          username,
+		EmailAddress:      emailAddress,
+		Image:             image,
+		Password:          utils.HashPassword(password),
+		CreatedAt:         time.Now().UTC(),
+		UpdatedAt:         time.Now().UTC(),
+		Friends:           []string{},
+		IsPremium:         false,
+		IsLifetimePremium: false,
+		MembershipType:    0,
+		IsOAuthUser:       false,
+		IsBanned:          false,
+		CanChangeUsername: false,
+		AppNotification:   createNotificationObject(true, true),
+		MailNotification:  createNotificationObject(false, false),
+		FCMToken:          fcmToken,
 	}
 }
 
 func createOAuthUserObject(emailAddress, username, fcmToken, image string, refreshToken *string, oAuthType int) *User {
 	return &User{
-		EmailAddress:     emailAddress,
-		Username:         username,
-		Image:            image,
-		CreatedAt:        time.Now().UTC(),
-		UpdatedAt:        time.Now().UTC(),
-		IsPremium:        false,
-		MembershipType:   0,
-		IsOAuthUser:      true,
-		AppNotification:  true,
-		MailNotification: false,
-		OAuthType:        &oAuthType,
-		RefreshToken:     refreshToken,
-		FCMToken:         fcmToken,
+		EmailAddress:      emailAddress,
+		Username:          username,
+		Image:             image,
+		CreatedAt:         time.Now().UTC(),
+		UpdatedAt:         time.Now().UTC(),
+		Friends:           []string{},
+		IsPremium:         false,
+		IsLifetimePremium: false,
+		MembershipType:    0,
+		IsOAuthUser:       true,
+		IsBanned:          false,
+		CanChangeUsername: true,
+		AppNotification:   createNotificationObject(true, true),
+		MailNotification:  createNotificationObject(false, false),
+		OAuthType:         &oAuthType,
+		RefreshToken:      refreshToken,
+		FCMToken:          fcmToken,
+	}
+}
+
+func createNotificationObject(friendRequest, reviewLikes bool) Notification {
+	return Notification{
+		FriendRequest: friendRequest,
+		ReviewLikes:   reviewLikes,
 	}
 }
 
@@ -192,6 +216,29 @@ func (userModel *UserModel) DeleteUserByID(uid string) error {
 }
 
 // Find
+func (userModel *UserModel) IsFriendsWith(userId, uid string) (bool, error) {
+	objectUserId, _ := primitive.ObjectIDFromHex(userId)
+
+	count, err := userModel.Collection.CountDocuments(context.TODO(), bson.M{
+		"_id": objectUserId,
+		"friends": bson.M{
+			"$elemMatch": bson.M{
+				"$eq": uid,
+			},
+		},
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"user_id": userId,
+			"uid":     uid,
+		}).Error("failed to check friend status: ", err)
+
+		return false, fmt.Errorf("Failed to check friend status.")
+	}
+
+	return count > 0, nil
+}
+
 func (userModel *UserModel) FindUserByEmail(emailAddress string) (User, error) {
 	result := userModel.Collection.FindOne(context.TODO(), bson.M{
 		"email": emailAddress,
@@ -204,6 +251,23 @@ func (userModel *UserModel) FindUserByEmail(emailAddress string) (User, error) {
 		}).Error("failed to find user by email: ", err)
 
 		return User{}, fmt.Errorf("Failed to find user by email.")
+	}
+
+	return user, nil
+}
+
+func (userModel *UserModel) FindUserByUsername(username string) (User, error) {
+	result := userModel.Collection.FindOne(context.TODO(), bson.M{
+		"username": username,
+	})
+
+	var user User
+	if err := result.Decode(&user); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"username": username,
+		}).Error("failed to find user by username: ", err)
+
+		return User{}, fmt.Errorf("Failed to find user by username.")
 	}
 
 	return user, nil

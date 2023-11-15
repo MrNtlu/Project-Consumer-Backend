@@ -32,12 +32,15 @@ func userRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongoDB
 			user.GET("/basic", userController.GetBasicUserInfo)
 			user.GET("/info", userController.GetUserInfo)
 			user.GET("/profile", userController.GetUserInfoFromUsername)
+			user.GET("/requests", userController.GetFriendRequests)
 			user.DELETE("/delete", userController.DeleteUser)
 			user.PATCH("/password", userController.ChangePassword)
 			user.PATCH("/image", userController.UpdateUser)
 			user.PATCH("/notification", userController.ChangeNotificationPreference)
 			user.PATCH("/token", userController.UpdateFCMToken)
 			user.PATCH("/membership", userController.ChangeUserMembership)
+			user.PATCH("/username", userController.ChangeUsername)
+			user.POST("/friend", userController.SendFriendRequest)
 		}
 	}
 }

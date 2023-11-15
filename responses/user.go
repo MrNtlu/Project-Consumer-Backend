@@ -3,8 +3,9 @@ package responses
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type IsUserPremium struct {
-	IsPremium      bool `bson:"is_premium" json:"is_premium"`
-	MembershipType int  `bson:"membership_type" json:"membership_type"`
+	IsPremium         bool `bson:"is_premium" json:"is_premium"`
+	IsLifetimePremium bool `bson:"is_lifetime_premium" json:"is_lifetime_premium"`
+	MembershipType    int  `bson:"membership_type" json:"membership_type"`
 }
 
 type UserLevel struct {
@@ -27,6 +28,9 @@ type UserInfo struct {
 	Username             string              `bson:"username" json:"username"`
 	EmailAddress         string              `bson:"email" json:"email"`
 	IsPremium            bool                `bson:"is_premium" json:"is_premium"`
+	IsFriendRequestSent  bool                `bson:"is_friend_request_sent" json:"is_friend_request_sent"`
+	IsFriendsWith        bool                `bson:"is_friends_with" json:"is_friends_with"`
+	FriendRequestCount   int64               `bson:"friend_request_count" json:"friend_request_count"`
 	MembershipType       int                 `bson:"membership_type" json:"membership_type"`
 	Image                string              `bson:"image" json:"image"`
 	FCMToken             string              `bson:"fcm_token" json:"fcm_token"`

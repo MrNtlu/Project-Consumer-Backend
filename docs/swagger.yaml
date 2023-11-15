@@ -83,6 +83,13 @@ definitions:
       user_id:
         type: string
     type: object
+  models.Notification:
+    properties:
+      friend_request:
+        type: boolean
+      review_likes:
+        type: boolean
+    type: object
   models.TVSeriesWatchList:
     properties:
       _id:
@@ -111,19 +118,29 @@ definitions:
       _id:
         type: string
       app_notification:
+        $ref: '#/definitions/models.Notification'
+      can_change_username:
         type: boolean
       email:
         type: string
       fcm_token:
         type: string
+      friends:
+        items:
+          type: string
+        type: array
       image:
         type: string
+      is_banned:
+        type: boolean
+      is_lifetime_premium:
+        type: boolean
       is_oauth:
         type: boolean
       is_premium:
         type: boolean
       mail_notification:
-        type: boolean
+        $ref: '#/definitions/models.Notification'
       membership_type:
         description: 0 Basic, 1 Premium 2 Premium Supporter
         type: integer
@@ -155,13 +172,13 @@ definitions:
     type: object
   requests.ChangeNotification:
     properties:
-      app_notification:
+      friend_request:
         type: boolean
-      mail_notification:
+      review_likes:
         type: boolean
     required:
-    - app_notification
-    - mail_notification
+    - friend_request
+    - review_likes
     type: object
   requests.ChangePassword:
     properties:
@@ -174,6 +191,14 @@ definitions:
     required:
     - new_password
     - old_password
+    type: object
+  requests.ChangeUsername:
+    properties:
+      username:
+        minLength: 3
+        type: string
+    required:
+    - username
     type: object
   requests.CreateAnimeList:
     properties:
@@ -424,6 +449,7 @@ definitions:
         minLength: 6
         type: string
       username:
+        minLength: 3
         type: string
     required:
     - email_address
@@ -440,6 +466,13 @@ definitions:
     required:
     - page
     - search
+    type: object
+  requests.SendFriendRequest:
+    properties:
+      username:
+        type: string
+    required:
+    - username
     type: object
   requests.SortByYearSeasonAnime:
     properties:
@@ -1188,6 +1221,19 @@ definitions:
         type: array
       day_of_week:
         type: integer
+    type: object
+  responses.FriendRequest:
+    properties:
+      _id:
+        type: string
+      created_at:
+        type: string
+      is_ignored:
+        type: boolean
+      receiver:
+        $ref: '#/definitions/responses.Author'
+      sender:
+        $ref: '#/definitions/responses.Author'
     type: object
   responses.Game:
     properties:
@@ -2094,12 +2140,18 @@ definitions:
         type: string
       fcm_token:
         type: string
+      friend_request_count:
+        type: integer
       game_count:
         type: integer
       game_total_hours_played:
         type: integer
       image:
         type: string
+      is_friend_request_sent:
+        type: boolean
+      is_friends_with:
+        type: boolean
       is_premium:
         type: boolean
       legend_content:
@@ -3969,6 +4021,64 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Change User Password
+      tags:
+      - user
+  /user/request:
+    post:
+      consumes:
+      - application/json
+      description: Creates user request object and send notification
+      parameters:
+      - description: Send Friend Request
+        in: body
+        name: sendfriendrequest
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SendFriendRequest'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Send Friend Request
+      tags:
+      - user
+  /user/requests:
+    get:
+      consumes:
+      - application/json
+      description: Returns friend requests by user id
+      parameters:
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Friend Request
+          schema:
+            items:
+              $ref: '#/definitions/responses.FriendRequest'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: Get friend requests
       tags:
       - user
   /user/token:

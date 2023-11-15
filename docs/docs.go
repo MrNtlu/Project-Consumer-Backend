@@ -2799,6 +2799,98 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/request": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Creates user request object and send notification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Send Friend Request",
+                "parameters": [
+                    {
+                        "description": "Send Friend Request",
+                        "name": "sendfriendrequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SendFriendRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/requests": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns friend requests by user id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get friend requests",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Friend Request",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.FriendRequest"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/user/token": {
             "patch": {
                 "security": [
@@ -2979,6 +3071,17 @@ const docTemplate = `{
                 }
             }
         },
+        "models.Notification": {
+            "type": "object",
+            "properties": {
+                "friend_request": {
+                    "type": "boolean"
+                },
+                "review_likes": {
+                    "type": "boolean"
+                }
+            }
+        },
         "models.TVSeriesWatchList": {
             "type": "object",
             "properties": {
@@ -3021,6 +3124,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "app_notification": {
+                    "$ref": "#/definitions/models.Notification"
+                },
+                "can_change_username": {
                     "type": "boolean"
                 },
                 "email": {
@@ -3029,8 +3135,20 @@ const docTemplate = `{
                 "fcm_token": {
                     "type": "string"
                 },
+                "friends": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "image": {
                     "type": "string"
+                },
+                "is_banned": {
+                    "type": "boolean"
+                },
+                "is_lifetime_premium": {
+                    "type": "boolean"
                 },
                 "is_oauth": {
                     "type": "boolean"
@@ -3039,7 +3157,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "mail_notification": {
-                    "type": "boolean"
+                    "$ref": "#/definitions/models.Notification"
                 },
                 "membership_type": {
                     "description": "0 Basic, 1 Premium 2 Premium Supporter",
@@ -3089,14 +3207,14 @@ const docTemplate = `{
         "requests.ChangeNotification": {
             "type": "object",
             "required": [
-                "app_notification",
-                "mail_notification"
+                "friend_request",
+                "review_likes"
             ],
             "properties": {
-                "app_notification": {
+                "friend_request": {
                     "type": "boolean"
                 },
-                "mail_notification": {
+                "review_likes": {
                     "type": "boolean"
                 }
             }
@@ -3115,6 +3233,18 @@ const docTemplate = `{
                 "old_password": {
                     "type": "string",
                     "minLength": 6
+                }
+            }
+        },
+        "requests.ChangeUsername": {
+            "type": "object",
+            "required": [
+                "username"
+            ],
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "minLength": 3
                 }
             }
         },
@@ -3470,7 +3600,8 @@ const docTemplate = `{
                     "minLength": 6
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 3
                 }
             }
         },
@@ -3486,6 +3617,17 @@ const docTemplate = `{
                     "minimum": 1
                 },
                 "search": {
+                    "type": "string"
+                }
+            }
+        },
+        "requests.SendFriendRequest": {
+            "type": "object",
+            "required": [
+                "username"
+            ],
+            "properties": {
+                "username": {
                     "type": "string"
                 }
             }
@@ -4576,6 +4718,26 @@ const docTemplate = `{
                 },
                 "day_of_week": {
                     "type": "integer"
+                }
+            }
+        },
+        "responses.FriendRequest": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "is_ignored": {
+                    "type": "boolean"
+                },
+                "receiver": {
+                    "$ref": "#/definitions/responses.Author"
+                },
+                "sender": {
+                    "$ref": "#/definitions/responses.Author"
                 }
             }
         },
@@ -5952,6 +6114,9 @@ const docTemplate = `{
                 "fcm_token": {
                     "type": "string"
                 },
+                "friend_request_count": {
+                    "type": "integer"
+                },
                 "game_count": {
                     "type": "integer"
                 },
@@ -5960,6 +6125,12 @@ const docTemplate = `{
                 },
                 "image": {
                     "type": "string"
+                },
+                "is_friend_request_sent": {
+                    "type": "boolean"
+                },
+                "is_friends_with": {
+                    "type": "boolean"
                 },
                 "is_premium": {
                     "type": "boolean"
