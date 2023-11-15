@@ -92,7 +92,7 @@ func (friendModel *FriendModel) GetFriendRequests(uid string) ([]responses.Frien
 		"from":         "users",
 		"localField":   "receiver_obj_id",
 		"foreignField": "_id",
-		"as":           "sender",
+		"as":           "receiver",
 	}}
 
 	receiverUnwind := bson.M{"$unwind": bson.M{
@@ -103,6 +103,7 @@ func (friendModel *FriendModel) GetFriendRequests(uid string) ([]responses.Frien
 
 	sort := bson.M{"$sort": bson.M{
 		"is_ignored": -1,
+		"created_at": -1,
 	}}
 
 	cursor, err := friendModel.RequestCollection.Aggregate(context.TODO(), bson.A{

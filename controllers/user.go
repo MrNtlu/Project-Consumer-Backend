@@ -270,6 +270,14 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 			return
 		}
 
+		if userInfo.Username == "" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": errNoUser,
+			})
+
+			return
+		}
+
 		reviews, _, err := reviewsModel.GetReviewsByUserID(&userId, requests.SortReviewByUserID{
 			UserID: userInfo.ID.Hex(),
 			Sort:   "popularity",
@@ -308,6 +316,14 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
+			})
+
+			return
+		}
+
+		if userInfo.Username == "" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": errNoUser,
 			})
 
 			return
