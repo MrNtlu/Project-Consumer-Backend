@@ -186,6 +186,7 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 	userInfo.FriendRequestCount = friendRequestCount
 
 	userInfo.IsFriendRequestSent = false
+	userInfo.IsFriendRequestReceived = false
 	userInfo.IsFriendsWith = false
 	userInfo.AnimeCount = userStats.AnimeCount
 	userInfo.GameCount = userStats.GameCount
@@ -197,6 +198,34 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 	userInfo.GameTotalHoursPlayed = userStats.GameTotalHoursPlayed
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched user info.", "data": userInfo})
+}
+
+// Get Friends
+// @Summary Get friends
+// @Description Returns friends by user id
+// @Tags user
+// @Accept application/json
+// @Produce application/json
+// @Security ApiKeyAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} models.User "User"
+// @Router /user/friends [get]
+func (u *UserController) GetFriends(c *gin.Context) {
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	userModel := models.NewUserModel(u.Database)
+
+	friends, _ := userModel.GetUserFriends(uid)
+
+	var result []models.User
+
+	if friends != nil {
+		result = friends
+	} else {
+		result = []models.User{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": result})
 }
 
 // Get Friend Requests
@@ -310,6 +339,16 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 	}
 	userInfo.IsFriendRequestSent = isFriendRequestSent
 
+	isFriendRequestReceived, err := friendModel.IsFriendRequestReceived(userInfo.ID.Hex(), userId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+	userInfo.IsFriendRequestReceived = isFriendRequestReceived
+
 	userLevel, _ := userModel.GetUserLevel(userInfo.ID.Hex())
 	userInfo.Level = userLevel
 
@@ -420,6 +459,85 @@ func (u *UserController) UpdateUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated image."})
+}
+
+// Answer Friend Request
+// @Summary Answer Friend Request
+// @Description Response friend request object
+// @Tags user
+// @Accept application/json
+// @Produce application/json
+// @Param answerfriendrequest body requests.AnswerFriendRequest true "Answer Friend Request"
+// @Security ApiKeyAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {string} string
+// @Failure 500 {string} string
+// @Router /user/request-answer [post]
+func (u *UserController) AnswerFriendRequest(c *gin.Context) {
+	var data requests.AnswerFriendRequest
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	userModel := models.NewUserModel(u.Database)
+	friendModel := models.NewFriendModel(u.Database)
+
+	friendRequest, err := friendModel.GetFriendRequest(data.ID, uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	if friendRequest.ReceiverID == "" {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": ErrNotFound,
+		})
+
+		return
+	}
+
+	if friendRequest.ReceiverID != uid {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": ErrUnauthorized,
+		})
+
+		return
+	}
+
+	if data.Answer == 0 || data.Answer == 1 {
+		if err := friendModel.DeleteFriendRequest(data.ID, uid); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		if data.Answer == 1 { //Accept
+			userModel.InsertFriend(friendRequest.SenderID, friendRequest.ReceiverID)
+			userModel.InsertFriend(friendRequest.ReceiverID, friendRequest.SenderID)
+
+			c.JSON(http.StatusOK, gin.H{"message": "Successfully accepted friend request."})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "Successfully denied friend request."})
+	} else {
+		if err := friendModel.IgnoreFriendRequest(data.ID, uid); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "Successfully ignored friend request."})
+	}
 }
 
 // Send Friend Request

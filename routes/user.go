@@ -33,6 +33,7 @@ func userRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongoDB
 			user.GET("/info", userController.GetUserInfo)
 			user.GET("/profile", userController.GetUserInfoFromUsername)
 			user.GET("/requests", userController.GetFriendRequests)
+			user.GET("/friends", userController.GetFriends)
 			user.DELETE("/delete", userController.DeleteUser)
 			user.PATCH("/password", userController.ChangePassword)
 			user.PATCH("/image", userController.UpdateUser)
@@ -40,6 +41,7 @@ func userRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongoDB
 			user.PATCH("/token", userController.UpdateFCMToken)
 			user.PATCH("/membership", userController.ChangeUserMembership)
 			user.PATCH("/username", userController.ChangeUsername)
+			user.POST("/request-answer", userController.AnswerFriendRequest)
 			user.POST("/friend", userController.SendFriendRequest)
 		}
 	}

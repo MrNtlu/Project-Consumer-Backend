@@ -149,6 +149,19 @@ definitions:
       username:
         type: string
     type: object
+  requests.AnswerFriendRequest:
+    properties:
+      answer:
+        description: 0 deny, 1 accept, 2 ignore
+        maximum: 2
+        minimum: 0
+        type: integer
+      id:
+        type: string
+    required:
+    - answer
+    - id
+    type: object
   requests.ChangeFCMToken:
     properties:
       fcm_token:
@@ -2148,6 +2161,8 @@ definitions:
         type: integer
       image:
         type: string
+      is_friend_request_received:
+        type: boolean
       is_friend_request_sent:
         type: boolean
       is_friends_with:
@@ -3857,6 +3872,31 @@ paths:
       summary: Will be used when user forgot password
       tags:
       - user
+  /user/friends:
+    get:
+      consumes:
+      - application/json
+      description: Returns friends by user id
+      parameters:
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User
+          schema:
+            items:
+              $ref: '#/definitions/models.User'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: Get friends
+      tags:
+      - user
   /user/image:
     patch:
       consumes:
@@ -4054,6 +4094,39 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Send Friend Request
+      tags:
+      - user
+  /user/request-answer:
+    post:
+      consumes:
+      - application/json
+      description: Response friend request object
+      parameters:
+      - description: Answer Friend Request
+        in: body
+        name: answerfriendrequest
+        required: true
+        schema:
+          $ref: '#/definitions/requests.AnswerFriendRequest'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Answer Friend Request
       tags:
       - user
   /user/requests:

@@ -147,6 +147,26 @@ func (userModel *UserModel) CreateOAuthUser(emailAddress, username, fcmToken, im
 }
 
 // Update
+func (userModel *UserModel) InsertFriend(userId, newFriendID string) error {
+	objectUserID, _ := primitive.ObjectIDFromHex(userId)
+
+	if _, err := userModel.Collection.UpdateOne(context.TODO(), bson.M{"_id": objectUserID}, bson.M{
+		"$push": bson.M{
+			"friends": newFriendID,
+		},
+	},
+	); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"new_friend_id": newFriendID,
+			"user_id":       userId,
+		}).Error("failed to insert friend: ", err)
+
+		return fmt.Errorf("Failed to add friend.")
+	}
+
+	return nil
+}
+
 func (userModel *UserModel) UpdateUser(user User) error {
 	user.UpdatedAt = time.Now().UTC()
 
@@ -635,6 +655,68 @@ func (userModel *UserModel) GetUserLevel(uid string) (int, error) {
 	}
 
 	return 1, nil
+}
+
+func (userModel *UserModel) GetUserFriends(uid string) ([]User, error) {
+	objectID, _ := primitive.ObjectIDFromHex(uid)
+
+	match := bson.M{"$match": bson.M{
+		"_id": objectID,
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$friends",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"username": 1,
+		"image":    1,
+		"friends": bson.M{
+			"$toObjectId": "$friends",
+		},
+		"email": 1,
+	}}
+
+	lookup := bson.M{"$lookup": bson.M{
+		"from":         "users",
+		"localField":   "friends",
+		"foreignField": "_id",
+		"as":           "friend",
+	}}
+
+	unwindFriend := bson.M{"$unwind": bson.M{
+		"path":                       "$friend",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	replaceRoot := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$friend",
+	}}
+
+	cursor, err := userModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, unwind, project, lookup, unwindFriend, replaceRoot,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to aggregate friends: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate friends.")
+	}
+
+	var friends []User
+	if err = cursor.All(context.TODO(), &friends); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to decode friends: ", err)
+
+		return nil, fmt.Errorf("Failed to decode friends.")
+	}
+
+	return friends, nil
 }
 
 func (userModel *UserModel) GetUserInfo(username, uid string, isUserName bool) (responses.UserInfo, error) {

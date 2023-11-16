@@ -2539,6 +2539,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/friends": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns friends by user id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get friends",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.User"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/user/image": {
             "patch": {
                 "security": [
@@ -2825,6 +2865,58 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/requests.SendFriendRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/request-answer": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Response friend request object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Answer Friend Request",
+                "parameters": [
+                    {
+                        "description": "Answer Friend Request",
+                        "name": "answerfriendrequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.AnswerFriendRequest"
                         }
                     },
                     {
@@ -3167,6 +3259,24 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "requests.AnswerFriendRequest": {
+            "type": "object",
+            "required": [
+                "answer",
+                "id"
+            ],
+            "properties": {
+                "answer": {
+                    "description": "0 deny, 1 accept, 2 ignore",
+                    "type": "integer",
+                    "maximum": 2,
+                    "minimum": 0
+                },
+                "id": {
                     "type": "string"
                 }
             }
@@ -6125,6 +6235,9 @@ const docTemplate = `{
                 },
                 "image": {
                     "type": "string"
+                },
+                "is_friend_request_received": {
+                    "type": "boolean"
                 },
                 "is_friend_request_sent": {
                     "type": "boolean"

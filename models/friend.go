@@ -61,9 +61,68 @@ func (friendModel *FriendModel) CreateFriendRequest(senderId, senderUsername, re
 	return nil
 }
 
+func (friendModel *FriendModel) GetFriendRequest(id, uid string) (FriendRequest, error) {
+	objectID, _ := primitive.ObjectIDFromHex(id)
+
+	result := friendModel.RequestCollection.FindOne(context.TODO(), bson.M{
+		"_id":         objectID,
+		"receiver_id": uid,
+	})
+
+	var friendRequest FriendRequest
+	if err := result.Decode(&friendRequest); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": id,
+		}).Error("failed to get friend request: ", err)
+
+		return FriendRequest{}, fmt.Errorf("Failed to get friend request.")
+	}
+
+	return friendRequest, nil
+}
+
+func (friendModel *FriendModel) IgnoreFriendRequest(id, uid string) error {
+	objectID, _ := primitive.ObjectIDFromHex(id)
+
+	_, err := friendModel.RequestCollection.UpdateOne(context.TODO(), bson.M{
+		"_id":         objectID,
+		"receiver_id": uid,
+	}, bson.M{"$set": bson.M{
+		"is_ignored": true,
+	}})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": id,
+		}).Error("failed to ignore friend request: ", err)
+
+		return fmt.Errorf("Failed to ignore friend request.")
+	}
+
+	return nil
+}
+
+func (friendModel *FriendModel) DeleteFriendRequest(id, uid string) error {
+	objectID, _ := primitive.ObjectIDFromHex(id)
+
+	_, err := friendModel.RequestCollection.DeleteOne(context.TODO(), bson.M{
+		"_id":         objectID,
+		"receiver_id": uid,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": id,
+		}).Error("failed to delete friend request: ", err)
+
+		return fmt.Errorf("Failed to delete friend request.")
+	}
+
+	return nil
+}
+
 func (friendModel *FriendModel) GetFriendRequests(uid string) ([]responses.FriendRequest, error) {
 	match := bson.M{"$match": bson.M{
 		"receiver_id": uid,
+		"is_ignored":  false,
 	}}
 
 	set := bson.M{"$set": bson.M{
@@ -146,9 +205,27 @@ func (friendModel *FriendModel) IsFriendRequestSent(senderId, receiverId string)
 	return count > 0, nil
 }
 
+func (friendModel *FriendModel) IsFriendRequestReceived(senderId, receiverId string) (bool, error) {
+	count, err := friendModel.RequestCollection.CountDocuments(context.TODO(), bson.M{
+		"sender_id":   senderId,
+		"receiver_id": receiverId,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"sender_id":   senderId,
+			"receiver_id": receiverId,
+		}).Error("failed to check received friend request status: ", err)
+
+		return false, fmt.Errorf("Failed to check received friend request.")
+	}
+
+	return count > 0, nil
+}
+
 func (friendModel *FriendModel) FriendRequestCount(receiverId string) (int64, error) {
 	count, err := friendModel.RequestCollection.CountDocuments(context.TODO(), bson.M{
 		"receiver_id": receiverId,
+		"is_ignored":  false,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
