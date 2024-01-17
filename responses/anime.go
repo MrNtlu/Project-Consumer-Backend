@@ -6,6 +6,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type PreviewAnime struct {
+	ID            primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	TitleOriginal string             `bson:"title_original" json:"title_original"`
+	TitleEn       string             `bson:"title_en" json:"title_en"`
+	TitleJP       string             `bson:"title_jp" json:"title_jp"`
+	ImageURL      string             `bson:"image_url" json:"image_url"`
+	MalID         int64              `bson:"mal_id" json:"mal_id"`
+}
+
 type DayOfWeekAnime struct {
 	Data      []Anime `bson:"data" json:"data"`
 	DayOfWeek int16   `bson:"day_of_week" json:"day_of_week"`

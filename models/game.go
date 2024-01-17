@@ -14,6 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type GameModel struct {
@@ -31,6 +32,110 @@ const (
 	gamePaginationLimit         = 40
 	gameSearchLimit             = 50
 )
+
+func (gameModel *GameModel) GetPreviewUpcomingGames() ([]responses.PreviewGame, error) {
+	match := bson.M{"$match": bson.M{
+		"$or": bson.A{
+			bson.M{"tba": true},
+			bson.M{"release_date": bson.M{"$gte": utils.GetCurrentDate()}},
+		},
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"has_release_date": bson.M{
+			"$and": bson.A{
+				bson.M{
+					"$ne": bson.A{"$release_date", nil},
+				},
+				bson.M{
+					"$ne": bson.A{"$release_date", ""},
+				},
+			},
+		},
+	}}
+
+	addPopularityFields := bson.M{"$addFields": bson.M{
+		"popularity": bson.M{
+			"$multiply": bson.A{
+				"$rawg_rating", "$rawg_rating_count",
+			},
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"has_release_date": -1,
+		"popularity":       -1,
+	}}
+
+	limit := bson.D{{"$limit", gameUpcomingPaginationLimit}}
+
+	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, addFields, addPopularityFields, sort, limit,
+	})
+	if err != nil {
+		logrus.Error("failed to aggregate upcoming preview games: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate upcoming preview games.")
+	}
+
+	var results []responses.PreviewGame
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		logrus.Error("failed to decode upcoming games: ", err)
+
+		return nil, fmt.Errorf("Failed to decode preview upcoming games.")
+	}
+
+	return results, nil
+}
+
+func (gameModel *GameModel) GetPreviewTopGames() ([]responses.PreviewGame, error) {
+	filter := bson.D{}
+	opts := options.Find().SetSort(bson.M{"metacritic_score": -1}).SetLimit(gamePaginationLimit)
+
+	cursor, err := gameModel.Collection.Find(context.TODO(), filter, opts)
+
+	var results []responses.PreviewGame
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		logrus.Error("failed to decode top games: ", err)
+
+		return nil, fmt.Errorf("Failed to decode preview top games.")
+	}
+
+	return results, nil
+}
+
+func (gameModel *GameModel) GetPreviewPopularGames() ([]responses.PreviewGame, error) {
+	addFields := bson.M{"$addFields": bson.M{
+		"popularity": bson.M{
+			"$multiply": bson.A{
+				"$rawg_rating", "$rawg_rating_count",
+			},
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"popularity": -1,
+	}}
+
+	limit := bson.D{{"$limit", gamePaginationLimit}}
+	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
+		addFields, sort, limit,
+	})
+	if err != nil {
+		logrus.Error("failed to aggregate popular preview games: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate popular preview games.")
+	}
+
+	var results []responses.PreviewGame
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		logrus.Error("failed to decode popular games: ", err)
+
+		return nil, fmt.Errorf("Failed to decode preview popular games.")
+	}
+
+	return results, nil
+}
 
 func (gameModel *GameModel) GetGamesFromOpenAI(uid string, games []string) ([]responses.AISuggestion, error) {
 	match := bson.M{"$match": bson.M{

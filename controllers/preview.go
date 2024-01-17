@@ -3,7 +3,6 @@ package controllers
 import (
 	"app/db"
 	"app/models"
-	"app/requests"
 	"app/responses"
 	"net/http"
 	"time"
@@ -27,10 +26,10 @@ func NewPreviewController(mongoDB *db.MongoDB) PreviewController {
 // @Tags preview
 // @Accept application/json
 // @Produce application/json
-// @Success 200 {array} responses.Movie
-// @Success 200 {array} responses.Anime
-// @Success 200 {array} responses.TVSeries
-// @Success 200 {array} responses.Game
+// @Success 200 {array} responses.PreviewMovie
+// @Success 200 {array} responses.PreviewAnime
+// @Success 200 {array} responses.PreviewTVSeries
+// @Success 200 {array} responses.PreviewGame
 // @Failure 500 {string} string
 // @Router /preview [get]
 func (pr *PreviewController) GetHomePreview(c *gin.Context) {
@@ -39,7 +38,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 	animeModel := models.NewAnimeModel(pr.Database)
 	gameModel := models.NewGameModel(pr.Database)
 
-	upcomingMovies, _, err := movieModel.GetUpcomingMoviesBySort(requests.Pagination{Page: 1})
+	upcomingMovies, err := movieModel.GetUpcomingPreviewMovies()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -48,10 +47,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 		return
 	}
 
-	popularMovies, _, err := movieModel.GetMoviesBySortAndFilter(requests.SortFilterMovie{
-		Sort: "popularity",
-		Page: 1,
-	})
+	popularMovies, err := movieModel.GetPopularPreviewMovies()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -60,10 +56,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 		return
 	}
 
-	topMovies, _, err := movieModel.GetMoviesBySortAndFilter(requests.SortFilterMovie{
-		Sort: "top",
-		Page: 1,
-	})
+	topMovies, err := movieModel.GetTopPreviewMovies()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -72,7 +65,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 		return
 	}
 
-	moviesInTheater, _, err := movieModel.GetMoviesInTheater(requests.Pagination{Page: 1})
+	moviesInTheater, err := movieModel.GetInTheaterPreviewMovies()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -83,7 +76,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 
 	// TV Series
 
-	upcomingTVSeries, _, err := tvModel.GetUpcomingTVSeries(requests.Pagination{Page: 1})
+	upcomingTVSeries, err := tvModel.GetUpcomingPreviewTVSeries()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -92,10 +85,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 		return
 	}
 
-	popularTVSeries, _, err := tvModel.GetTVSeriesBySortAndFilter(requests.SortFilterTVSeries{
-		Sort: "popularity",
-		Page: 1,
-	})
+	popularTVSeries, err := tvModel.GetPopularPreviewTVSeries()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -104,10 +94,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 		return
 	}
 
-	topTVSeries, _, err := tvModel.GetTVSeriesBySortAndFilter(requests.SortFilterTVSeries{
-		Sort: "top",
-		Page: 1,
-	})
+	topTVSeries, err := tvModel.GetTopPreviewTVSeries()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -136,7 +123,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 
 	// Anime
 
-	upcomingAnimes, _, err := animeModel.GetUpcomingAnimesBySort(requests.Pagination{Page: 1})
+	upcomingAnimes, err := animeModel.GetPreviewUpcomingAnimes()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -145,10 +132,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 		return
 	}
 
-	topRatedAnimes, _, err := animeModel.GetAnimesBySortAndFilter(requests.SortFilterAnime{
-		Sort: "top",
-		Page: 1,
-	})
+	topRatedAnimes, err := animeModel.GetPreviewTopAnimes()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -157,10 +141,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 		return
 	}
 
-	popularAnimes, _, err := animeModel.GetAnimesBySortAndFilter(requests.SortFilterAnime{
-		Sort: "popularity",
-		Page: 1,
-	})
+	popularAnimes, err := animeModel.GetPreviewPopularAnimes()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -187,7 +168,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 
 	// Game
 
-	upcomingGames, _, err := gameModel.GetUpcomingGamesBySort(requests.Pagination{Page: 1})
+	upcomingGames, err := gameModel.GetPreviewUpcomingGames()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -196,10 +177,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 		return
 	}
 
-	topRatedGames, _, err := gameModel.GetGamesByFilterAndSort(requests.SortFilterGame{
-		Sort: "top",
-		Page: 1,
-	})
+	topRatedGames, err := gameModel.GetPreviewTopGames()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -208,10 +186,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 		return
 	}
 
-	popularGames, _, err := gameModel.GetGamesByFilterAndSort(requests.SortFilterGame{
-		Sort: "popularity",
-		Page: 1,
-	})
+	popularGames, err := gameModel.GetPreviewPopularGames()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

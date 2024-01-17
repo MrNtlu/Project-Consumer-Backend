@@ -78,6 +78,13 @@ func main() {
 		ctx.Abort()
 	}))
 
+	// config := cors.DefaultConfig()
+	// config.AllowOrigins = []string{"http://localhost:3000", "http://localhost:8080"}
+	// config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	// config.AllowHeaders = []string{"*"}
+	// config.AllowCredentials = true
+	// router.Use(cors.New(config))
+
 	routes.SetupRoutes(router, jwtHandler, mongoDB)
 
 	port := os.Getenv("PORT")

@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type TVModel struct {
@@ -30,6 +31,100 @@ const (
 	tvSeriesSearchLimit             = 50
 	tvSeriesPaginationLimit         = 40
 )
+
+func (tvModel *TVModel) GetUpcomingPreviewTVSeries() ([]responses.PreviewTVSeries, error) {
+	match := bson.M{
+		"status": "In Production",
+	}
+
+	opts := options.Find().SetSort(bson.M{"tmdb_popularity": -1}).SetLimit(tvSeriesUpcomingPaginationLimit)
+
+	cursor, err := tvModel.Collection.Find(context.TODO(), match, opts)
+
+	var results []responses.PreviewTVSeries
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		logrus.Error("failed to decode preview upcoming: ", err)
+
+		return nil, fmt.Errorf("Failed to decode preview tv series.")
+	}
+
+	return results, nil
+}
+
+func (tvModel *TVModel) GetPopularPreviewTVSeries() ([]responses.PreviewTVSeries, error) {
+	set := bson.M{"$set": bson.M{
+		"tmdb_popularity": bson.M{
+			"$multiply": bson.A{
+				bson.M{
+					"$sqrt": bson.M{
+						"$multiply": bson.A{
+							"$tmdb_vote", "$tmdb_vote_count",
+						},
+					},
+				},
+				"$tmdb_popularity",
+			},
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"tmdb_popularity": -1,
+	}}
+
+	limit := bson.D{{"$limit", tvSeriesPaginationLimit}}
+
+	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
+		set, sort, limit,
+	})
+	if err != nil {
+		logrus.Error("failed to aggregate popular preview tv: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate preview tv series.")
+	}
+
+	var results []responses.PreviewTVSeries
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		logrus.Error("failed to decode preview upcoming: ", err)
+
+		return nil, fmt.Errorf("Failed to decode preview tv series.")
+	}
+
+	return results, nil
+}
+
+func (tvModel *TVModel) GetTopPreviewTVSeries() ([]responses.PreviewTVSeries, error) {
+	addFields := bson.M{"$addFields": bson.M{
+		"top_rated": bson.M{
+			"$multiply": bson.A{
+				"$tmdb_vote", "$tmdb_vote_count",
+			},
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"top_rated": -1,
+	}}
+
+	limit := bson.D{{"$limit", tvSeriesPaginationLimit}}
+
+	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
+		addFields, sort, limit,
+	})
+	if err != nil {
+		logrus.Error("failed to aggregate popular preview tv: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate preview tv series.")
+	}
+
+	var results []responses.PreviewTVSeries
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		logrus.Error("failed to decode preview upcoming: ", err)
+
+		return nil, fmt.Errorf("Failed to decode preview tv series.")
+	}
+
+	return results, nil
+}
 
 func (tvModel *TVModel) GetTVSeriesFromOpenAI(uid string, tvSeries []string) ([]responses.AISuggestion, error) {
 	match := bson.M{"$match": bson.M{

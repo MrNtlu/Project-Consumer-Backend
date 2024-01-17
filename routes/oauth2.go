@@ -14,6 +14,6 @@ func oauth2Router(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongo
 	oauth := router.Group("/oauth")
 	{
 		oauth.POST("/google", OAuth2Controller.OAuth2GoogleLogin(jwtToken))
-		// oauth.POST("/apple", OAuth2Controller.OAuth2AppleLogin(jwtToken))
+		oauth.POST("/apple", OAuth2Controller.OAuth2AppleLogin(jwtToken))
 	}
 }

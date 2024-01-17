@@ -47,7 +47,7 @@ type User struct {
 	IsBanned           bool               `bson:"is_banned" json:"is_banned"`
 	MembershipType     int                `bson:"membership_type" json:"membership_type"` //0 Basic, 1 Premium 2 Premium Supporter
 	IsOAuthUser        bool               `bson:"is_oauth" json:"is_oauth"`
-	OAuthType          *int               `bson:"oauth_type" json:"oauth_type"`
+	OAuthType          *int               `bson:"oauth_type" json:"oauth_type"` //0 google, 1 apple
 	RefreshToken       *string            `bson:"refresh_token" json:"-"`
 	FCMToken           string             `bson:"fcm_token" json:"fcm_token"`
 	CanChangeUsername  bool               `bson:"can_change_username" json:"can_change_username"`

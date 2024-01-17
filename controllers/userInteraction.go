@@ -257,16 +257,30 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 
 		animeList := userListModel.GetAnimeListByUserIdAndAnimeId(uid, consumeLater.ContentID)
 
+		var episodes int64
+		if anime.Episodes != nil {
+			episodes = *anime.Episodes
+		} else {
+			episodes = 0
+		}
+
 		if animeList.UserID != "" {
 			timesFinished = animeList.TimesFinished + 1
+
+			var score float32
+			if data.Score == nil && animeList.Score != nil {
+				score = *animeList.Score
+			} else {
+				score = *data.Score
+			}
 
 			if _, err := userListModel.UpdateAnimeListByID(animeList, requests.UpdateAnimeList{
 				ID:              consumeLater.ContentID,
 				IsUpdatingScore: true,
-				Score:           data.Score,
+				Score:           &score,
 				TimesFinished:   &timesFinished,
 				Status:          &status,
-				WatchedEpisodes: anime.Episodes,
+				WatchedEpisodes: &episodes,
 			}); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": err.Error(),
@@ -276,11 +290,12 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 			}
 		} else {
 			if _, err = userListModel.CreateAnimeList(uid, requests.CreateAnimeList{
-				AnimeID:       consumeLater.ContentID,
-				AnimeMALID:    anime.MalID,
-				Status:        status,
-				TimesFinished: &timesFinished,
-				Score:         data.Score,
+				AnimeID:         consumeLater.ContentID,
+				AnimeMALID:      anime.MalID,
+				Status:          status,
+				TimesFinished:   &timesFinished,
+				WatchedEpisodes: &episodes,
+				Score:           data.Score,
 			}, anime); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": err.Error(),
@@ -339,10 +354,17 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 		if gameList.UserID != "" {
 			timesFinished = gameList.TimesFinished + 1
 
+			var score float32
+			if data.Score == nil && gameList.Score != nil {
+				score = *gameList.Score
+			} else {
+				score = *data.Score
+			}
+
 			if _, err := userListModel.UpdateGameListByID(gameList, requests.UpdateGameList{
 				ID:              consumeLater.ContentID,
 				IsUpdatingScore: true,
-				Score:           data.Score,
+				Score:           &score,
 				TimesFinished:   &timesFinished,
 				Status:          &status,
 			}); err != nil {
@@ -418,10 +440,17 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 		if movieList.UserID != "" {
 			timesFinished = movieList.TimesFinished + 1
 
+			var score float32
+			if data.Score == nil && movieList.Score != nil {
+				score = *movieList.Score
+			} else {
+				score = *data.Score
+			}
+
 			if _, err := userListModel.UpdateMovieListByID(movieList, requests.UpdateMovieList{
 				ID:              consumeLater.ContentID,
 				IsUpdatingScore: true,
-				Score:           data.Score,
+				Score:           &score,
 				TimesFinished:   &timesFinished,
 				Status:          &status,
 			}); err != nil {
@@ -492,17 +521,27 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 
 		tvList := userListModel.GetTVSeriesListByUserIdAndTVId(uid, consumeLater.ContentID)
 
+		episodes := tvSeries.TotalEpisodes
+		seasons := tvSeries.TotalSeasons
+
 		if tvList.UserID != "" {
 			timesFinished = tvList.TimesFinished + 1
+
+			var score float32
+			if data.Score == nil && tvList.Score != nil {
+				score = *tvList.Score
+			} else {
+				score = *data.Score
+			}
 
 			if _, err := userListModel.UpdateTVSeriesListByID(tvList, requests.UpdateTVSeriesList{
 				ID:              consumeLater.ContentID,
 				IsUpdatingScore: true,
-				Score:           data.Score,
+				Score:           &score,
 				TimesFinished:   &timesFinished,
 				Status:          &status,
-				WatchedEpisodes: &tvSeries.TotalEpisodes,
-				WatchedSeasons:  &tvSeries.TotalSeasons,
+				WatchedEpisodes: &episodes,
+				WatchedSeasons:  &seasons,
 			}); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": err.Error(),
@@ -512,11 +551,13 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 			}
 		} else {
 			if _, err = userListModel.CreateTVSeriesWatchList(uid, requests.CreateTVSeriesWatchList{
-				TvID:          consumeLater.ContentID,
-				TvTmdbID:      tvSeries.TmdbID,
-				Status:        "finished",
-				TimesFinished: &timesFinished,
-				Score:         data.Score,
+				TvID:            consumeLater.ContentID,
+				TvTmdbID:        tvSeries.TmdbID,
+				Status:          "finished",
+				TimesFinished:   &timesFinished,
+				WatchedEpisodes: &episodes,
+				WatchedSeasons:  &seasons,
+				Score:           data.Score,
 			}, tvSeries); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": err.Error(),

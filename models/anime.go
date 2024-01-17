@@ -15,6 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type AnimeModel struct {
@@ -32,6 +33,105 @@ const (
 	animeSearchLimit             = 50
 	animePaginationLimit         = 40
 )
+
+func (animeModel *AnimeModel) GetPreviewUpcomingAnimes() ([]responses.PreviewAnime, error) {
+	match := bson.M{"$match": bson.M{
+		"is_airing": false,
+		"$or": bson.A{
+			bson.M{"status": "Not yet aired"},
+			bson.M{"aired.from": bson.M{"$gte": utils.GetCurrentDate()}},
+		},
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"has_year": bson.M{
+			"$ne": bson.A{"$year", nil},
+		},
+	}}
+
+	addPopularityFields := bson.M{"$addFields": bson.M{
+		"popularity": bson.M{
+			"$multiply": bson.A{
+				"$mal_score", "$mal_scored_by",
+			},
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"has_year":   -1,
+		"popularity": -1,
+	}}
+
+	limit := bson.D{{"$limit", animeUpcomingPaginationLimit}}
+
+	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, addFields, addPopularityFields, sort, limit,
+	})
+	if err != nil {
+		logrus.Error("failed to aggregate preview upcoming anime: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate preview upcoming animes.")
+	}
+
+	var results []responses.PreviewAnime
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		logrus.Error("failed to decode preview upcoming animes: ", err)
+
+		return nil, fmt.Errorf("Failed to decode preview upcoming animes.")
+	}
+
+	return results, nil
+}
+
+func (animeModel *AnimeModel) GetPreviewPopularAnimes() ([]responses.PreviewAnime, error) {
+	addFields := bson.M{"$addFields": bson.M{
+		"popularity": bson.M{
+			"$multiply": bson.A{
+				"$mal_score", "$mal_scored_by",
+			},
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"popularity": -1,
+	}}
+
+	limit := bson.D{{"$limit", animePaginationLimit}}
+
+	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
+		addFields, sort, limit,
+	})
+	if err != nil {
+		logrus.Error("failed to aggregate popular preview anime: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate preview popular animes.")
+	}
+
+	var results []responses.PreviewAnime
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		logrus.Error("failed to decode preview popular animes: ", err)
+
+		return nil, fmt.Errorf("Failed to decode preview popular animes.")
+	}
+
+	return results, nil
+}
+
+func (animeModel *AnimeModel) GetPreviewTopAnimes() ([]responses.PreviewAnime, error) {
+	filter := bson.D{}
+	opts := options.Find().SetSort(bson.M{"mal_score": -1}).SetLimit(animePaginationLimit)
+
+	cursor, err := animeModel.Collection.Find(context.TODO(), filter, opts)
+
+	var results []responses.PreviewAnime
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		logrus.Error("failed to decode preview top animes: ", err)
+
+		return nil, fmt.Errorf("Failed to decode preview top animes.")
+	}
+
+	return results, nil
+}
 
 func (animeModel *AnimeModel) GetAnimeFromOpenAI(uid string, anime []string) ([]responses.AISuggestion, error) {
 	match := bson.M{"$match": bson.M{

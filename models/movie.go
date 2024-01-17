@@ -14,6 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type MovieModel struct {
@@ -32,7 +33,104 @@ const (
 	moviePaginationLimit         = 40
 )
 
-//TODO Caching with Redis
+func (movieModel *MovieModel) GetUpcomingPreviewMovies() ([]responses.PreviewMovie, error) {
+	match := bson.M{
+		"$or": bson.A{
+			bson.M{
+				"status": bson.M{
+					"$ne": "Released",
+				},
+			},
+			bson.M{"release_date": bson.M{"$gte": utils.GetCurrentDate()}},
+		},
+	}
+
+	opts := options.Find().SetSort(bson.M{"tmdb_popularity": -1}).SetLimit(movieUpcomingPaginationLimit)
+
+	cursor, err := movieModel.Collection.Find(context.TODO(), match, opts)
+
+	var results []responses.PreviewMovie
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		logrus.Error("failed to decode preview upcoming: ", err)
+
+		return nil, fmt.Errorf("Failed to decode preview upcoming movies.")
+	}
+
+	return results, nil
+}
+
+func (movieModel *MovieModel) GetPopularPreviewMovies() ([]responses.PreviewMovie, error) {
+	filter := bson.D{}
+	opts := options.Find().SetSort(bson.M{"tmdb_popularity": -1}).SetLimit(moviePaginationLimit)
+
+	cursor, err := movieModel.Collection.Find(context.TODO(), filter, opts)
+
+	var results []responses.PreviewMovie
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		logrus.Error("failed to decode popular upcoming: ", err)
+
+		return nil, fmt.Errorf("Failed to decode popular movies.")
+	}
+
+	return results, nil
+}
+
+func (movieModel *MovieModel) GetTopPreviewMovies() ([]responses.PreviewMovie, error) {
+	addFields := bson.M{"$addFields": bson.M{
+		"top_rated": bson.M{
+			"$multiply": bson.A{
+				"$tmdb_vote", "$tmdb_vote_count",
+			},
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"top_rated": -1,
+	}}
+
+	limit := bson.D{{"$limit", moviePaginationLimit}}
+
+	cursor, err := movieModel.Collection.Aggregate(context.TODO(), bson.A{
+		addFields, sort, limit,
+	})
+	if err != nil {
+		logrus.Error("failed to aggregate top preview movies: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate top preview movies.")
+	}
+
+	var results []responses.PreviewMovie
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		logrus.Error("failed to decode top movies: ", err)
+
+		return nil, fmt.Errorf("Failed to decode top movies.")
+	}
+
+	return results, nil
+}
+
+func (movieModel *MovieModel) GetInTheaterPreviewMovies() ([]responses.PreviewMovie, error) {
+	match := bson.M{
+		"status": "Released",
+		"release_date": bson.M{
+			"$gte": utils.GetCustomDate(0, -1, 0),
+			"$lte": utils.GetCurrentDate(),
+		},
+	}
+
+	opts := options.Find().SetSort(bson.M{"tmdb_popularity": -1}).SetLimit(movieUpcomingPaginationLimit)
+
+	cursor, err := movieModel.Collection.Find(context.TODO(), match, opts)
+
+	var results []responses.PreviewMovie
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		logrus.Error("failed to decode preview in theater movies: ", err)
+
+		return nil, fmt.Errorf("Failed to decode preview in theater movies.")
+	}
+
+	return results, nil
+}
 
 func (movieModel *MovieModel) GetMoviesFromOpenAI(uid string, movies []string) ([]responses.AISuggestion, error) {
 	match := bson.M{"$match": bson.M{

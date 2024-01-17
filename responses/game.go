@@ -6,6 +6,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type PreviewGame struct {
+	ID            primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	Title         string             `bson:"title" json:"title"`
+	TitleOriginal string             `bson:"title_original" json:"title_original"`
+	RawgID        int64              `bson:"rawg_id" json:"rawg_id"`
+	ImageUrl      string             `bson:"image_url" json:"image_url"`
+}
+
 type Game struct {
 	ID                        primitive.ObjectID            `bson:"_id,omitempty" json:"_id"`
 	Title                     string                        `bson:"title" json:"title"`
