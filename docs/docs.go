@@ -1759,6 +1759,35 @@ const docTemplate = `{
                 }
             }
         },
+        "/oauth/apple": {
+            "post": {
+                "description": "Gets user info from apple and creates/finds user and returns token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oauth2"
+                ],
+                "summary": "OAuth2 Apple Login",
+                "responses": {
+                    "200": {
+                        "description": "Token",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/oauth/google": {
             "post": {
                 "description": "Gets user info from google and creates/finds user and returns token",
@@ -1819,7 +1848,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/responses.Game"
+                                "$ref": "#/definitions/responses.PreviewGame"
                             }
                         }
                     },
@@ -3256,6 +3285,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "oauth_type": {
+                    "description": "0 google, 1 apple",
                     "type": "integer"
                 },
                 "username": {
@@ -5515,6 +5545,89 @@ const docTemplate = `{
                 },
                 "times_finished": {
                     "type": "integer"
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "tmdb_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.PreviewAnime": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "mal_id": {
+                    "type": "integer"
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_jp": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.PreviewGame": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "rawg_id": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.PreviewMovie": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "tmdb_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.PreviewTVSeries": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
                 },
                 "title_en": {
                     "type": "string"
