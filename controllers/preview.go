@@ -30,6 +30,7 @@ func NewPreviewController(mongoDB *db.MongoDB) PreviewController {
 // @Success 200 {array} responses.PreviewAnime
 // @Success 200 {array} responses.PreviewTVSeries
 // @Success 200 {array} responses.PreviewGame
+// @Success 200 {array} responses.PreviewManga
 // @Failure 500 {string} string
 // @Router /preview [get]
 func (pr *PreviewController) GetHomePreview(c *gin.Context) {
@@ -37,6 +38,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 	tvModel := models.NewTVModel(pr.Database)
 	animeModel := models.NewAnimeModel(pr.Database)
 	gameModel := models.NewGameModel(pr.Database)
+	mangaModel := models.NewMangaModel(pr.Database)
 
 	upcomingMovies, err := movieModel.GetUpcomingPreviewMovies()
 	if err != nil {
@@ -195,11 +197,41 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 		return
 	}
 
+	// Manga
+
+	publishingManga, err := mangaModel.GetPreviewCurrentlyPublishingManga()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	topRatedManga, err := mangaModel.GetPreviewTopManga()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	popularManga, err := mangaModel.GetPreviewPopularManga()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"movie": gin.H{"upcoming": upcomingMovies, "popular": popularMovies, "top": topMovies, "extra": moviesInTheater},
 		"tv":    gin.H{"upcoming": upcomingTVSeries, "popular": popularTVSeries, "top": topTVSeries, "extra": dayOfWeekTVSeriesList.Data},
 		"anime": gin.H{"upcoming": upcomingAnimes, "top": topRatedAnimes, "popular": popularAnimes, "extra": dayOfWeekAnimeList.Data},
 		"game":  gin.H{"upcoming": upcomingGames, "top": topRatedGames, "popular": popularGames, "extra": nil},
+		"manga": gin.H{"upcoming": publishingManga, "top": topRatedManga, "popular": popularManga, "extra": nil},
 	})
 
 }

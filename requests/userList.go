@@ -37,6 +37,16 @@ type CreateTVSeriesWatchList struct {
 	Score           *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
 }
 
+type CreateMangaList struct {
+	MangaID       string   `json:"manga_id" binding:"required"`
+	MangaMALID    int64    `json:"manga_mal_id" binding:"required"`
+	Status        string   `json:"status" binding:"required,oneof=active finished dropped planto"`
+	ReadChapters  *int64   `json:"read_chapters" binding:"required,number,min=0"`
+	ReadVolumes   *int64   `json:"read_volumes" binding:"required,number,min=0"`
+	TimesFinished *int     `json:"times_finished" binding:"omitempty,number,min=0"`
+	Score         *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
+}
+
 type SortList struct {
 	Sort string `form:"sort" binding:"required,oneof=score timeswatched"`
 }
@@ -72,6 +82,16 @@ type UpdateMovieList struct {
 	Status          *string  `json:"status" binding:"omitempty,oneof=active finished dropped planto"`
 }
 
+type UpdateMangaList struct {
+	ID              string   `json:"id" binding:"required"`
+	IsUpdatingScore bool     `json:"is_updating_score"`
+	Score           *float32 `json:"score" binding:"omitempty,number,min=0,max=10"`
+	TimesFinished   *int     `json:"times_finished" binding:"omitempty,number,min=0"`
+	Status          *string  `json:"status" binding:"omitempty,oneof=active finished dropped planto"`
+	ReadChapters    *int64   `json:"read_chapters" binding:"omitempty,number,min=0"`
+	ReadVolumes     *int64   `json:"read_volumes" binding:"omitempty,number,min=0"`
+}
+
 type IncrementTVSeriesList struct {
 	ID        string `json:"id" binding:"required"`
 	IsEpisode *bool  `json:"is_episode" binding:"required"`
@@ -89,5 +109,5 @@ type UpdateTVSeriesList struct {
 
 type DeleteList struct {
 	ID   string `json:"id" binding:"required"`
-	Type string `json:"type" binding:"required,oneof=anime game movie tv"`
+	Type string `json:"type" binding:"required,oneof=anime game movie tv manga"`
 }

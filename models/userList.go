@@ -23,6 +23,7 @@ const (
 type UserListModel struct {
 	UserListCollection          *mongo.Collection
 	AnimeListCollection         *mongo.Collection
+	MangaListCollection         *mongo.Collection
 	GameListCollection          *mongo.Collection
 	MovieWatchListCollection    *mongo.Collection
 	TVSeriesWatchListCollection *mongo.Collection
@@ -32,6 +33,7 @@ func NewUserListModel(mongoDB *db.MongoDB) *UserListModel {
 	return &UserListModel{
 		UserListCollection:          mongoDB.Database.Collection("user-lists"),
 		AnimeListCollection:         mongoDB.Database.Collection("anime-lists"),
+		MangaListCollection:         mongoDB.Database.Collection("manga-lists"),
 		GameListCollection:          mongoDB.Database.Collection("game-lists"),
 		MovieWatchListCollection:    mongoDB.Database.Collection("movie-watch-lists"),
 		TVSeriesWatchListCollection: mongoDB.Database.Collection("tvseries-watch-lists"),
@@ -43,6 +45,20 @@ type UserList struct {
 	UserID   string             `bson:"user_id" json:"user_id"`
 	Slug     string             `bson:"slug" json:"slug"`
 	IsPublic bool               `bson:"is_public" json:"is_public"`
+}
+
+type MangaList struct {
+	ID            primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	UserID        string             `bson:"user_id" json:"user_id"`
+	MangaMALID    int64              `bson:"manga_mal_id" json:"manga_mal_id"`
+	MangaID       string             `bson:"manga_id" json:"manga_id"`
+	Status        string             `bson:"status" json:"status"`
+	ReadChapters  int64              `bson:"read_chapters" json:"read_chapters"`
+	ReadVolumes   int64              `bson:"read_volumes" json:"read_volumes"`
+	Score         *float32           `bson:"score" json:"score"`
+	TimesFinished int                `bson:"times_finished" json:"times_finished"`
+	CreatedAt     time.Time          `bson:"created_at" json:"created_at"`
+	UpdatedAt     time.Time          `bson:"updated_at" json:"-"`
 }
 
 type AnimeList struct {
@@ -117,6 +133,21 @@ func createAnimeListObject(userID, animeID, status string, animeMALID, watchedEp
 		TimesFinished:   handleTimesFinished(status, timesFinished),
 		CreatedAt:       time.Now().UTC(),
 		UpdatedAt:       time.Now().UTC(),
+	}
+}
+
+func createMangaListObject(userID, malID, status string, mangaMALID, readChapters, readVolumes int64, score *float32, timesFinished *int) *MangaList {
+	return &MangaList{
+		UserID:        userID,
+		MangaID:       malID,
+		MangaMALID:    mangaMALID,
+		Status:        status,
+		ReadChapters:  readChapters,
+		ReadVolumes:   readVolumes,
+		Score:         score,
+		TimesFinished: handleTimesFinished(status, timesFinished),
+		CreatedAt:     time.Now().UTC(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 }
 
@@ -219,6 +250,39 @@ func (userListModel *UserListModel) CreateAnimeList(uid string, data requests.Cr
 	animeList.ID = insertedID.InsertedID.(primitive.ObjectID)
 
 	return *animeList, nil
+}
+
+func (userListModel *UserListModel) CreateMangaList(uid string, data requests.CreateMangaList, manga responses.Manga) (MangaList, error) {
+	mangaList := createMangaListObject(
+		uid, data.MangaID, data.Status, data.MangaMALID,
+		*data.ReadChapters, *data.ReadVolumes, data.Score, data.TimesFinished,
+	)
+
+	if data.Status == "finished" && data.ReadChapters != nil && manga.Chapters != nil && *data.ReadChapters < *manga.Chapters {
+		mangaList.ReadChapters = *manga.Chapters
+	}
+
+	if data.Status == "finished" && data.ReadVolumes != nil && manga.Volumes != nil && *data.ReadVolumes < *manga.Volumes {
+		mangaList.ReadVolumes = *manga.Volumes
+	}
+
+	var (
+		insertedID *mongo.InsertOneResult
+		err        error
+	)
+
+	if insertedID, err = userListModel.MangaListCollection.InsertOne(context.TODO(), mangaList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to create new manga list: ", err)
+
+		return MangaList{}, fmt.Errorf("Failed to create new manga list.")
+	}
+
+	mangaList.ID = insertedID.InsertedID.(primitive.ObjectID)
+
+	return *mangaList, nil
 }
 
 func (userListModel *UserListModel) CreateGameList(uid string, data requests.CreateGameList) (GameList, error) {
@@ -381,6 +445,78 @@ func (userListModel *UserListModel) UpdateAnimeListByID(animeList AnimeList, dat
 	}
 
 	return animeList, nil
+}
+
+func (userListModel *UserListModel) IncrementMangaListChapterVolumeByID(mangaList MangaList, data requests.IncrementTVSeriesList) (MangaList, error) {
+	var updateField string
+
+	if *data.IsEpisode {
+		mangaList.ReadChapters = mangaList.ReadChapters + 1
+		updateField = "read_chapters"
+	} else {
+		mangaList.ReadVolumes = mangaList.ReadVolumes + 1
+		updateField = "read_volumes"
+	}
+
+	if _, err := userListModel.MangaListCollection.UpdateOne(context.TODO(), bson.M{
+		"_id": mangaList.ID,
+	}, bson.M{"$inc": bson.M{
+		updateField: 1,
+	}}); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"manga_list_id": mangaList.ID,
+			"data":          data,
+		}).Error("failed to increment manga list: ", err)
+
+		return MangaList{}, fmt.Errorf("Failed to update manga list.")
+	}
+
+	return mangaList, nil
+}
+
+func (userListModel *UserListModel) UpdateMangaListByID(mangaList MangaList, data requests.UpdateMangaList) (MangaList, error) {
+	if data.IsUpdatingScore || data.TimesFinished != nil ||
+		data.Status != nil || data.ReadChapters != nil || data.ReadVolumes != nil {
+		set := bson.M{}
+
+		if data.IsUpdatingScore && mangaList.Score != data.Score {
+			set["score"] = data.Score
+			mangaList.Score = data.Score
+		}
+
+		if data.TimesFinished != nil && mangaList.TimesFinished != *data.TimesFinished {
+			set["times_finished"] = *data.TimesFinished
+			mangaList.TimesFinished = *data.TimesFinished
+		}
+
+		if data.Status != nil && mangaList.Status != *data.Status {
+			set["status"] = *data.Status
+			mangaList.Status = *data.Status
+		}
+
+		if data.ReadChapters != nil && mangaList.ReadChapters != *data.ReadChapters {
+			set["read_chapters"] = *data.ReadChapters
+			mangaList.ReadChapters = *data.ReadChapters
+		}
+
+		if data.ReadVolumes != nil && mangaList.ReadVolumes != *data.ReadVolumes {
+			set["read_volumes"] = *data.ReadVolumes
+			mangaList.ReadVolumes = *data.ReadVolumes
+		}
+
+		if _, err := userListModel.MangaListCollection.UpdateOne(context.TODO(), bson.M{
+			"_id": mangaList.ID,
+		}, bson.M{"$set": set}); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"manga_list_id": mangaList.ID,
+				"data":          data,
+			}).Error("failed to update manga list: ", err)
+
+			return MangaList{}, fmt.Errorf("Failed to update manga list.")
+		}
+	}
+
+	return mangaList, nil
 }
 
 func (userListModel *UserListModel) IncrementGameListHourByID(gameList GameList, data requests.ID) (GameList, error) {
