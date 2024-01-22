@@ -163,6 +163,21 @@ definitions:
     - answer
     - id
     type: object
+  requests.AssistantRequest:
+    properties:
+      contentName:
+        type: string
+      contentType:
+        enum:
+        - anime
+        - game
+        - movie
+        - tv
+        type: string
+    required:
+    - contentName
+    - contentType
+    type: object
   requests.ChangeFCMToken:
     properties:
       fcm_token:
@@ -396,6 +411,7 @@ definitions:
         - game
         - movie
         - tv
+        - manga
         type: string
     required:
     - id
@@ -581,6 +597,34 @@ definitions:
         type: string
       tba:
         type: boolean
+    required:
+    - page
+    - sort
+    type: object
+  requests.SortFilterManga:
+    properties:
+      demographics:
+        type: string
+      genres:
+        type: string
+      page:
+        minimum: 1
+        type: integer
+      sort:
+        enum:
+        - top
+        - popularity
+        - new
+        - old
+        type: string
+      status:
+        enum:
+        - publishing
+        - discontinued
+        - finished
+        type: string
+      themes:
+        type: string
     required:
     - page
     - sort
@@ -1513,6 +1557,45 @@ definitions:
       date:
         type: string
     type: object
+  responses.Manga:
+    properties:
+      _id:
+        type: string
+      chapters:
+        type: integer
+      demographics:
+        items:
+          $ref: '#/definitions/responses.AnimeGenre'
+        type: array
+      description:
+        type: string
+      genres:
+        items:
+          $ref: '#/definitions/responses.AnimeGenre'
+        type: array
+      image_url:
+        type: string
+      mal_id:
+        type: integer
+      mal_score:
+        type: number
+      status:
+        type: string
+      themes:
+        items:
+          $ref: '#/definitions/responses.AnimeGenre'
+        type: array
+      title_en:
+        type: string
+      title_jp:
+        type: string
+      title_original:
+        type: string
+      type:
+        type: string
+      volumes:
+        type: integer
+    type: object
   responses.Movie:
     properties:
       _id:
@@ -1719,6 +1802,21 @@ definitions:
       rawg_id:
         type: integer
       title:
+        type: string
+      title_original:
+        type: string
+    type: object
+  responses.PreviewManga:
+    properties:
+      _id:
+        type: string
+      image_url:
+        type: string
+      mal_id:
+        type: integer
+      title_en:
+        type: string
+      title_jp:
         type: string
       title_original:
         type: string
@@ -2308,14 +2406,14 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns animes by sort and filter
+      description: Returns manga by sort and filter
       parameters:
-      - description: Sort and Filter Anime
+      - description: Sort and Filter Manga
         in: body
-        name: sortfilteranime
+        name: sortfiltermanga
         required: true
         schema:
-          $ref: '#/definitions/requests.SortFilterAnime'
+          $ref: '#/definitions/requests.SortFilterManga'
       produces:
       - application/json
       responses:
@@ -2323,15 +2421,15 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/responses.Anime'
+              $ref: '#/definitions/responses.Manga'
             type: array
         "500":
           description: Internal Server Error
           schema:
             type: string
-      summary: Get Animes by Sort and Filter
+      summary: Get Manga by Sort and Filter
       tags:
-      - anime
+      - manga
   /anime/airing:
     get:
       consumes:
@@ -2465,6 +2563,58 @@ paths:
       summary: Get Upcoming Animes by Sort
       tags:
       - anime
+  /assistant/opinion:
+    get:
+      consumes:
+      - application/json
+      description: Returns content Public Opinion
+      parameters:
+      - description: Assistant Request
+        in: body
+        name: assistantrequest
+        required: true
+        schema:
+          $ref: '#/definitions/requests.AssistantRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Content Public Opinion
+      tags:
+      - openai
+  /assistant/summary:
+    get:
+      consumes:
+      - application/json
+      description: Returns content summary
+      parameters:
+      - description: Assistant Request
+        in: body
+        name: assistantrequest
+        required: true
+        schema:
+          $ref: '#/definitions/requests.AssistantRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Content Summary
+      tags:
+      - openai
   /auth/register:
     post:
       consumes:
@@ -3482,7 +3632,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/responses.PreviewGame'
+              $ref: '#/definitions/responses.PreviewManga'
             type: array
         "500":
           description: Internal Server Error
@@ -3735,6 +3885,25 @@ paths:
           schema:
             type: string
       summary: Get AI Recommendations from OpenAI
+      tags:
+      - openai
+  /suggestions/generate:
+    post:
+      consumes:
+      - application/json
+      description: Generates and returns ai recommendations from OpenAI
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.AISuggestionResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Generate AI Recommendations from OpenAI
       tags:
       - openai
   /tv:

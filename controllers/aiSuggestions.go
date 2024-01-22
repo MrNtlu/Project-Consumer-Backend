@@ -3,6 +3,7 @@ package controllers
 import (
 	"app/db"
 	"app/models"
+	"app/requests"
 	"app/responses"
 	"fmt"
 	"net/http"
@@ -27,6 +28,102 @@ var (
 	errNotEnoughUserList = "You need to have more content in your list. Total of 5 content is required. e.g. 1 Movie, 2 TV Series, 2 Anime, 0 Game."
 )
 
+// Get Content Summary
+// @Summary Get Content Summary
+// @Description Returns content summary
+// @Tags openai
+// @Accept application/json
+// @Produce application/json
+// @Param assistantrequest body requests.AssistantRequest true "Assistant Request"
+// @Success 200 {object} string
+// @Failure 500 {string} string
+// @Router /assistant/summary [get]
+func (ai *AISuggestionsController) GetSummary(c *gin.Context) {
+	var data requests.AssistantRequest
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	userModel := models.NewUserModel(ai.Database)
+	openAIModel := models.CreateOpenAIClient()
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	isPremium, _ := userModel.IsUserPremium(uid)
+
+	if isPremium {
+		summary, err := openAIModel.GetSummary(data.ContentName, data.ContentType)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": summary.Response})
+		return
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "You need to have a premium membership to do this action.",
+		})
+
+		return
+	}
+}
+
+// Get Content Public Opinion
+// @Summary Get Content Public Opinion
+// @Description Returns content Public Opinion
+// @Tags openai
+// @Accept application/json
+// @Produce application/json
+// @Param assistantrequest body requests.AssistantRequest true "Assistant Request"
+// @Success 200 {object} string
+// @Failure 500 {string} string
+// @Router /assistant/opinion [get]
+func (ai *AISuggestionsController) GetPublicOpinion(c *gin.Context) {
+	var data requests.AssistantRequest
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	userModel := models.NewUserModel(ai.Database)
+	openAIModel := models.CreateOpenAIClient()
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	isPremium, _ := userModel.IsUserPremium(uid)
+
+	if isPremium {
+		summary, err := openAIModel.GetPublicOpinion(data.ContentName, data.ContentType)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": summary.Response})
+
+		return
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "You need to have a premium membership to do this action.",
+		})
+
+		return
+	}
+
+}
+
 // Get AI Recommendations
 // @Summary Get AI Recommendations from OpenAI
 // @Description Returns ai recommendations from OpenAI
@@ -37,6 +134,99 @@ var (
 // @Failure 500 {string} string
 // @Router /suggestions [get]
 func (ai *AISuggestionsController) GetAISuggestions(c *gin.Context) {
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	aiSuggestionsModel := models.NewAISuggestionsModel(ai.Database)
+	userModel := models.NewUserModel(ai.Database)
+	movieModel := models.NewMovieModel(ai.Database)
+	tvModel := models.NewTVModel(ai.Database)
+	animeModel := models.NewAnimeModel(ai.Database)
+	gameModel := models.NewGameModel(ai.Database)
+
+	aiSuggestion, _ := aiSuggestionsModel.GetAISuggestions(uid)
+
+	isPremium, _ := userModel.IsUserPremium(uid)
+	currentDate := time.Now().UTC()
+
+	var (
+		movieList []string
+		tvList    []string
+		animeList []string
+		gameList  []string
+		createdAt time.Time
+	)
+	if aiSuggestion.UserID == "" || (aiSuggestion.UserID != "" &&
+		((isPremium && (currentDate.Sub(aiSuggestion.CreatedAt).Hours()/24) >= 7) ||
+			(!isPremium && (currentDate.Sub(aiSuggestion.CreatedAt).Hours()/24) >= 30))) {
+
+		c.JSON(http.StatusOK, gin.H{"data": nil, "message": "You can generate your recommendations now!"})
+
+		return
+	} else {
+		movieList = aiSuggestion.Movies
+		tvList = aiSuggestion.TVSeries
+		animeList = aiSuggestion.Anime
+		gameList = aiSuggestion.Games
+		createdAt = aiSuggestion.CreatedAt
+	}
+
+	movies, err := movieModel.GetMoviesFromOpenAI(uid, movieList)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	tvSeries, err := tvModel.GetTVSeriesFromOpenAI(uid, tvList)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	anime, err := animeModel.GetAnimeFromOpenAI(uid, animeList)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	games, err := gameModel.GetGamesFromOpenAI(uid, gameList)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	suggestions := append(movies, tvSeries...)
+	suggestions = append(suggestions, anime...)
+	suggestions = append(suggestions, games...)
+
+	c.JSON(http.StatusOK, gin.H{"data": responses.AISuggestionResponse{
+		Suggestions: suggestions,
+		CreatedAt:   createdAt,
+	}, "message": "Successfully returned."})
+
+	return
+}
+
+// Generate AI Recommendations
+// @Summary Generate AI Recommendations from OpenAI
+// @Description Generates and returns ai recommendations from OpenAI
+// @Tags openai
+// @Accept application/json
+// @Produce application/json
+// @Success 200 {object} responses.AISuggestionResponse
+// @Failure 500 {string} string
+// @Router /suggestions/generate [post]
+func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 	uid := jwt.ExtractClaims(c)["id"].(string)
 	aiSuggestionsModel := models.NewAISuggestionsModel(ai.Database)
 	userModel := models.NewUserModel(ai.Database)
@@ -113,11 +303,11 @@ func (ai *AISuggestionsController) GetAISuggestions(c *gin.Context) {
 			go aiSuggestionsModel.CreateAISuggestions(uid, movieList, tvList, animeList, gameList)
 		}
 	} else {
-		movieList = aiSuggestion.Movies
-		tvList = aiSuggestion.TVSeries
-		animeList = aiSuggestion.Anime
-		gameList = aiSuggestion.Games
-		createdAt = aiSuggestion.CreatedAt
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Couldn't generate new, sorry.",
+		})
+
+		return
 	}
 
 	movies, err := movieModel.GetMoviesFromOpenAI(uid, movieList)

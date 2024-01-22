@@ -25,7 +25,7 @@ const docTemplate = `{
     "paths": {
         "/anime": {
             "get": {
-                "description": "Returns animes by sort and filter",
+                "description": "Returns manga by sort and filter",
                 "consumes": [
                     "application/json"
                 ],
@@ -33,17 +33,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "anime"
+                    "manga"
                 ],
-                "summary": "Get Animes by Sort and Filter",
+                "summary": "Get Manga by Sort and Filter",
                 "parameters": [
                     {
-                        "description": "Sort and Filter Anime",
-                        "name": "sortfilteranime",
+                        "description": "Sort and Filter Manga",
+                        "name": "sortfiltermanga",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/requests.SortFilterAnime"
+                            "$ref": "#/definitions/requests.SortFilterManga"
                         }
                     }
                 ],
@@ -53,7 +53,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/responses.Anime"
+                                "$ref": "#/definitions/responses.Manga"
                             }
                         }
                     },
@@ -259,6 +259,86 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/responses.Anime"
                             }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/assistant/opinion": {
+            "get": {
+                "description": "Returns content Public Opinion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openai"
+                ],
+                "summary": "Get Content Public Opinion",
+                "parameters": [
+                    {
+                        "description": "Assistant Request",
+                        "name": "assistantrequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.AssistantRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/assistant/summary": {
+            "get": {
+                "description": "Returns content summary",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openai"
+                ],
+                "summary": "Get Content Summary",
+                "parameters": [
+                    {
+                        "description": "Assistant Request",
+                        "name": "assistantrequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.AssistantRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "500": {
@@ -1848,7 +1928,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/responses.PreviewGame"
+                                "$ref": "#/definitions/responses.PreviewManga"
                             }
                         }
                     },
@@ -2228,6 +2308,35 @@ const docTemplate = `{
                     "openai"
                 ],
                 "summary": "Get AI Recommendations from OpenAI",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.AISuggestionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/suggestions/generate": {
+            "post": {
+                "description": "Generates and returns ai recommendations from OpenAI",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openai"
+                ],
+                "summary": "Generate AI Recommendations from OpenAI",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3311,6 +3420,27 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.AssistantRequest": {
+            "type": "object",
+            "required": [
+                "contentName",
+                "contentType"
+            ],
+            "properties": {
+                "contentName": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string",
+                    "enum": [
+                        "anime",
+                        "game",
+                        "movie",
+                        "tv"
+                    ]
+                }
+            }
+        },
         "requests.ChangeFCMToken": {
             "type": "object",
             "required": [
@@ -3637,7 +3767,8 @@ const docTemplate = `{
                         "anime",
                         "game",
                         "movie",
-                        "tv"
+                        "tv",
+                        "manga"
                     ]
                 }
             }
@@ -3903,6 +4034,45 @@ const docTemplate = `{
                 },
                 "tba": {
                     "type": "boolean"
+                }
+            }
+        },
+        "requests.SortFilterManga": {
+            "type": "object",
+            "required": [
+                "page",
+                "sort"
+            ],
+            "properties": {
+                "demographics": {
+                    "type": "string"
+                },
+                "genres": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "top",
+                        "popularity",
+                        "new",
+                        "old"
+                    ]
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "publishing",
+                        "discontinued",
+                        "finished"
+                    ]
+                },
+                "themes": {
+                    "type": "string"
                 }
             }
         },
@@ -5282,6 +5452,65 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.Manga": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "chapters": {
+                    "type": "integer"
+                },
+                "demographics": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeGenre"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeGenre"
+                    }
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "mal_id": {
+                    "type": "integer"
+                },
+                "mal_score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "themes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeGenre"
+                    }
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_jp": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "volumes": {
+                    "type": "integer"
+                }
+            }
+        },
         "responses.Movie": {
             "type": "object",
             "properties": {
@@ -5593,6 +5822,29 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "title": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.PreviewManga": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "mal_id": {
+                    "type": "integer"
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_jp": {
                     "type": "string"
                 },
                 "title_original": {

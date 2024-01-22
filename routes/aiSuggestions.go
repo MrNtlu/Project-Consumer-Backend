@@ -14,5 +14,12 @@ func aiSuggestionsRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware
 	suggestions := router.Group("/suggestions").Use(jwtToken.MiddlewareFunc())
 	{
 		suggestions.GET("", aiSuggestionsController.GetAISuggestions)
+		suggestions.POST("/generate", aiSuggestionsController.GenerateAISuggestions)
+	}
+
+	assistant := router.Group("/assistant").Use(jwtToken.MiddlewareFunc())
+	{
+		assistant.GET("/summary", aiSuggestionsController.GetSummary)
+		assistant.GET("/opinion", aiSuggestionsController.GetPublicOpinion)
 	}
 }
