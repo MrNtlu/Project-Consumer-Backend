@@ -169,40 +169,55 @@ func (ai *AISuggestionsController) GetAISuggestions(c *gin.Context) {
 		createdAt = aiSuggestion.CreatedAt
 	}
 
-	movies, err := movieModel.GetMoviesFromOpenAI(uid, movieList)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	var (
+		movies []responses.AISuggestion
+		err    error
+	)
+	if len(gameList) > 0 {
+		movies, err = movieModel.GetMoviesFromOpenAI(uid, movieList)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
 
-		return
+			return
+		}
 	}
 
-	tvSeries, err := tvModel.GetTVSeriesFromOpenAI(uid, tvList)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	var tvSeries []responses.AISuggestion
+	if len(gameList) > 0 {
+		tvSeries, err = tvModel.GetTVSeriesFromOpenAI(uid, tvList)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
 
-		return
+			return
+		}
 	}
 
-	anime, err := animeModel.GetAnimeFromOpenAI(uid, animeList)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	var anime []responses.AISuggestion
+	if len(gameList) > 0 {
+		anime, err = animeModel.GetAnimeFromOpenAI(uid, animeList)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
 
-		return
+			return
+		}
 	}
 
-	games, err := gameModel.GetGamesFromOpenAI(uid, gameList)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	var games []responses.AISuggestion
+	if len(gameList) > 0 {
+		games, err = gameModel.GetGamesFromOpenAI(uid, gameList)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
 
-		return
+			return
+		}
 	}
 
 	suggestions := append(movies, tvSeries...)
@@ -310,40 +325,55 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 		return
 	}
 
-	movies, err := movieModel.GetMoviesFromOpenAI(uid, movieList)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	var (
+		movies []responses.AISuggestion
+		err    error
+	)
+	if len(gameList) > 0 {
+		movies, err = movieModel.GetMoviesFromOpenAI(uid, movieList)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
 
-		return
+			return
+		}
 	}
 
-	tvSeries, err := tvModel.GetTVSeriesFromOpenAI(uid, tvList)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	var tvSeries []responses.AISuggestion
+	if len(gameList) > 0 {
+		tvSeries, err = tvModel.GetTVSeriesFromOpenAI(uid, tvList)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
 
-		return
+			return
+		}
 	}
 
-	anime, err := animeModel.GetAnimeFromOpenAI(uid, animeList)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	var anime []responses.AISuggestion
+	if len(gameList) > 0 {
+		anime, err = animeModel.GetAnimeFromOpenAI(uid, animeList)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
 
-		return
+			return
+		}
 	}
 
-	games, err := gameModel.GetGamesFromOpenAI(uid, gameList)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	var games []responses.AISuggestion
+	if len(gameList) > 0 {
+		games, err = gameModel.GetGamesFromOpenAI(uid, gameList)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
 
-		return
+			return
+		}
 	}
 
 	suggestions := append(movies, tvSeries...)
