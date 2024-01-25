@@ -278,7 +278,9 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 		}
 
 		if count < 5 {
-			c.JSON(http.StatusBadRequest, errNotEnoughUserList)
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": errNotEnoughUserList,
+			})
 
 			return
 		}
