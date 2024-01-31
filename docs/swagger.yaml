@@ -3681,14 +3681,14 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get Reviews by User
+      description: Get Reviews with or without authentication
       parameters:
-      - description: Sort Review by User ID
+      - description: Sort Review by Content ID
         in: body
-        name: sortreviewbyuserid
+        name: sortreviewbycontentid
         required: true
         schema:
-          $ref: '#/definitions/requests.SortReviewByUserID'
+          $ref: '#/definitions/requests.SortReviewByContentID'
       - description: Authentication header
         in: header
         name: Authorization
@@ -3713,7 +3713,7 @@ paths:
             type: string
       security:
       - BearerAuth: []
-      summary: Get Reviews by User
+      summary: Get Review
       tags:
       - review
     patch:
@@ -3827,7 +3827,7 @@ paths:
       summary: Get Reviews by User
       tags:
       - review
-  /review/vote:
+  /review/like:
     patch:
       consumes:
       - application/json
@@ -3865,7 +3865,46 @@ paths:
             type: string
       security:
       - BearerAuth: []
-      summary: Vote Review
+      summary: Like/Dislike Review
+      tags:
+      - review
+  /review/user:
+    get:
+      consumes:
+      - application/json
+      description: Get Reviews by User
+      parameters:
+      - description: Sort Review by User ID
+        in: body
+        name: sortreviewbyuserid
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortReviewByUserID'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Review'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Reviews by User
       tags:
       - review
   /suggestions:

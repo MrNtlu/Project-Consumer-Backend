@@ -81,10 +81,24 @@ func (aiSuggestionsModel *AISuggestionsModel) DeleteAISuggestionsByUserID(uid st
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid": uid,
-		}).Error("failed to delete ai suggestions: ", err)
+		}).Error("failed to delete ai suggestion: ", err)
 
-		return false, fmt.Errorf("Failed to delete ai suggestions.")
+		return false, fmt.Errorf("Failed to delete ai suggestion.")
 	}
 
 	return count.DeletedCount > 0, nil
+}
+
+func (aiSuggestionsModel *AISuggestionsModel) DeleteAllAISuggestionsByUserID(uid string) error {
+	if _, err := aiSuggestionsModel.Collection.DeleteMany(context.TODO(), bson.M{
+		"user_id": uid,
+	}); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to delete ai suggestions: ", err)
+
+		return fmt.Errorf("Failed to delete ai suggestions.")
+	}
+
+	return nil
 }

@@ -375,7 +375,7 @@ func (r *ReviewController) GetReviewsByContentID(c *gin.Context) {
 // @Success 200 {array} responses.Review
 // @Failure 404 {string} string
 // @Failure 500 {string} string
-// @Router /review [get]
+// @Router /review/user [get]
 func (r *ReviewController) GetReviewsByUserID(c *gin.Context) {
 	var data requests.SortReviewByUserID
 	if err := c.ShouldBindQuery(&data); err != nil {
@@ -477,8 +477,8 @@ func (r *ReviewController) UpdateReview(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully updated.", "data": updatedReview})
 }
 
-// Vote Review
-// @Summary Vote Review
+// Like/Dislike Review
+// @Summary Like/Dislike Review
 // @Description Like Review
 // @Tags review
 // @Accept application/json
@@ -490,7 +490,7 @@ func (r *ReviewController) UpdateReview(c *gin.Context) {
 // @Failure 400 {string} string
 // @Failure 404 {string} string
 // @Failure 500 {string} string
-// @Router /review/vote [patch]
+// @Router /review/like [patch]
 func (r *ReviewController) VoteReview(c *gin.Context) {
 	var data requests.ID
 	if shouldReturn := bindJSONData(&data, c); shouldReturn {

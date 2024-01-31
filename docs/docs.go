@@ -1948,7 +1948,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get Reviews by User",
+                "description": "Get Reviews with or without authentication",
                 "consumes": [
                     "application/json"
                 ],
@@ -1958,15 +1958,15 @@ const docTemplate = `{
                 "tags": [
                     "review"
                 ],
-                "summary": "Get Reviews by User",
+                "summary": "Get Review",
                 "parameters": [
                     {
-                        "description": "Sort Review by User ID",
-                        "name": "sortreviewbyuserid",
+                        "description": "Sort Review by Content ID",
+                        "name": "sortreviewbycontentid",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/requests.SortReviewByUserID"
+                            "$ref": "#/definitions/requests.SortReviewByContentID"
                         }
                     },
                     {
@@ -2231,7 +2231,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/review/vote": {
+        "/review/like": {
             "patch": {
                 "security": [
                     {
@@ -2248,7 +2248,7 @@ const docTemplate = `{
                 "tags": [
                     "review"
                 ],
-                "summary": "Vote Review",
+                "summary": "Like/Dislike Review",
                 "parameters": [
                     {
                         "description": "ID",
@@ -2278,6 +2278,67 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/review/user": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get Reviews by User",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "review"
+                ],
+                "summary": "Get Reviews by User",
+                "parameters": [
+                    {
+                        "description": "Sort Review by User ID",
+                        "name": "sortreviewbyuserid",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortReviewByUserID"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Review"
+                            }
                         }
                     },
                     "404": {

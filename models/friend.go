@@ -237,3 +237,17 @@ func (friendModel *FriendModel) FriendRequestCount(receiverId string) (int64, er
 
 	return count, nil
 }
+
+func (friendModel *FriendModel) DeleteAllFriendRequestsByUserID(uid string) error {
+	if _, err := friendModel.RequestCollection.DeleteMany(context.TODO(), bson.M{
+		"user_id": uid,
+	}); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to delete all friend requests by user id: ", err)
+
+		return fmt.Errorf("Failed to delete all friend requests by user.")
+	}
+
+	return nil
+}
