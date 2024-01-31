@@ -2,8 +2,12 @@ package models
 
 import (
 	"app/db"
+	"app/requests"
+	"context"
+	"fmt"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -38,3 +42,66 @@ type CustomListContent struct {
 }
 
 //Order https://github.com/MrNtlu/Asset-Manager/blob/master/models/favouriteInvesting.go
+/* TODO Endpoints
+* - Get custom list by user id -sort by popularity, name, created at
+* - Add to custom list (pass content type, content id etc.)
+* - Remove from custom list
+* - Bulk delete from list
+* - Update custom list
+* - Reorder custom list
+* - Delete custom list
+ */
+
+func createCustomListObject(userID, name string, description *string, isPrivate bool, content []requests.CustomListContent) *CustomList {
+	return &CustomList{
+		UserID:      userID,
+		Name:        name,
+		Description: description,
+		Likes:       []string{},
+		IsPrivate:   isPrivate,
+		Content:     convertRequestToModel(content),
+		CreatedAt:   time.Now().UTC(),
+	}
+}
+
+func (customListModel *CustomListModel) CreateCustomList(uid string, data requests.CreateCustomList) (CustomList, error) {
+	customList := createCustomListObject(
+		uid,
+		data.Name,
+		data.Description,
+		*data.IsPrivate,
+		data.Content,
+	)
+
+	var (
+		insertedID *mongo.InsertOneResult
+		err        error
+	)
+
+	if insertedID, err = customListModel.Collection.InsertOne(context.TODO(), customList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"custom_list": customList,
+		}).Error("failed to create new custom list: ", err)
+
+		return CustomList{}, fmt.Errorf("Failed to create custom list.")
+	}
+
+	customList.ID = insertedID.InsertedID.(primitive.ObjectID)
+
+	return *customList, nil
+}
+
+func convertRequestToModel(content []requests.CustomListContent) []CustomListContent {
+	var modelList []CustomListContent
+
+	for i := 0; i < len(content); i++ {
+		modelList = append(modelList, CustomListContent{
+			Order:                content[i].Order,
+			ContentID:            content[i].ContentID,
+			ContentExternalID:    content[i].ContentExternalID,
+			ContentExternalIntID: content[i].ContentExternalIntID,
+		})
+	}
+
+	return modelList
+}
