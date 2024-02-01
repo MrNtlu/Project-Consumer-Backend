@@ -474,7 +474,7 @@ func (r *ReviewController) UpdateReview(c *gin.Context) {
 		ContentID:        review.ContentID,
 	})
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Successfully updated.", "data": updatedReview})
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated.", "data": updatedReview})
 }
 
 // Like/Dislike Review

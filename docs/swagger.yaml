@@ -41,6 +41,43 @@ definitions:
       user_id:
         type: string
     type: object
+  models.CustomList:
+    properties:
+      _id:
+        type: string
+      content:
+        items:
+          $ref: '#/definitions/models.CustomListContent'
+        type: array
+      created_at:
+        type: string
+      description:
+        type: string
+      is_private:
+        type: boolean
+      likes:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      user_id:
+        type: string
+    type: object
+  models.CustomListContent:
+    properties:
+      content_external_id:
+        type: string
+      content_external_int_id:
+        type: integer
+      content_id:
+        type: string
+      content_type:
+        description: anime, movie, tv or game
+        type: string
+      order:
+        type: integer
+    type: object
   models.GameList:
     properties:
       _id:
@@ -150,6 +187,35 @@ definitions:
       username:
         type: string
     type: object
+  requests.AddToCustomList:
+    properties:
+      content:
+        $ref: '#/definitions/requests.AddToCustomListContent'
+      id:
+        type: string
+    required:
+    - content
+    - id
+    type: object
+  requests.AddToCustomListContent:
+    properties:
+      content_external_id:
+        type: string
+      content_external_int_id:
+        type: integer
+      content_id:
+        type: string
+      content_type:
+        enum:
+        - anime
+        - game
+        - movie
+        - tv
+        type: string
+    required:
+    - content_id
+    - content_type
+    type: object
   requests.AnswerFriendRequest:
     properties:
       answer:
@@ -177,6 +243,18 @@ definitions:
     required:
     - contentName
     - contentType
+    type: object
+  requests.BulkDeleteCustomList:
+    properties:
+      content:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+    required:
+    - content
+    - id
     type: object
   requests.ChangeFCMToken:
     properties:
@@ -278,6 +356,25 @@ definitions:
     required:
     - content_id
     - content_type
+    type: object
+  requests.CreateCustomList:
+    properties:
+      content:
+        items:
+          $ref: '#/definitions/requests.CustomListContent'
+        type: array
+      description:
+        type: string
+      is_private:
+        type: boolean
+      name:
+        maxLength: 250
+        minLength: 1
+        type: string
+    required:
+    - content
+    - is_private
+    - name
     type: object
   requests.CreateGameList:
     properties:
@@ -400,6 +497,28 @@ definitions:
     - tv_tmdb_id
     - watched_episodes
     - watched_seasons
+    type: object
+  requests.CustomListContent:
+    properties:
+      content_external_id:
+        type: string
+      content_external_int_id:
+        type: integer
+      content_id:
+        type: string
+      content_type:
+        enum:
+        - anime
+        - game
+        - movie
+        - tv
+        type: string
+      order:
+        type: integer
+    required:
+    - content_id
+    - content_type
+    - order
     type: object
   requests.DeleteList:
     properties:
@@ -529,6 +648,21 @@ definitions:
     - season
     - sort
     - year
+    type: object
+  requests.SortCustomList:
+    properties:
+      sort:
+        enum:
+        - popularity
+        - latest
+        - oldest
+        - alphabetical
+        - unalphabetical
+        type: string
+      userID:
+        type: string
+    required:
+    - sort
     type: object
   requests.SortFilterAnime:
     properties:
@@ -791,6 +925,23 @@ definitions:
         type: integer
     required:
     - id
+    type: object
+  requests.UpdateCustomList:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      is_private:
+        type: boolean
+      name:
+        maxLength: 250
+        minLength: 1
+        type: string
+    required:
+    - id
+    - is_private
+    - name
     type: object
   requests.UpdateGameList:
     properties:
@@ -1255,6 +1406,52 @@ definitions:
         type: string
       image_url:
         type: string
+      score:
+        type: number
+      title_en:
+        type: string
+      title_original:
+        type: string
+    type: object
+  responses.CustomList:
+    properties:
+      _id:
+        type: string
+      author:
+        $ref: '#/definitions/responses.Author'
+      content:
+        items:
+          $ref: '#/definitions/responses.CustomListContent'
+        type: array
+      created_at:
+        type: string
+      description:
+        type: string
+      is_private:
+        type: boolean
+      likes:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      user_id:
+        type: string
+    type: object
+  responses.CustomListContent:
+    properties:
+      content_external_id:
+        type: string
+      content_external_int_id:
+        type: integer
+      content_id:
+        type: string
+      content_type:
+        type: string
+      image_url:
+        type: string
+      order:
+        type: integer
       score:
         type: number
       title_en:
@@ -2824,6 +3021,262 @@ paths:
       summary: Move consume later as user list
       tags:
       - consume_later
+  /custom-list:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes Custom List
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ID'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete Custom List
+      tags:
+      - custom_list
+    get:
+      consumes:
+      - application/json
+      description: Get Custom List by User ID with or without authentication
+      parameters:
+      - description: Sort Custom List
+        in: body
+        name: sortcustomlist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortCustomList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.CustomList'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Custom List by User ID
+      tags:
+      - custom_list
+    patch:
+      consumes:
+      - application/json
+      description: Updates Custom List Name, Description, Privacy Status
+      parameters:
+      - description: Update Custom List
+        in: body
+        name: updatecustomlist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.UpdateCustomList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.CustomList'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Update Custom List Details
+      tags:
+      - custom_list
+    post:
+      consumes:
+      - application/json
+      description: Creates Custom List
+      parameters:
+      - description: Create Custom List
+        in: body
+        name: createcustomlist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CreateCustomList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.CustomList'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create Custom List
+      tags:
+      - custom_list
+  /custom-list/add:
+    patch:
+      consumes:
+      - application/json
+      description: Add New Content to Custom List
+      parameters:
+      - description: Add To Custom List
+        in: body
+        name: addtocustomlist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.AddToCustomList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.CustomList'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Add Content to Custom List
+      tags:
+      - custom_list
+  /custom-list/content:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes Bulk Content from Custom List
+      parameters:
+      - description: Bulk Delete Custom List
+        in: body
+        name: bulkdeletecustomlist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.BulkDeleteCustomList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.CustomList'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete Bulk Content From Custom List
+      tags:
+      - custom_list
+  /custom-list/details:
+    get:
+      consumes:
+      - application/json
+      description: Get Custom List Details with or without authentication
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ID'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.CustomList'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Custom List Details
+      tags:
+      - custom_list
   /game:
     get:
       consumes:

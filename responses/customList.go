@@ -9,6 +9,7 @@ import (
 type CustomList struct {
 	ID          primitive.ObjectID  `bson:"_id,omitempty" json:"_id"`
 	UserID      string              `bson:"user_id" json:"user_id"`
+	Author      Author              `bson:"author" json:"author"`
 	Name        string              `bson:"name" json:"name"`
 	Description *string             `bson:"description" json:"description"`
 	Likes       []string            `bson:"likes" json:"likes"`
@@ -27,5 +28,4 @@ type CustomListContent struct {
 	TitleOriginal        string   `bson:"title_original" json:"title_original"`
 	ImageURL             *string  `bson:"image_url" json:"image_url"`
 	Score                *float64 `bson:"score" json:"score"`
-	Description          string   `bson:"description" json:"description"`
 }

@@ -676,6 +676,406 @@ const docTemplate = `{
                 }
             }
         },
+        "/custom-list": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get Custom List by User ID with or without authentication",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "custom_list"
+                ],
+                "summary": "Get Custom List by User ID",
+                "parameters": [
+                    {
+                        "description": "Sort Custom List",
+                        "name": "sortcustomlist",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortCustomList"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.CustomList"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates Custom List",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "custom_list"
+                ],
+                "summary": "Create Custom List",
+                "parameters": [
+                    {
+                        "description": "Create Custom List",
+                        "name": "createcustomlist",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.CreateCustomList"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.CustomList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes Custom List",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "custom_list"
+                ],
+                "summary": "Delete Custom List",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ID"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates Custom List Name, Description, Privacy Status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "custom_list"
+                ],
+                "summary": "Update Custom List Details",
+                "parameters": [
+                    {
+                        "description": "Update Custom List",
+                        "name": "updatecustomlist",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.UpdateCustomList"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.CustomList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/custom-list/add": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Add New Content to Custom List",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "custom_list"
+                ],
+                "summary": "Add Content to Custom List",
+                "parameters": [
+                    {
+                        "description": "Add To Custom List",
+                        "name": "addtocustomlist",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.AddToCustomList"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.CustomList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/custom-list/content": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes Bulk Content from Custom List",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "custom_list"
+                ],
+                "summary": "Delete Bulk Content From Custom List",
+                "parameters": [
+                    {
+                        "description": "Bulk Delete Custom List",
+                        "name": "bulkdeletecustomlist",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.BulkDeleteCustomList"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.CustomList"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/custom-list/details": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get Custom List Details with or without authentication",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "custom_list"
+                ],
+                "summary": "Get Custom List Details",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ID"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.CustomList"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/game": {
             "get": {
                 "description": "Returns games by sort and filter",
@@ -3298,6 +3698,62 @@ const docTemplate = `{
                 }
             }
         },
+        "models.CustomList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.CustomListContent"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_private": {
+                    "type": "boolean"
+                },
+                "likes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CustomListContent": {
+            "type": "object",
+            "properties": {
+                "content_external_id": {
+                    "type": "string"
+                },
+                "content_external_int_id": {
+                    "type": "integer"
+                },
+                "content_id": {
+                    "type": "string"
+                },
+                "content_type": {
+                    "description": "anime, movie, tv or game",
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.GameList": {
             "type": "object",
             "properties": {
@@ -3463,6 +3919,48 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.AddToCustomList": {
+            "type": "object",
+            "required": [
+                "content",
+                "id"
+            ],
+            "properties": {
+                "content": {
+                    "$ref": "#/definitions/requests.AddToCustomListContent"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "requests.AddToCustomListContent": {
+            "type": "object",
+            "required": [
+                "content_id",
+                "content_type"
+            ],
+            "properties": {
+                "content_external_id": {
+                    "type": "string"
+                },
+                "content_external_int_id": {
+                    "type": "integer"
+                },
+                "content_id": {
+                    "type": "string"
+                },
+                "content_type": {
+                    "type": "string",
+                    "enum": [
+                        "anime",
+                        "game",
+                        "movie",
+                        "tv"
+                    ]
+                }
+            }
+        },
         "requests.AnswerFriendRequest": {
             "type": "object",
             "required": [
@@ -3499,6 +3997,24 @@ const docTemplate = `{
                         "movie",
                         "tv"
                     ]
+                }
+            }
+        },
+        "requests.BulkDeleteCustomList": {
+            "type": "object",
+            "required": [
+                "content",
+                "id"
+            ],
+            "properties": {
+                "content": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "string"
                 }
             }
         },
@@ -3645,6 +4161,33 @@ const docTemplate = `{
                 },
                 "self_note": {
                     "type": "string"
+                }
+            }
+        },
+        "requests.CreateCustomList": {
+            "type": "object",
+            "required": [
+                "content",
+                "is_private",
+                "name"
+            ],
+            "properties": {
+                "content": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/requests.CustomListContent"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_private": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 250,
+                    "minLength": 1
                 }
             }
         },
@@ -3809,6 +4352,37 @@ const docTemplate = `{
                 "watched_seasons": {
                     "type": "integer",
                     "minimum": 0
+                }
+            }
+        },
+        "requests.CustomListContent": {
+            "type": "object",
+            "required": [
+                "content_id",
+                "content_type",
+                "order"
+            ],
+            "properties": {
+                "content_external_id": {
+                    "type": "string"
+                },
+                "content_external_int_id": {
+                    "type": "integer"
+                },
+                "content_id": {
+                    "type": "string"
+                },
+                "content_type": {
+                    "type": "string",
+                    "enum": [
+                        "anime",
+                        "game",
+                        "movie",
+                        "tv"
+                    ]
+                },
+                "order": {
+                    "type": "integer"
                 }
             }
         },
@@ -3996,6 +4570,27 @@ const docTemplate = `{
                 },
                 "year": {
                     "type": "integer"
+                }
+            }
+        },
+        "requests.SortCustomList": {
+            "type": "object",
+            "required": [
+                "sort"
+            ],
+            "properties": {
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "latest",
+                        "oldest",
+                        "alphabetical",
+                        "unalphabetical"
+                    ]
+                },
+                "userID": {
+                    "type": "string"
                 }
             }
         },
@@ -4357,6 +4952,30 @@ const docTemplate = `{
                 "watched_episodes": {
                     "type": "integer",
                     "minimum": 0
+                }
+            }
+        },
+        "requests.UpdateCustomList": {
+            "type": "object",
+            "required": [
+                "id",
+                "is_private",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_private": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 250,
+                    "minLength": 1
                 }
             }
         },
@@ -5052,6 +5671,76 @@ const docTemplate = `{
                 },
                 "image_url": {
                     "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.CustomList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "author": {
+                    "$ref": "#/definitions/responses.Author"
+                },
+                "content": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.CustomListContent"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_private": {
+                    "type": "boolean"
+                },
+                "likes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.CustomListContent": {
+            "type": "object",
+            "properties": {
+                "content_external_id": {
+                    "type": "string"
+                },
+                "content_external_int_id": {
+                    "type": "integer"
+                },
+                "content_id": {
+                    "type": "string"
+                },
+                "content_type": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
                 },
                 "score": {
                     "type": "number"

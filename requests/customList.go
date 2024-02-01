@@ -1,10 +1,8 @@
 package requests
 
 type CreateCustomList struct {
-	UserID      string              `json:"user_id" binding:"required"`
 	Name        string              `json:"name" binding:"required,min=1,max=250"`
 	Description *string             `json:"description" binding:"omitempty"`
-	Likes       []string            `json:"likes" binding:"required"`
 	IsPrivate   *bool               `json:"is_private" binding:"required"`
 	Content     []CustomListContent `json:"content" binding:"required"`
 }
@@ -44,4 +42,9 @@ type ReorderCustomList struct {
 type BulkDeleteCustomList struct {
 	ID      string   `json:"id" binding:"required"`
 	Content []string `json:"content" binding:"required"`
+}
+
+type SortCustomList struct {
+	UserID string `form:"user_id" binding:"omitempty"`
+	Sort   string `form:"sort" binding:"required,oneof=popularity latest oldest alphabetical unalphabetical"`
 }
