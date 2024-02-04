@@ -928,6 +928,10 @@ definitions:
     type: object
   requests.UpdateCustomList:
     properties:
+      content:
+        items:
+          $ref: '#/definitions/requests.CustomListContent'
+        type: array
       description:
         type: string
       id:
@@ -939,6 +943,7 @@ definitions:
         minLength: 1
         type: string
     required:
+    - content
     - id
     - is_private
     - name

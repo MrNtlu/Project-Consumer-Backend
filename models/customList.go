@@ -97,6 +97,7 @@ func (customListModel *CustomListModel) UpdateCustomList(uid string, data reques
 	customList.Name = data.Name
 	customList.Description = data.Description
 	customList.IsPrivate = *data.IsPrivate
+	customList.Content = convertRequestToModel(data.Content)
 
 	if _, err := customListModel.Collection.UpdateOne(context.TODO(), bson.M{
 		"_id":     objectCustomListID,

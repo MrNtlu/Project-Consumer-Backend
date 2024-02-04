@@ -16,10 +16,11 @@ type CustomListContent struct {
 }
 
 type UpdateCustomList struct {
-	ID          string  `json:"id" binding:"required"`
-	Name        string  `json:"name" binding:"required,min=1,max=250"`
-	Description *string `json:"description" binding:"omitempty"`
-	IsPrivate   *bool   `json:"is_private" binding:"required"`
+	ID          string              `json:"id" binding:"required"`
+	Name        string              `json:"name" binding:"required,min=1,max=250"`
+	Description *string             `json:"description" binding:"omitempty"`
+	IsPrivate   *bool               `json:"is_private" binding:"required"`
+	Content     []CustomListContent `json:"content" binding:"required"`
 }
 
 type AddToCustomList struct {

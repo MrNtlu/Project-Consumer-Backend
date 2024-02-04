@@ -4955,11 +4955,18 @@
         "requests.UpdateCustomList": {
             "type": "object",
             "required": [
+                "content",
                 "id",
                 "is_private",
                 "name"
             ],
             "properties": {
+                "content": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/requests.CustomListContent"
+                    }
+                },
                 "description": {
                     "type": "string"
                 },
