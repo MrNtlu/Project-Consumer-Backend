@@ -14,6 +14,8 @@ type CustomList struct {
 	Description *string             `bson:"description" json:"description"`
 	Likes       []string            `bson:"likes" json:"likes"`
 	IsPrivate   bool                `bson:"is_private" json:"is_private"`
+	IsLiked     bool                `bson:"is_liked" json:"is_liked"`
+	Popularity  int                 `bson:"popularity" json:"popularity"`
 	Content     []CustomListContent `bson:"content" json:"content"`
 	CreatedAt   time.Time           `bson:"created_at" json:"created_at"`
 }

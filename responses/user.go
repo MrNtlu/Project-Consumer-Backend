@@ -8,6 +8,14 @@ type IsUserPremium struct {
 	MembershipType    int  `bson:"membership_type" json:"membership_type"`
 }
 
+type Leaderboard struct {
+	Username  string `bson:"username" json:"username"`
+	UserID    string `bson:"user_id" json:"user_id"`
+	Level     int    `bson:"level" json:"level"`
+	IsPremium bool   `bson:"is_premium" json:"is_premium"`
+	Image     string `bson:"image" json:"image"`
+}
+
 type UserLevel struct {
 	TotalScore int `bson:"total_score" json:"total_score"`
 }

@@ -2692,6 +2692,67 @@
                 }
             }
         },
+        "/review/social": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get Review List independent from content or user id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "review"
+                ],
+                "summary": "Get Review List",
+                "parameters": [
+                    {
+                        "description": "Sort Review",
+                        "name": "sortreview",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortReview"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.ReviewDetails"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/review/user": {
             "get": {
                 "security": [
@@ -2742,6 +2803,35 @@
                         "description": "Not Found",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/social": {
+            "get": {
+                "description": "Returns reviews, custom lists and leaderboard for social page.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "social"
+                ],
+                "summary": "Get Socials",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.SocialPreview"
                         }
                     },
                     "500": {
@@ -3605,6 +3695,58 @@
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/requests.ChangeFCMToken"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/username": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Users can change their username",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Change Username",
+                "parameters": [
+                    {
+                        "description": "Change Username",
+                        "name": "changeusername",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ChangeUsername"
                         }
                     },
                     {
@@ -4825,6 +4967,27 @@
                 }
             }
         },
+        "requests.SortReview": {
+            "type": "object",
+            "required": [
+                "page",
+                "sort"
+            ],
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "latest",
+                        "oldest"
+                    ]
+                }
+            }
+        },
         "requests.SortReviewByContentID": {
             "type": "object",
             "required": [
@@ -5708,6 +5871,9 @@
                 "description": {
                     "type": "string"
                 },
+                "is_liked": {
+                    "type": "boolean"
+                },
                 "is_private": {
                     "type": "boolean"
                 },
@@ -5719,6 +5885,9 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "popularity": {
+                    "type": "integer"
                 },
                 "user_id": {
                     "type": "string"
@@ -6156,6 +6325,26 @@
                     "type": "integer"
                 },
                 "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.Leaderboard": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "type": "string"
+                },
+                "is_premium": {
+                    "type": "boolean"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }
@@ -6908,6 +7097,23 @@
                 },
                 "season_num": {
                     "type": "integer"
+                }
+            }
+        },
+        "responses.SocialPreview": {
+            "type": "object",
+            "properties": {
+                "leaderboard": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Leaderboard"
+                    }
+                },
+                "reviews": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.ReviewDetails"
+                    }
                 }
             }
         },

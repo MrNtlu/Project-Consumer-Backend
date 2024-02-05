@@ -180,6 +180,59 @@ func (r *ReviewController) CreateReview(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdReview})
 }
 
+// Get Review List
+// @Summary Get Review List
+// @Description Get Review List independent from content or user id
+// @Tags review
+// @Accept application/json
+// @Produce application/json
+// @Param sortreview body requests.SortReview true "Sort Review"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} responses.ReviewDetails
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /review/social [get]
+func (r *ReviewController) GetReviewsIndependentFromContent(c *gin.Context) {
+	var data requests.SortReview
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	reviewModel := models.NewReviewModel(r.Database)
+
+	uid, OK := c.Get("uuid")
+	if OK && uid != nil {
+		userId := uid.(string)
+
+		reviews, pagination, err := reviewModel.GetReviewsIndependentFromContent(&userId, data)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": reviews, "pagination": pagination})
+	} else {
+		reviews, pagination, err := reviewModel.GetReviewsIndependentFromContent(nil, data)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": reviews, "pagination": pagination})
+	}
+}
+
 // Get Review Details
 // @Summary Get Review Details
 // @Description Get Review Details with or without authentication
@@ -189,7 +242,7 @@ func (r *ReviewController) CreateReview(c *gin.Context) {
 // @Param id body requests.ID true "ID"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 200 {array} responses.ReviewDetails
+// @Success 200 {object} responses.ReviewDetails
 // @Failure 404 {string} string
 // @Failure 500 {string} string
 // @Router /review/details [get]

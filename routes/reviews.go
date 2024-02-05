@@ -25,5 +25,6 @@ func reviewRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongo
 		reviewOptional.GET("", reviewController.GetReviewsByContentID)
 		reviewOptional.GET("/user", reviewController.GetReviewsByUserID)
 		reviewOptional.GET("/details", reviewController.GetReviewDetails)
+		reviewOptional.GET("/social", reviewController.GetReviewsIndependentFromContent)
 	}
 }

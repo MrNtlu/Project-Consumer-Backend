@@ -621,7 +621,7 @@ func (u *UserController) SendFriendRequest(c *gin.Context) {
 // @Param Authorization header string true "Authentication header"
 // @Success 200 {string} string
 // @Failure 500 {string} string
-// @Router /user/membership [patch]
+// @Router /user/username [patch]
 func (u *UserController) ChangeUsername(c *gin.Context) {
 	var data requests.ChangeUsername
 	if shouldReturn := bindJSONData(&data, c); shouldReturn {

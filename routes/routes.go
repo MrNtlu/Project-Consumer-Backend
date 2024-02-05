@@ -12,6 +12,7 @@ func SetupRoutes(router *gin.Engine, jwtToken *jwt.GinJWTMiddleware, mongoDB *db
 	apiRouter := router.Group("/api/v1")
 
 	previewRouter(apiRouter, mongoDB)
+	socialRouter(apiRouter, jwtToken, mongoDB)
 	userRouter(apiRouter, jwtToken, mongoDB)
 	tvRouter(apiRouter, mongoDB)
 	movieRouter(apiRouter, mongoDB)

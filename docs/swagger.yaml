@@ -834,6 +834,21 @@ definitions:
     - page
     - sort
     type: object
+  requests.SortReview:
+    properties:
+      page:
+        minimum: 1
+        type: integer
+      sort:
+        enum:
+        - popularity
+        - latest
+        - oldest
+        type: string
+    required:
+    - page
+    - sort
+    type: object
   requests.SortReviewByContentID:
     properties:
       contentExternalID:
@@ -1432,6 +1447,8 @@ definitions:
         type: string
       description:
         type: string
+      is_liked:
+        type: boolean
       is_private:
         type: boolean
       likes:
@@ -1440,6 +1457,8 @@ definitions:
         type: array
       name:
         type: string
+      popularity:
+        type: integer
       user_id:
         type: string
     type: object
@@ -1727,6 +1746,19 @@ definitions:
       store_id:
         type: integer
       url:
+        type: string
+    type: object
+  responses.Leaderboard:
+    properties:
+      image:
+        type: string
+      is_premium:
+        type: boolean
+      level:
+        type: integer
+      user_id:
+        type: string
+      username:
         type: string
     type: object
   responses.Log:
@@ -2222,6 +2254,17 @@ definitions:
         type: string
       season_num:
         type: integer
+    type: object
+  responses.SocialPreview:
+    properties:
+      leaderboard:
+        items:
+          $ref: '#/definitions/responses.Leaderboard'
+        type: array
+      reviews:
+        items:
+          $ref: '#/definitions/responses.ReviewDetails'
+        type: array
     type: object
   responses.StarCounts:
     properties:
@@ -4326,6 +4369,45 @@ paths:
       summary: Like/Dislike Review
       tags:
       - review
+  /review/social:
+    get:
+      consumes:
+      - application/json
+      description: Get Review List independent from content or user id
+      parameters:
+      - description: Sort Review
+        in: body
+        name: sortreview
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortReview'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.ReviewDetails'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Review List
+      tags:
+      - review
   /review/user:
     get:
       consumes:
@@ -4365,6 +4447,25 @@ paths:
       summary: Get Reviews by User
       tags:
       - review
+  /social:
+    get:
+      consumes:
+      - application/json
+      description: Returns reviews, custom lists and leaderboard for social page.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.SocialPreview'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Socials
+      tags:
+      - social
   /suggestions:
     get:
       consumes:
@@ -4925,6 +5026,39 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Updates FCM User Token
+      tags:
+      - user
+  /user/username:
+    patch:
+      consumes:
+      - application/json
+      description: Users can change their username
+      parameters:
+      - description: Change Username
+        in: body
+        name: changeusername
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ChangeUsername'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Change Username
       tags:
       - user
 schemes:
