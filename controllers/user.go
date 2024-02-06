@@ -781,7 +781,7 @@ func (u *UserController) ChangePassword(c *gin.Context) {
 
 	if err = utils.CheckPassword([]byte(user.Password), []byte(data.OldPassword)); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"error": errPasswordNoMatch},
+			"error": errPasswordNoMatch,
 		})
 
 		return
