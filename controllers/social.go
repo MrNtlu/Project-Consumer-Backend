@@ -32,10 +32,11 @@ func NewSocialController(mongoDB *db.MongoDB) SocialController {
 func (s *SocialController) GetSocials(c *gin.Context) {
 	reviewModel := models.NewReviewModel(s.Database)
 	userModel := models.NewUserModel(s.Database)
-	// customListModel := models.NewCustomListModel(s.Database)
+	customListModel := models.NewCustomListModel(s.Database)
 
 	var (
 		popularReviews []responses.ReviewDetails
+		customLists    []responses.CustomList
 		err            error
 	)
 
@@ -68,6 +69,32 @@ func (s *SocialController) GetSocials(c *gin.Context) {
 		}
 	}
 
+	if OK && uid != nil {
+		userId := uid.(string)
+
+		customLists, err = customListModel.GetCustomListsByUserID(&userId, requests.SortCustomList{
+			Sort: "popularity",
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+	} else {
+		customLists, err = customListModel.GetCustomListsByUserID(nil, requests.SortCustomList{
+			Sort: "popularity",
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+	}
+
 	leaderboard, err := userModel.GetLeaderboard()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -80,5 +107,6 @@ func (s *SocialController) GetSocials(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": responses.SocialPreview{
 		Reviews:     popularReviews,
 		Leaderboard: leaderboard,
+		CustomLists: customLists,
 	}})
 }

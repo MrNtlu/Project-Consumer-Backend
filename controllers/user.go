@@ -279,6 +279,7 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 	userModel := models.NewUserModel(u.Database)
 	userListModel := models.NewUserListModel(u.Database)
 	reviewsModel := models.NewReviewModel(u.Database)
+	customListModel := models.NewCustomListModel(u.Database)
 	friendModel := models.NewFriendModel(u.Database)
 
 	var (
@@ -318,6 +319,19 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 		return
 	}
 	userInfo.Reviews = reviews
+
+	customLists, err := customListModel.GetCustomListsByUserID(&userId, requests.SortCustomList{
+		UserID: userInfo.ID.Hex(),
+		Sort:   "popularity",
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+	userInfo.CustomLists = customLists
 
 	isFriendsWith, err := userModel.IsFriendsWith(userInfo.ID.Hex(), userId)
 	if err != nil {
@@ -962,11 +976,15 @@ func (u *UserController) DeleteUser(c *gin.Context) {
 	userInteractionModel := models.NewUserInteractionModel(u.Database)
 	friendModel := models.NewFriendModel(u.Database)
 	suggestionModel := models.NewAISuggestionsModel(u.Database)
+	customListsModel := models.NewCustomListModel(u.Database)
+	reviewsModel := models.NewReviewModel(u.Database)
 	logsModel := models.NewLogsModel(u.Database)
 
 	go userListModel.DeleteUserListByUserID(uid)
 	go userInteractionModel.DeleteAllConsumeLaterByUserID(uid)
 	go friendModel.DeleteAllFriendRequestsByUserID(uid)
+	go reviewsModel.DeleteAllReviewsByUserID(uid)
+	go customListsModel.DeleteAllCustomListsByUserID(uid)
 	go suggestionModel.DeleteAllAISuggestionsByUserID(uid)
 	go logsModel.DeleteLogsByUserID(uid)
 

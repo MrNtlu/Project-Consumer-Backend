@@ -4,6 +4,7 @@ import (
 	"app/db"
 	"app/models"
 	"app/requests"
+	"app/responses"
 	"net/http"
 
 	jwt "github.com/appleboy/gin-jwt/v2"
@@ -186,6 +187,126 @@ func (cl *CustomListController) UpdateAddContentToCustomList(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully added.", "data": updatedCustomList})
 }
 
+// Like/Dislike Custom List
+// @Summary Like/Dislike Custom List
+// @Description Like and Dislike Custom List
+// @Tags custom_list
+// @Accept application/json
+// @Produce application/json
+// @Param id body requests.ID true "ID"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {object} responses.CustomList
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /custom-list/like [patch]
+func (cl *CustomListController) LikeCustomList(c *gin.Context) {
+	var data requests.ID
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	customListModel := models.NewCustomListModel(cl.Database)
+
+	var (
+		updatedCustomList responses.CustomList
+		err               error
+	)
+
+	customList, err := customListModel.GetBaseCustomListResponse(&uid, data.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	if customList.UserID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
+
+	if customList.UserID == uid {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "You cannot like your own list.",
+		})
+
+		return
+	}
+
+	if updatedCustomList, err = customListModel.LikeCustomList(uid, data, customList); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully liked.", "data": updatedCustomList})
+}
+
+// Bookmark Custom List
+// @Summary Bookmark Custom List
+// @Description Bookmark Custom List
+// @Tags custom_list
+// @Accept application/json
+// @Produce application/json
+// @Param id body requests.ID true "ID"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {object} responses.CustomList
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /custom-list/bookmark [patch]
+func (cl *CustomListController) BookmarkCustomList(c *gin.Context) {
+	var data requests.ID
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	customListModel := models.NewCustomListModel(cl.Database)
+
+	var (
+		updatedCustomList responses.CustomList
+		err               error
+	)
+
+	customList, err := customListModel.GetBaseCustomListResponse(&uid, data.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	if customList.UserID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
+
+	if customList.UserID == uid {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "You cannot bookmark your own list.",
+		})
+
+		return
+	}
+
+	if updatedCustomList, err = customListModel.BookmarkCustomList(uid, data, customList); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully bookmarked.", "data": updatedCustomList})
+}
+
 // Get Custom List by User ID
 // @Summary Get Custom List by User ID
 // @Description Get Custom List by User ID with or without authentication
@@ -237,6 +358,82 @@ func (cl *CustomListController) GetCustomListsByUserID(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{"data": customLists})
 	}
+}
+
+// Get Liked Custom List
+// @Summary Get Liked Custom List
+// @Description Get Liked Custom List
+// @Tags custom_list
+// @Accept application/json
+// @Produce application/json
+// @Param id body requests.SortLikeBookmarkCustomList true "ID"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} responses.CustomList
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /custom-list/liked [get]
+func (cl *CustomListController) GetLikedCustomLists(c *gin.Context) {
+	var data requests.SortLikeBookmarkCustomList
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	customListModel := models.NewCustomListModel(cl.Database)
+
+	likedCustomLists, err := customListModel.GetLikedCustomLists(uid, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": likedCustomLists})
+}
+
+// Get Bookmarked Custom List
+// @Summary Get Bookmarked Custom List
+// @Description Get Bookmarked Custom List
+// @Tags custom_list
+// @Accept application/json
+// @Produce application/json
+// @Param id body requests.SortLikeBookmarkCustomList true "ID"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} responses.CustomList
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /custom-list/bookmarked [get]
+func (cl *CustomListController) GetBookmarkedCustomLists(c *gin.Context) {
+	var data requests.SortLikeBookmarkCustomList
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	customListModel := models.NewCustomListModel(cl.Database)
+
+	bookmarkedCustomLists, err := customListModel.GetBookmarkedCustomLists(uid, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": bookmarkedCustomLists})
 }
 
 // Get Custom List Details

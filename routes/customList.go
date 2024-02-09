@@ -14,8 +14,12 @@ func customListRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, m
 
 	customList := router.Group("/custom-list").Use(jwtToken.MiddlewareFunc())
 	{
+		customList.GET("/liked", customListController.GetLikedCustomLists)
+		customList.GET("/bookmarked", customListController.GetBookmarkedCustomLists)
 		customList.POST("", customListController.CreateCustomList)
 		customList.PATCH("", customListController.UpdateCustomList)
+		customList.PATCH("/like", customListController.LikeCustomList)
+		customList.PATCH("/bookmark", customListController.BookmarkCustomList)
 		customList.PATCH("/add", customListController.UpdateAddContentToCustomList)
 		customList.DELETE("/content", customListController.DeleteBulkContentFromCustomListByID)
 		customList.DELETE("", customListController.DeleteCustomListByID)

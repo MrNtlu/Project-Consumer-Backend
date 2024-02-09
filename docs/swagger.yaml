@@ -45,6 +45,10 @@ definitions:
     properties:
       _id:
         type: string
+      bookmarks:
+        items:
+          type: string
+        type: array
       content:
         items:
           $ref: '#/definitions/models.CustomListContent'
@@ -834,6 +838,30 @@ definitions:
     - page
     - sort
     type: object
+  requests.SortLikeBookmarkCustomList:
+    properties:
+      sort:
+        enum:
+        - popularity
+        - latest
+        - oldest
+        - alphabetical
+        - unalphabetical
+        type: string
+    required:
+    - sort
+    type: object
+  requests.SortLikedReview:
+    properties:
+      sort:
+        enum:
+        - popularity
+        - latest
+        - oldest
+        type: string
+    required:
+    - sort
+    type: object
   requests.SortReview:
     properties:
       page:
@@ -1439,6 +1467,12 @@ definitions:
         type: string
       author:
         $ref: '#/definitions/responses.Author'
+      bookmark_count:
+        type: integer
+      bookmarks:
+        items:
+          type: string
+        type: array
       content:
         items:
           $ref: '#/definitions/responses.CustomListContent'
@@ -1447,6 +1481,8 @@ definitions:
         type: string
       description:
         type: string
+      is_bookmarked:
+        type: boolean
       is_liked:
         type: boolean
       is_private:
@@ -2257,6 +2293,10 @@ definitions:
     type: object
   responses.SocialPreview:
     properties:
+      custom_lists:
+        items:
+          $ref: '#/definitions/responses.CustomList'
+        type: array
       leaderboard:
         items:
           $ref: '#/definitions/responses.Leaderboard'
@@ -2547,6 +2587,10 @@ definitions:
         items:
           $ref: '#/definitions/responses.ConsumeLater'
         type: array
+      custom_lists:
+        items:
+          $ref: '#/definitions/responses.CustomList'
+        type: array
       email:
         type: string
       fcm_token:
@@ -2639,12 +2683,12 @@ info:
   contact:
     email: mrntlu@gmail.com
     name: Burak Fidan
-  description: REST Api of Project Consumer.
+  description: REST Api of Watchlistfy.
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  termsOfService: '#soon'
-  title: Project Consumer API
+  termsOfService: https://watchlistfy.com/terms-conditions.html
+  title: Watchlistfy API
   version: "1.0"
 paths:
   /anime:
@@ -3253,6 +3297,82 @@ paths:
       summary: Add Content to Custom List
       tags:
       - custom_list
+  /custom-list/bookmark:
+    patch:
+      consumes:
+      - application/json
+      description: Bookmark Custom List
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ID'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.CustomList'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Bookmark Custom List
+      tags:
+      - custom_list
+  /custom-list/bookmarked:
+    get:
+      consumes:
+      - application/json
+      description: Get Bookmarked Custom List
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortLikeBookmarkCustomList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.CustomList'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Bookmarked Custom List
+      tags:
+      - custom_list
   /custom-list/content:
     delete:
       consumes:
@@ -3323,6 +3443,82 @@ paths:
       security:
       - BearerAuth: []
       summary: Get Custom List Details
+      tags:
+      - custom_list
+  /custom-list/like:
+    patch:
+      consumes:
+      - application/json
+      description: Like and Dislike Custom List
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ID'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.CustomList'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Like/Dislike Custom List
+      tags:
+      - custom_list
+  /custom-list/liked:
+    get:
+      consumes:
+      - application/json
+      description: Get Liked Custom List
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortLikeBookmarkCustomList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.CustomList'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Liked Custom List
       tags:
       - custom_list
   /game:
@@ -4367,6 +4563,45 @@ paths:
       security:
       - BearerAuth: []
       summary: Like/Dislike Review
+      tags:
+      - review
+  /review/liked:
+    get:
+      consumes:
+      - application/json
+      description: Get Liked by User
+      parameters:
+      - description: Sort Liked Review
+        in: body
+        name: sortlikedreview
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortLikedReview'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.ReviewWithContent'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Liked by User
       tags:
       - review
   /review/social:

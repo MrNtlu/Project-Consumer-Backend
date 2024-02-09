@@ -55,6 +55,7 @@ type UserInfo struct {
 	LegendContent           []UserInfoContent   `bson:"legend_content" json:"legend_content"`
 	ConsumeLater            []ConsumeLater      `bson:"consume_later" json:"consume_later"`
 	Reviews                 []ReviewWithContent `bson:"reviews" json:"reviews"`
+	CustomLists             []CustomList        `bson:"custom_lists" json:"custom_lists"`
 }
 
 type UserInfoContent struct {

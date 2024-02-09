@@ -49,3 +49,7 @@ type SortCustomList struct {
 	UserID string `form:"user_id" binding:"omitempty"`
 	Sort   string `form:"sort" binding:"required,oneof=popularity latest oldest alphabetical unalphabetical"`
 }
+
+type SortLikeBookmarkCustomList struct {
+	Sort string `form:"sort" binding:"required,oneof=popularity latest oldest alphabetical unalphabetical"`
+}

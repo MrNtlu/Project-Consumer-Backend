@@ -876,6 +876,297 @@ func (reviewModel *ReviewModel) GetReviewDetails(uid *string, reviewID string) (
 	return responses.ReviewDetails{}, nil
 }
 
+func (reviewModel *ReviewModel) GetLikedReviews(uid string, data requests.SortLikedReview) ([]responses.ReviewWithContent, error) {
+	var (
+		sortType  string
+		sortOrder int8
+	)
+
+	switch data.Sort {
+	case "popularity":
+		sortType = "popularity"
+		sortOrder = -1
+	case "latest":
+		sortType = "created_at"
+		sortOrder = -1
+	case "oldest":
+		sortType = "created_at"
+		sortOrder = 1
+	}
+
+	match := bson.M{"$match": bson.M{
+		"likes": bson.M{
+			"$in": bson.A{uid},
+		},
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"obj_user_id": bson.M{
+			"$toObjectId": "$user_id",
+		},
+		"obj_content_id": bson.M{
+			"$toObjectId": "$content_id",
+		},
+		"popularity": bson.M{
+			"$size": "$likes",
+		},
+	}}
+
+	lookup := bson.M{"$lookup": bson.M{
+		"from":         "users",
+		"localField":   "obj_user_id",
+		"foreignField": "_id",
+		"as":           "author",
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$author",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	facet := bson.M{"$facet": bson.M{
+		"movies": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "movie"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "movies",
+					"let": bson.M{
+						"content_id":  "$content_id",
+						"external_id": "$content_external_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$tmdb_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"tv": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "tv"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "tv-series",
+					"let": bson.M{
+						"content_id":  "$content_id",
+						"external_id": "$content_external_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$tmdb_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"anime": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "anime"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "animes",
+					"let": bson.M{
+						"content_id":  "$content_id",
+						"external_id": "$content_external_int_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$mal_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"games": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "game"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "games",
+					"let": bson.M{
+						"content_id":  "$content_id",
+						"external_id": "$content_external_int_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$rawg_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       "$title",
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"reviews": bson.M{
+			"$concatArrays": bson.A{"$movies", "$tv", "$anime", "$games"},
+		},
+	}}
+
+	unwindReviews := bson.M{"$unwind": bson.M{
+		"path":                       "$reviews",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	replaceRoot := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$reviews",
+	}}
+
+	unwindContent := bson.M{"$unwind": bson.M{
+		"path":                       "$content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$_id",
+		"user_id": bson.M{
+			"$first": "$user_id",
+		},
+		"content_id": bson.M{
+			"$first": "$content_id",
+		},
+		"content_external_id": bson.M{
+			"$first": "$content_external_id",
+		},
+		"content_external_int_id": bson.M{
+			"$first": "$content_external_int_id",
+		},
+		"review": bson.M{
+			"$first": "$review",
+		},
+		"author": bson.M{
+			"$first": "$author",
+		},
+		"popularity": bson.M{
+			"$first": "$popularity",
+		},
+		"content": bson.M{
+			"$first": "$content",
+		},
+		"content_type": bson.M{
+			"$first": "$content_type",
+		},
+		"is_author": bson.M{
+			"$first": false,
+		},
+		"is_liked": bson.M{
+			"$first": true,
+		},
+		"is_spoiler": bson.M{
+			"$first": "$is_spoiler",
+		},
+		"star": bson.M{
+			"$first": "$star",
+		},
+		"likes": bson.M{
+			"$first": "$likes",
+		},
+		"created_at": bson.M{
+			"$first": "$created_at",
+		},
+		"updated_at": bson.M{
+			"$first": "$updated_at",
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		sortType: sortOrder,
+	}}
+
+	cursor, err := reviewModel.ReviewCollection.Aggregate(context.TODO(), bson.A{
+		match, set, lookup, unwind, facet, project, unwindReviews, replaceRoot,
+		unwindContent, group, sort,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"data": data.Sort,
+			"uid":  uid,
+		}).Error("failed to aggregate liked reviews: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate liked reviews.")
+	}
+
+	var reviewDetails []responses.ReviewWithContent
+	if err = cursor.All(context.TODO(), &reviewDetails); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"data": data.Sort,
+			"uid":  uid,
+		}).Error("failed to decode liked reviews: ", err)
+
+		return nil, fmt.Errorf("Failed to decode liked reviews.")
+	}
+	return reviewDetails, nil
+}
+
 func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID, uid string, contentExternalID *string, contentExternalIntID *int64) (responses.ReviewSummary, error) {
 	var (
 		cID  string
@@ -1697,6 +1988,20 @@ func (reviewModel *ReviewModel) DeleteReviewByID(uid, reviewID string) (bool, er
 	}
 
 	return count.DeletedCount > 0, nil
+}
+
+func (reviewModel *ReviewModel) DeleteAllReviewsByUserID(uid string) error {
+	if _, err := reviewModel.ReviewCollection.DeleteMany(context.TODO(), bson.M{
+		"user_id": uid,
+	}); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to delete reviews: ", err)
+
+		return fmt.Errorf("Failed to delete reviews.")
+	}
+
+	return nil
 }
 
 func removeElement(slice []string, element string) []string {

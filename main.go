@@ -20,10 +20,10 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// @title Project Consumer API
+// @title Watchlistfy API
 // @version 1.0
-// @description REST Api of Project Consumer.
-// @termsOfService #soon
+// @description REST Api of Watchlistfy.
+// @termsOfService https://watchlistfy.com/terms-conditions.html
 
 // @contact.name Burak Fidan
 // @contact.email mrntlu@gmail.com

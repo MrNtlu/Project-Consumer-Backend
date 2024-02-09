@@ -9,7 +9,7 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "#soon",
+        "termsOfService": "https://watchlistfy.com/terms-conditions.html",
         "contact": {
             "name": "Burak Fidan",
             "email": "mrntlu@gmail.com"
@@ -963,6 +963,125 @@ const docTemplate = `{
                 }
             }
         },
+        "/custom-list/bookmark": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Bookmark Custom List",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "custom_list"
+                ],
+                "summary": "Bookmark Custom List",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ID"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.CustomList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/custom-list/bookmarked": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get Bookmarked Custom List",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "custom_list"
+                ],
+                "summary": "Get Bookmarked Custom List",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortLikeBookmarkCustomList"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.CustomList"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/custom-list/content": {
             "delete": {
                 "security": [
@@ -1041,6 +1160,125 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/requests.ID"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.CustomList"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/custom-list/like": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Like and Dislike Custom List",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "custom_list"
+                ],
+                "summary": "Like/Dislike Custom List",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ID"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.CustomList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/custom-list/liked": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get Liked Custom List",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "custom_list"
+                ],
+                "summary": "Get Liked Custom List",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortLikeBookmarkCustomList"
                         }
                     },
                     {
@@ -2695,6 +2933,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/review/liked": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get Liked by User",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "review"
+                ],
+                "summary": "Get Liked by User",
+                "parameters": [
+                    {
+                        "description": "Sort Liked Review",
+                        "name": "sortlikedreview",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortLikedReview"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.ReviewWithContent"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/review/social": {
             "get": {
                 "security": [
@@ -3883,6 +4182,12 @@ const docTemplate = `{
                 "_id": {
                     "type": "string"
                 },
+                "bookmarks": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "content": {
                     "type": "array",
                     "items": {
@@ -5007,6 +5312,40 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.SortLikeBookmarkCustomList": {
+            "type": "object",
+            "required": [
+                "sort"
+            ],
+            "properties": {
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "latest",
+                        "oldest",
+                        "alphabetical",
+                        "unalphabetical"
+                    ]
+                }
+            }
+        },
+        "requests.SortLikedReview": {
+            "type": "object",
+            "required": [
+                "sort"
+            ],
+            "properties": {
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "latest",
+                        "oldest"
+                    ]
+                }
+            }
+        },
         "requests.SortReview": {
             "type": "object",
             "required": [
@@ -5899,6 +6238,15 @@ const docTemplate = `{
                 "author": {
                     "$ref": "#/definitions/responses.Author"
                 },
+                "bookmark_count": {
+                    "type": "integer"
+                },
+                "bookmarks": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "content": {
                     "type": "array",
                     "items": {
@@ -5910,6 +6258,9 @@ const docTemplate = `{
                 },
                 "description": {
                     "type": "string"
+                },
+                "is_bookmarked": {
+                    "type": "boolean"
                 },
                 "is_liked": {
                     "type": "boolean"
@@ -7143,6 +7494,12 @@ const docTemplate = `{
         "responses.SocialPreview": {
             "type": "object",
             "properties": {
+                "custom_lists": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.CustomList"
+                    }
+                },
                 "leaderboard": {
                     "type": "array",
                     "items": {
@@ -7583,6 +7940,12 @@ const docTemplate = `{
                         "$ref": "#/definitions/responses.ConsumeLater"
                     }
                 },
+                "custom_lists": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.CustomList"
+                    }
+                },
                 "email": {
                     "type": "string"
                 },
@@ -7731,8 +8094,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "http://localhost:8080",
 	BasePath:         "/api/v1",
 	Schemes:          []string{"https"},
-	Title:            "Project Consumer API",
-	Description:      "REST Api of Project Consumer.",
+	Title:            "Watchlistfy API",
+	Description:      "REST Api of Watchlistfy.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 }
