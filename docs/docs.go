@@ -3327,7 +3327,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Returns users stats from username",
+                "description": "Returns users membership \u0026 stats",
                 "consumes": [
                     "application/json"
                 ],
@@ -3337,17 +3337,8 @@ const docTemplate = `{
                 "tags": [
                     "user"
                 ],
-                "summary": "User info from username",
+                "summary": "User membership info",
                 "parameters": [
-                    {
-                        "description": "Get Profile",
-                        "name": "getprofile",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.GetProfile"
-                        }
-                    },
                     {
                         "type": "string",
                         "description": "Authentication header",
@@ -3523,6 +3514,52 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/profile": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns users stats from username",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "User info from username",
+                "parameters": [
+                    {
+                        "description": "Get Profile",
+                        "name": "getprofile",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.GetProfile"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User Info",
+                        "schema": {
+                            "$ref": "#/definitions/responses.UserInfo"
                         }
                     }
                 }

@@ -266,12 +266,6 @@ func (customListModel *CustomListModel) GetCustomListsByUserID(uid *string, data
 		},
 	}}
 
-	setLimit := bson.M{"$set": bson.M{
-		"content": bson.M{
-			"$slice": bson.A{"$content", 5},
-		},
-	}}
-
 	unwindContent := bson.M{"$unwind": bson.M{
 		"path":                       "$content",
 		"includeArrayIndex":          "index",
@@ -527,7 +521,7 @@ func (customListModel *CustomListModel) GetCustomListsByUserID(uid *string, data
 	}}
 
 	cursor, err := customListModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, set, setLimit, unwindContent, facet, project, unwind, replaceRoot, unwindContentAgain, group, lookup, unwindAuthor, sort,
+		match, set, unwindContent, facet, project, unwind, replaceRoot, unwindContentAgain, group, lookup, unwindAuthor, sort,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{

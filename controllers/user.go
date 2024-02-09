@@ -265,7 +265,7 @@ func (u *UserController) GetFriendRequests(c *gin.Context) {
 // @Param getprofile body requests.GetProfile true "Get Profile"
 // @Param Authorization header string true "Authentication header"
 // @Success 200 {object} responses.UserInfo "User Info"
-// @Router /user/info [get]
+// @Router /user/profile [get]
 func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 	var data requests.GetProfile
 	if err := c.ShouldBindQuery(&data); err != nil {

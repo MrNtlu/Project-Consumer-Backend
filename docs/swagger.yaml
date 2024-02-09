@@ -4775,14 +4775,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns users stats from username
+      description: Returns users membership & stats
       parameters:
-      - description: Get Profile
-        in: body
-        name: getprofile
-        required: true
-        schema:
-          $ref: '#/definitions/requests.GetProfile'
       - description: Authentication header
         in: header
         name: Authorization
@@ -4797,7 +4791,7 @@ paths:
             $ref: '#/definitions/responses.UserInfo'
       security:
       - ApiKeyAuth: []
-      summary: User info from username
+      summary: User membership info
       tags:
       - user
   /user/membership:
@@ -4902,6 +4896,35 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Change User Password
+      tags:
+      - user
+  /user/profile:
+    get:
+      consumes:
+      - application/json
+      description: Returns users stats from username
+      parameters:
+      - description: Get Profile
+        in: body
+        name: getprofile
+        required: true
+        schema:
+          $ref: '#/definitions/requests.GetProfile'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User Info
+          schema:
+            $ref: '#/definitions/responses.UserInfo'
+      security:
+      - ApiKeyAuth: []
+      summary: User info from username
       tags:
       - user
   /user/request:
