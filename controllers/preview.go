@@ -3,6 +3,7 @@ package controllers
 import (
 	"app/db"
 	"app/models"
+	"app/requests"
 	"app/responses"
 	"net/http"
 	"time"
@@ -31,6 +32,7 @@ func NewPreviewController(mongoDB *db.MongoDB) PreviewController {
 // @Success 200 {array} responses.PreviewTVSeries
 // @Success 200 {array} responses.PreviewGame
 // @Success 200 {array} responses.PreviewManga
+// @Success 200 {array} responses.ActorDetails
 // @Failure 500 {string} string
 // @Router /preview [get]
 func (pr *PreviewController) GetHomePreview(c *gin.Context) {
@@ -59,6 +61,15 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 	}
 
 	topMovies, err := movieModel.GetTopPreviewMovies()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	popularActors, err := movieModel.GetPopularActors(requests.Pagination{Page: 1})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -97,6 +108,15 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 	}
 
 	topTVSeries, err := tvModel.GetTopPreviewTVSeries()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	popularActorsTVSeries, err := tvModel.GetPopularActors(requests.Pagination{Page: 1})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -227,8 +247,8 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"movie": gin.H{"upcoming": upcomingMovies, "popular": popularMovies, "top": topMovies, "extra": moviesInTheater},
-		"tv":    gin.H{"upcoming": upcomingTVSeries, "popular": popularTVSeries, "top": topTVSeries, "extra": dayOfWeekTVSeriesList.Data},
+		"movie": gin.H{"upcoming": upcomingMovies, "popular": popularMovies, "top": topMovies, "extra": moviesInTheater, "actors": popularActors},
+		"tv":    gin.H{"upcoming": upcomingTVSeries, "popular": popularTVSeries, "top": topTVSeries, "extra": dayOfWeekTVSeriesList.Data, "actors": popularActorsTVSeries},
 		"anime": gin.H{"upcoming": upcomingAnimes, "top": topRatedAnimes, "popular": popularAnimes, "extra": dayOfWeekAnimeList.Data},
 		"game":  gin.H{"upcoming": upcomingGames, "top": topRatedGames, "popular": popularGames, "extra": nil},
 		"manga": gin.H{"upcoming": publishingManga, "top": topRatedManga, "popular": popularManga, "extra": nil},

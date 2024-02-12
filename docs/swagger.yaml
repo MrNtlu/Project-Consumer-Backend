@@ -4405,7 +4405,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/responses.PreviewManga'
+              $ref: '#/definitions/responses.ActorDetails'
             type: array
         "500":
           description: Internal Server Error

@@ -2652,7 +2652,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/responses.PreviewManga"
+                                "$ref": "#/definitions/responses.ActorDetails"
                             }
                         }
                     },
