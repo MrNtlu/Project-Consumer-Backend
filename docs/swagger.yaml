@@ -561,6 +561,17 @@ definitions:
     required:
     - id
     type: object
+  requests.IDPagination:
+    properties:
+      id:
+        type: string
+      page:
+        minimum: 1
+        type: integer
+    required:
+    - id
+    - page
+    type: object
   requests.IncrementTVSeriesList:
     properties:
       id:
@@ -1120,6 +1131,15 @@ definitions:
       name:
         type: string
       tmdb_id:
+        type: string
+    type: object
+  responses.ActorDetails:
+    properties:
+      _id:
+        type: string
+      image_url:
+        type: string
+      name:
         type: string
     type: object
   responses.Anime:
@@ -4159,6 +4179,34 @@ paths:
       summary: Get Movies by Sort and Filter
       tags:
       - movie
+  /movie/actor:
+    get:
+      consumes:
+      - application/json
+      description: Returns Movies by Actors
+      parameters:
+      - description: ID Pagination
+        in: body
+        name: idpagination
+        required: true
+        schema:
+          $ref: '#/definitions/requests.IDPagination'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Movie'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Movies by Actors
+      tags:
+      - movie
   /movie/details:
     get:
       consumes:
@@ -4185,6 +4233,34 @@ paths:
           schema:
             type: string
       summary: Get Movie Details
+      tags:
+      - movie
+  /movie/popular-actors:
+    get:
+      consumes:
+      - application/json
+      description: Returns Popular Actors
+      parameters:
+      - description: Pagination
+        in: body
+        name: pagination
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Pagination'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.ActorDetails'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Popular Actors
       tags:
       - movie
   /movie/search:
@@ -4767,6 +4843,34 @@ paths:
       summary: Get TV Series by Sort and Filter
       tags:
       - tv
+  /tv/actor:
+    get:
+      consumes:
+      - application/json
+      description: Returns TV Series by Actors
+      parameters:
+      - description: ID Pagination
+        in: body
+        name: idpagination
+        required: true
+        schema:
+          $ref: '#/definitions/requests.IDPagination'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.TVSeries'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get TV Series by Actors
+      tags:
+      - tv
   /tv/airing:
     get:
       consumes:
@@ -4814,6 +4918,34 @@ paths:
           schema:
             type: string
       summary: Get TV Series Details
+      tags:
+      - tv
+  /tv/popular-actors:
+    get:
+      consumes:
+      - application/json
+      description: Returns Popular Actors
+      parameters:
+      - description: Pagination
+        in: body
+        name: pagination
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Pagination'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.ActorDetails'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Popular Actors
       tags:
       - tv
   /tv/search:

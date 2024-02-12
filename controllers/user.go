@@ -323,7 +323,7 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 	customLists, err := customListModel.GetCustomListsByUserID(&userId, requests.SortCustomList{
 		UserID: userInfo.ID.Hex(),
 		Sort:   "popularity",
-	})
+	}, true)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

@@ -30,6 +30,7 @@ const (
 	tvSeriesUpcomingPaginationLimit = 40
 	tvSeriesSearchLimit             = 50
 	tvSeriesPaginationLimit         = 40
+	tvSeriesActorsLimit             = 50
 )
 
 func (tvModel *TVModel) GetUpcomingPreviewTVSeries() ([]responses.PreviewTVSeries, error) {
@@ -590,6 +591,85 @@ func (tvModel *TVModel) GetTVSeriesDetailsWithWatchListAndWatchLater(data reques
 	}
 
 	return responses.TVSeriesDetails{}, nil
+}
+
+func (tvModel *TVModel) GetPopularActors(data requests.Pagination) ([]responses.ActorDetails, error) {
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$actors",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$actors.tmdb_id",
+		"name": bson.M{
+			"$first": "$actors.name",
+		},
+		"image_url": bson.M{
+			"$first": "$actors.image",
+		},
+		"count": bson.M{
+			"$sum": 1,
+		},
+		"popularity": bson.M{
+			"$sum": "$tmdb_popularity",
+		},
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"popularity": bson.M{
+			"$multiply": bson.A{"$count", "$popularity"},
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"popularity": -1,
+	}}
+
+	limit := bson.M{"$limit": tvSeriesActorsLimit}
+
+	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
+		unwind, group, set, sort, limit,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"data": data,
+		}).Error("failed to aggregate actors: ", err)
+
+		return nil, fmt.Errorf("Failed to get top actors.")
+	}
+
+	var actorList []responses.ActorDetails
+	if err := cursor.All(context.TODO(), &actorList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"data": data,
+		}).Error("failed to decode actors: ", err)
+
+		return nil, fmt.Errorf("Failed to decode top actors.")
+	}
+
+	return actorList, nil
+}
+
+func (tvModel *TVModel) GetTVSeriesByActor(data requests.IDPagination) ([]responses.TVSeries, p.PaginationData, error) {
+	match := bson.M{
+		"actors.tmdb_id": bson.M{
+			"$in": bson.A{data.ID},
+		},
+	}
+
+	var tvList []responses.TVSeries
+	paginatedData, err := p.New(tvModel.Collection).Context(context.TODO()).Limit(tvSeriesPaginationLimit).
+		Page(data.Page).Sort("tmdb_popularity", -1).Filter(match).Decode(&tvList).Find()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate tv series by actor: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get tv series by actor.")
+	}
+
+	return tvList, paginatedData.Pagination, nil
 }
 
 func (tvModel *TVModel) SearchTVSeriesByTitle(data requests.Search) ([]responses.TVSeries, p.PaginationData, error) {

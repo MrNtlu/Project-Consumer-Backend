@@ -2305,6 +2305,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/movie/actor": {
+            "get": {
+                "description": "Returns Movies by Actors",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movie"
+                ],
+                "summary": "Get Movies by Actors",
+                "parameters": [
+                    {
+                        "description": "ID Pagination",
+                        "name": "idpagination",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.IDPagination"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Movie"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/movie/details": {
             "get": {
                 "description": "Returns movie details with optional authentication",
@@ -2336,6 +2379,49 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/responses.MovieDetails"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/movie/popular-actors": {
+            "get": {
+                "description": "Returns Popular Actors",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movie"
+                ],
+                "summary": "Get Popular Actors",
+                "parameters": [
+                    {
+                        "description": "Pagination",
+                        "name": "pagination",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.Pagination"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.ActorDetails"
                             }
                         }
                     },
@@ -3246,6 +3332,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/tv/actor": {
+            "get": {
+                "description": "Returns TV Series by Actors",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tv"
+                ],
+                "summary": "Get TV Series by Actors",
+                "parameters": [
+                    {
+                        "description": "ID Pagination",
+                        "name": "idpagination",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.IDPagination"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.TVSeries"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/tv/airing": {
             "get": {
                 "description": "Returns list of tv series by day of week",
@@ -3309,6 +3438,49 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/responses.TVSeriesDetails"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/tv/popular-actors": {
+            "get": {
+                "description": "Returns Popular Actors",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tv"
+                ],
+                "summary": "Get Popular Actors",
+                "parameters": [
+                    {
+                        "description": "Pagination",
+                        "name": "pagination",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.Pagination"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.ActorDetails"
                             }
                         }
                     },
@@ -4925,6 +5097,22 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.IDPagination": {
+            "type": "object",
+            "required": [
+                "id",
+                "page"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
         "requests.IncrementTVSeriesList": {
             "type": "object",
             "required": [
@@ -5710,6 +5898,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tmdb_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.ActorDetails": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }

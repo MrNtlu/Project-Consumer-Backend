@@ -74,7 +74,7 @@ func (s *SocialController) GetSocials(c *gin.Context) {
 
 		customLists, err = customListModel.GetCustomListsByUserID(&userId, requests.SortCustomList{
 			Sort: "popularity",
-		})
+		}, true)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -85,7 +85,7 @@ func (s *SocialController) GetSocials(c *gin.Context) {
 	} else {
 		customLists, err = customListModel.GetCustomListsByUserID(nil, requests.SortCustomList{
 			Sort: "popularity",
-		})
+		}, true)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),

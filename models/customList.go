@@ -269,7 +269,7 @@ func (customListModel *CustomListModel) DeleteAllCustomListsByUserID(uid string)
 	return nil
 }
 
-func (customListModel *CustomListModel) GetCustomListsByUserID(uid *string, data requests.SortCustomList) ([]responses.CustomList, error) {
+func (customListModel *CustomListModel) GetCustomListsByUserID(uid *string, data requests.SortCustomList, hidePrivate bool) ([]responses.CustomList, error) {
 	var (
 		sortType            string
 		sortOrder           int8
@@ -303,9 +303,16 @@ func (customListModel *CustomListModel) GetCustomListsByUserID(uid *string, data
 				"else": false,
 			},
 		}
-		match = bson.M{"$match": bson.M{
-			"user_id": *uid,
-		}}
+		if hidePrivate {
+			match = bson.M{"$match": bson.M{
+				"user_id":    *uid,
+				"is_private": false,
+			}}
+		} else {
+			match = bson.M{"$match": bson.M{
+				"user_id": *uid,
+			}}
+		}
 	} else if uid != nil && data.UserID != "" {
 		likeAggregation = bson.M{
 			"$cond": bson.M{
@@ -331,9 +338,16 @@ func (customListModel *CustomListModel) GetCustomListsByUserID(uid *string, data
 				"else": false,
 			},
 		}
-		match = bson.M{"$match": bson.M{
-			"user_id": data.UserID,
-		}}
+		if hidePrivate {
+			match = bson.M{"$match": bson.M{
+				"user_id":    data.UserID,
+				"is_private": false,
+			}}
+		} else {
+			match = bson.M{"$match": bson.M{
+				"user_id": data.UserID,
+			}}
+		}
 	} else {
 		likeAggregation = bson.M{
 			"$eq": bson.A{
@@ -347,10 +361,13 @@ func (customListModel *CustomListModel) GetCustomListsByUserID(uid *string, data
 		}
 		if data.UserID != "" {
 			match = bson.M{"$match": bson.M{
-				"user_id": data.UserID,
+				"user_id":    data.UserID,
+				"is_private": false,
 			}}
 		} else {
-			match = bson.M{"$match": bson.M{}}
+			match = bson.M{"$match": bson.M{
+				"is_private": false,
+			}}
 		}
 	}
 

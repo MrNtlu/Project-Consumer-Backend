@@ -31,6 +31,7 @@ const (
 	movieUpcomingPaginationLimit = 40
 	movieSearchLimit             = 50
 	moviePaginationLimit         = 40
+	movieActorsLimit             = 50
 )
 
 func (movieModel *MovieModel) GetUpcomingPreviewMovies() ([]responses.PreviewMovie, error) {
@@ -523,6 +524,85 @@ func (movieModel *MovieModel) GetMovieDetailsWithWatchListAndWatchLater(data req
 	}
 
 	return responses.MovieDetails{}, nil
+}
+
+func (movieModel *MovieModel) GetPopularActors(data requests.Pagination) ([]responses.ActorDetails, error) {
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$actors",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$actors.tmdb_id",
+		"name": bson.M{
+			"$first": "$actors.name",
+		},
+		"image_url": bson.M{
+			"$first": "$actors.image",
+		},
+		"count": bson.M{
+			"$sum": 1,
+		},
+		"popularity": bson.M{
+			"$sum": "$tmdb_popularity",
+		},
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"popularity": bson.M{
+			"$multiply": bson.A{"$count", "$popularity"},
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"popularity": -1,
+	}}
+
+	limit := bson.M{"$limit": movieActorsLimit}
+
+	cursor, err := movieModel.Collection.Aggregate(context.TODO(), bson.A{
+		unwind, group, set, sort, limit,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"data": data,
+		}).Error("failed to aggregate actors: ", err)
+
+		return nil, fmt.Errorf("Failed to get top actors.")
+	}
+
+	var actorList []responses.ActorDetails
+	if err := cursor.All(context.TODO(), &actorList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"data": data,
+		}).Error("failed to decode actors: ", err)
+
+		return nil, fmt.Errorf("Failed to decode top actors.")
+	}
+
+	return actorList, nil
+}
+
+func (movieModel *MovieModel) GetMoviesByActor(data requests.IDPagination) ([]responses.Movie, p.PaginationData, error) {
+	match := bson.M{
+		"actors.tmdb_id": bson.M{
+			"$in": bson.A{data.ID},
+		},
+	}
+
+	var movies []responses.Movie
+	paginatedData, err := p.New(movieModel.Collection).Context(context.TODO()).Limit(moviePaginationLimit).
+		Page(data.Page).Sort("tmdb_popularity", -1).Filter(match).Decode(&movies).Find()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate movies by actor: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get movies by actor.")
+	}
+
+	return movies, paginatedData.Pagination, nil
 }
 
 func (movieModel *MovieModel) SearchMovieByTitle(data requests.Search) ([]responses.Movie, p.PaginationData, error) {

@@ -21,6 +21,7 @@ func NewCustomListController(mongoDB *db.MongoDB) CustomListController {
 	}
 }
 
+const errNoContent = "You need to add at least 1 entry."
 const errCustomListPremium = "Free members can create up to 5 lists, you can get premium membership to create more."
 const errCustomListPremiumLimit = "You've reached your limit, sorry 🙏"
 const errCustomListContentPremium = "Free members can create up to 10 content to their list, you can get premium membership to add more."
@@ -50,6 +51,14 @@ func (cl *CustomListController) CreateCustomList(c *gin.Context) {
 
 	isPremium, _ := userModel.IsUserPremium(uid)
 	count := customListModel.GetCustomListCount(uid)
+
+	if len(data.Content) <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": errNoContent,
+		})
+
+		return
+	}
 
 	if (isPremium && count >= models.CustomListPremiumLimit) || (!isPremium && count >= models.CustomListFreeLimit) {
 		if isPremium {
@@ -104,6 +113,14 @@ func (cl *CustomListController) UpdateCustomList(c *gin.Context) {
 
 	uid := jwt.ExtractClaims(c)["id"].(string)
 	customListModel := models.NewCustomListModel(cl.Database)
+
+	if len(data.Content) <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": errNoContent,
+		})
+
+		return
+	}
 
 	var (
 		updatedCustomList models.CustomList
@@ -336,7 +353,7 @@ func (cl *CustomListController) GetCustomListsByUserID(c *gin.Context) {
 	if OK && uid != nil {
 		userId := uid.(string)
 
-		customLists, err := customListModel.GetCustomListsByUserID(&userId, data)
+		customLists, err := customListModel.GetCustomListsByUserID(&userId, data, false)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -347,7 +364,7 @@ func (cl *CustomListController) GetCustomListsByUserID(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{"data": customLists})
 	} else {
-		customLists, err := customListModel.GetCustomListsByUserID(nil, data)
+		customLists, err := customListModel.GetCustomListsByUserID(nil, data, false)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),

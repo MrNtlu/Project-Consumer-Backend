@@ -220,6 +220,74 @@ func (m *MovieController) GetMovieDetails(c *gin.Context) {
 	}
 }
 
+// Get Popular Actors
+// @Summary Get Popular Actors
+// @Description Returns Popular Actors
+// @Tags movie
+// @Accept application/json
+// @Produce application/json
+// @Param pagination body requests.Pagination true "Pagination"
+// @Success 200 {array} responses.ActorDetails
+// @Failure 500 {string} string
+// @Router /movie/popular-actors [get]
+func (m *MovieController) GetPopularActors(c *gin.Context) {
+	var data requests.Pagination
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	movieModel := models.NewMovieModel(m.Database)
+
+	actors, err := movieModel.GetPopularActors(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": actors})
+}
+
+// Get Movies by Actors
+// @Summary Get Movies by Actors
+// @Description Returns Movies by Actors
+// @Tags movie
+// @Accept application/json
+// @Produce application/json
+// @Param idpagination body requests.IDPagination true "ID Pagination"
+// @Success 200 {array} responses.Movie
+// @Failure 500 {string} string
+// @Router /movie/actor [get]
+func (m *MovieController) GetMoviesByActor(c *gin.Context) {
+	var data requests.IDPagination
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	movieModel := models.NewMovieModel(m.Database)
+
+	movies, pagination, err := movieModel.GetMoviesByActor(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": movies})
+}
+
 // Search Movie
 // @Summary Search Movie
 // @Description Search movies

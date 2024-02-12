@@ -127,3 +127,9 @@ type Translation struct {
 	Title       string `bson:"title" json:"title"`
 	Description string `bson:"description" json:"description"`
 }
+
+type ActorDetails struct {
+	ID       string  `bson:"_id" json:"_id"`
+	ImageURL *string `bson:"image_url" json:"image_url"`
+	Name     string  `bson:"name" json:"name"`
+}

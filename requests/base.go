@@ -8,6 +8,11 @@ type ID struct {
 	ID string `json:"id" form:"id" binding:"required"`
 }
 
+type IDPagination struct {
+	ID   string `form:"id" binding:"required"`
+	Page int64  `form:"page" binding:"required,number,min=1"`
+}
+
 type Search struct {
 	Search string `json:"search" form:"search" binding:"required"`
 	Page   int64  `form:"page" binding:"required,number,min=1"`

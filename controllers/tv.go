@@ -210,6 +210,74 @@ func (tv *TVController) GetTVSeriesDetails(c *gin.Context) {
 	}
 }
 
+// Get Popular Actors
+// @Summary Get Popular Actors
+// @Description Returns Popular Actors
+// @Tags tv
+// @Accept application/json
+// @Produce application/json
+// @Param pagination body requests.Pagination true "Pagination"
+// @Success 200 {array} responses.ActorDetails
+// @Failure 500 {string} string
+// @Router /tv/popular-actors [get]
+func (tv *TVController) GetPopularActors(c *gin.Context) {
+	var data requests.Pagination
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	tvModel := models.NewTVModel(tv.Database)
+
+	actors, err := tvModel.GetPopularActors(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": actors})
+}
+
+// Get TV Series by Actors
+// @Summary Get TV Series by Actors
+// @Description Returns TV Series by Actors
+// @Tags tv
+// @Accept application/json
+// @Produce application/json
+// @Param idpagination body requests.IDPagination true "ID Pagination"
+// @Success 200 {array} responses.TVSeries
+// @Failure 500 {string} string
+// @Router /tv/actor [get]
+func (tv *TVController) GetTVSeriesByActor(c *gin.Context) {
+	var data requests.IDPagination
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	tvModel := models.NewTVModel(tv.Database)
+
+	tvSeries, pagination, err := tvModel.GetTVSeriesByActor(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": tvSeries})
+}
+
 // Search TV Series
 // @Summary Search TV Series
 // @Description Search tv series
