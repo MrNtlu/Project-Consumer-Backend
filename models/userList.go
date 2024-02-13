@@ -221,7 +221,7 @@ func (userListModel *UserListModel) CreateUserList(uid, slug string) error {
 
 func (userListModel *UserListModel) CreateAnimeList(uid string, data requests.CreateAnimeList, anime responses.Anime) (AnimeList, error) {
 	animeList := createAnimeListObject(
-		uid, data.AnimeID, data.Status, data.AnimeMALID,
+		uid, anime.ID.Hex(), data.Status, anime.MalID,
 		*data.WatchedEpisodes, data.Score, data.TimesFinished,
 	)
 
@@ -254,7 +254,7 @@ func (userListModel *UserListModel) CreateAnimeList(uid string, data requests.Cr
 
 func (userListModel *UserListModel) CreateMangaList(uid string, data requests.CreateMangaList, manga responses.Manga) (MangaList, error) {
 	mangaList := createMangaListObject(
-		uid, data.MangaID, data.Status, data.MangaMALID,
+		uid, manga.ID.Hex(), data.Status, manga.MalID,
 		*data.ReadChapters, *data.ReadVolumes, data.Score, data.TimesFinished,
 	)
 
@@ -285,9 +285,9 @@ func (userListModel *UserListModel) CreateMangaList(uid string, data requests.Cr
 	return *mangaList, nil
 }
 
-func (userListModel *UserListModel) CreateGameList(uid string, data requests.CreateGameList) (GameList, error) {
+func (userListModel *UserListModel) CreateGameList(uid string, data requests.CreateGameList, game responses.GameDetails) (GameList, error) {
 	gameList := createGameListObject(
-		uid, data.GameID, data.Status, data.GameRAWGID,
+		uid, game.ID.Hex(), data.Status, game.RawgID,
 		data.Score, data.AchievementStatus,
 		data.TimesFinished, data.HoursPlayed,
 	)
@@ -311,8 +311,11 @@ func (userListModel *UserListModel) CreateGameList(uid string, data requests.Cre
 	return *gameList, nil
 }
 
-func (userListModel *UserListModel) CreateMovieWatchList(uid string, data requests.CreateMovieWatchList) (MovieWatchList, error) {
-	movieWatchList := createMovieWatchListObject(uid, data.MovieTmdbID, data.MovieID, data.Status, data.Score, data.TimesFinished)
+func (userListModel *UserListModel) CreateMovieWatchList(uid string, data requests.CreateMovieWatchList, movie responses.Movie) (MovieWatchList, error) {
+	movieWatchList := createMovieWatchListObject(
+		uid, movie.TmdbID, movie.ID.Hex(), data.Status,
+		data.Score, data.TimesFinished,
+	)
 
 	var (
 		insertedID *mongo.InsertOneResult
@@ -337,7 +340,7 @@ func (userListModel *UserListModel) CreateTVSeriesWatchList(
 	uid string, data requests.CreateTVSeriesWatchList, tvSeries responses.TVSeries,
 ) (TVSeriesWatchList, error) {
 	tvSeriesWatchList := createTVSeriesWatchListObject(
-		uid, data.TvTmdbID, data.TvID, data.Status,
+		uid, tvSeries.TmdbID, tvSeries.ID.Hex(), data.Status,
 		*data.WatchedEpisodes, *data.WatchedSeasons, data.Score,
 		data.TimesFinished,
 	)

@@ -381,7 +381,7 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 				Status:        status,
 				Score:         data.Score,
 				TimesFinished: &timesFinished,
-			}); err != nil {
+			}, game); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": err.Error(),
 				})
@@ -466,7 +466,7 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 				MovieTmdbID: *consumeLater.ContentExternalID,
 				Status:      "finished",
 				Score:       data.Score,
-			}); err != nil {
+			}, movie); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": err.Error(),
 				})

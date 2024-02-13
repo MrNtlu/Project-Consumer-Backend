@@ -157,7 +157,7 @@ func (u *UserListController) CreateGameList(c *gin.Context) {
 		return
 	}
 
-	if createdGameList, err = userListModel.CreateGameList(uid, data); err != nil {
+	if createdGameList, err = userListModel.CreateGameList(uid, data, game); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -236,7 +236,7 @@ func (u *UserListController) CreateMovieWatchList(c *gin.Context) {
 		return
 	}
 
-	if createdWatchList, err = userListModel.CreateMovieWatchList(uid, data); err != nil {
+	if createdWatchList, err = userListModel.CreateMovieWatchList(uid, data, movie); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
