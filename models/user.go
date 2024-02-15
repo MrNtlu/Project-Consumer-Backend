@@ -587,6 +587,64 @@ func (userModel *UserModel) GetLeaderboard() ([]responses.Leaderboard, error) {
 					"as": "later_list",
 				},
 			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "custom-lists",
+					"let": bson.M{
+						"user_id": "$user_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{
+										"$user_id",
+										"$$user_id",
+									},
+								},
+							},
+						},
+						bson.M{
+							"$group": bson.M{
+								"_id": "$status",
+								"total": bson.M{
+									"$sum": 50,
+								},
+							},
+						},
+					},
+					"as": "custom_lists",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "reviews",
+					"let": bson.M{
+						"user_id": "$user_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{
+										"$user_id",
+										"$$user_id",
+									},
+								},
+							},
+						},
+						bson.M{
+							"$group": bson.M{
+								"_id": "$status",
+								"total": bson.M{
+									"$sum": 10,
+								},
+							},
+						},
+					},
+					"as": "reviews",
+				},
+			},
 		},
 	}}
 
@@ -631,6 +689,12 @@ func (userModel *UserModel) GetLeaderboard() ([]responses.Leaderboard, error) {
 					},
 					bson.M{
 						"$sum": "$later_list.total",
+					},
+					bson.M{
+						"$sum": "$custom_lists.total",
+					},
+					bson.M{
+						"$sum": "$reviews.total",
 					},
 				},
 			},
@@ -917,6 +981,64 @@ func (userModel *UserModel) GetUserLevel(uid string) (int, error) {
 					"as": "later_list",
 				},
 			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "custom-lists",
+					"let": bson.M{
+						"user_id": "$user_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{
+										"$user_id",
+										"$$user_id",
+									},
+								},
+							},
+						},
+						bson.M{
+							"$group": bson.M{
+								"_id": "$status",
+								"total": bson.M{
+									"$sum": 50,
+								},
+							},
+						},
+					},
+					"as": "custom_lists",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "reviews",
+					"let": bson.M{
+						"user_id": "$user_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{
+										"$user_id",
+										"$$user_id",
+									},
+								},
+							},
+						},
+						bson.M{
+							"$group": bson.M{
+								"_id": "$status",
+								"total": bson.M{
+									"$sum": 10,
+								},
+							},
+						},
+					},
+					"as": "reviews",
+				},
+			},
 		},
 	}}
 
@@ -949,6 +1071,12 @@ func (userModel *UserModel) GetUserLevel(uid string) (int, error) {
 					},
 					bson.M{
 						"$sum": "$later_list.total",
+					},
+					bson.M{
+						"$sum": "$custom_lists.total",
+					},
+					bson.M{
+						"$sum": "$reviews.total",
 					},
 				},
 			},
