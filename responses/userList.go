@@ -36,6 +36,25 @@ type AnimeList struct {
 	CreatedAt       time.Time          `bson:"created_at" json:"created_at"`
 }
 
+type MangaList struct {
+	ID            primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	ContentStatus string             `bson:"content_status" json:"content_status"`
+	Score         *float32           `bson:"score" json:"score"`
+	TimesFinished int                `bson:"times_finished" json:"times_finished"`
+	ReadChapters  int64              `bson:"read_chapters" json:"read_chapters"`
+	ReadVolumes   int64              `bson:"read_volumes" json:"read_volumes"`
+	MangaID       string             `bson:"manga_id" json:"manga_id"`
+	MangaMALID    int64              `bson:"manga_mal_id" json:"manga_mal_id"`
+	Status        string             `bson:"status" json:"status"`
+	StatusSort    int                `bson:"status_sort" json:"status_sort"`
+	TitleEn       string             `bson:"title_en" json:"title_en"`
+	TitleOriginal string             `bson:"title_original" json:"title_original"`
+	TotalChapters *int64             `bson:"total_chapters" json:"total_chapters"`
+	TotalVolumes  string             `bson:"total_volumes" json:"total_volumes"`
+	ImageURL      *string            `bson:"image_url" json:"image_url"`
+	CreatedAt     time.Time          `bson:"created_at" json:"created_at"`
+}
+
 type GameList struct {
 	ID                primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	ContentStatus     string             `bson:"content_status" json:"content_status"`

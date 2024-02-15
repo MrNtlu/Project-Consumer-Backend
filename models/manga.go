@@ -6,10 +6,12 @@ import (
 	"app/responses"
 	"context"
 	"fmt"
+	"strconv"
 
 	p "github.com/gobeam/mongo-go-pagination"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -194,4 +196,536 @@ func (mangaModel *MangaModel) GetMangaBySortAndFilter(data requests.SortFilterMa
 	}
 
 	return mangas, paginatedData.Pagination, nil
+}
+
+func (mangaModel *MangaModel) GetMangaDetails(data requests.ID) (responses.Manga, error) {
+	objectID, _ := primitive.ObjectIDFromHex(data.ID)
+	malID, _ := strconv.Atoi(data.ID)
+
+	match := bson.M{"$match": bson.M{
+		"$or": bson.A{
+			bson.M{
+				"_id": objectID,
+			},
+			bson.M{
+				"mal_id": malID,
+			},
+		},
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"manga_id": bson.M{
+			"$toString": "$_id",
+		},
+	}}
+
+	unwindRelations := bson.M{"$unwind": bson.M{
+		"path":                       "$relations",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	unwindSource := bson.M{"$unwind": bson.M{
+		"path":                       "$relations.source",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	setRelation := bson.M{"$set": bson.M{
+		"relations.mal_id": "$relations.source.mal_id",
+		"relations.type":   "$relations.source.type",
+	}}
+
+	animeRelationLookup := bson.M{"$lookup": bson.M{
+		"from": "animes",
+		"let": bson.M{
+			"mal_id":   "$relations.mal_id",
+			"relation": "$relations.relation",
+			"type":     "$relations.type",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$eq": bson.A{"$mal_id", "$$mal_id"},
+					},
+				},
+			},
+			bson.M{
+				"$project": bson.M{
+					"_id": 1,
+					"anime_id": bson.M{
+						"$toString": "$_id",
+					},
+					"mal_id":         1,
+					"title_en":       1,
+					"title_original": 1,
+					"image_url":      1,
+					"relation":       "$$relation",
+					"type":           "$$type",
+				},
+			},
+		},
+		"as": "anime_relation",
+	}}
+
+	mangaRelationLookup := bson.M{"$lookup": bson.M{
+		"from": "mangas",
+		"let": bson.M{
+			"mal_id":   "$relations.mal_id",
+			"relation": "$relations.relation",
+			"type":     "$relations.type",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$eq": bson.A{"$mal_id", "$$mal_id"},
+					},
+				},
+			},
+			bson.M{
+				"$project": bson.M{
+					"_id": 1,
+					"anime_id": bson.M{
+						"$toString": "$_id",
+					},
+					"mal_id":         1,
+					"title_en":       1,
+					"title_original": 1,
+					"image_url":      1,
+					"relation":       "$$relation",
+					"type":           "$$type",
+				},
+			},
+		},
+		"as": "manga_relation",
+	}}
+
+	unwindAnimeRelation := bson.M{"$unwind": bson.M{
+		"path":                       "$anime_relation",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	unwindMangaRelation := bson.M{"$unwind": bson.M{
+		"path":                       "$manga_relation",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	setAnimeRelation := bson.M{"$set": bson.M{
+		"anime_relation": bson.M{
+			"$ifNull": bson.A{"$anime_relation", false},
+		},
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$_id",
+		"title_original": bson.M{
+			"$first": "$title_original",
+		},
+		"title_en": bson.M{
+			"$first": "$title_en",
+		},
+		"title_jp": bson.M{
+			"$first": "$title_jp",
+		},
+		"description": bson.M{
+			"$first": "$description",
+		},
+		"image_url": bson.M{
+			"$first": "$image_url",
+		},
+		"mal_id": bson.M{
+			"$first": "$mal_id",
+		},
+		"mal_score": bson.M{
+			"$first": "$mal_score",
+		},
+		"mal_scored_by": bson.M{
+			"$first": "$mal_scored_by",
+		},
+		"type": bson.M{
+			"$first": "$type",
+		},
+		"chapters": bson.M{
+			"$first": "$chapters",
+		},
+		"volumes": bson.M{
+			"$first": "$volumes",
+		},
+		"status": bson.M{
+			"$first": "$status",
+		},
+		"is_publishing": bson.M{
+			"$first": "$is_publishing",
+		},
+		"published": bson.M{
+			"$first": "$published",
+		},
+		"recommendations": bson.M{
+			"$first": "$recommendations",
+		},
+		"serializations": bson.M{
+			"$first": "$serializations",
+		},
+		"genres": bson.M{
+			"$first": "$genres",
+		},
+		"themes": bson.M{
+			"$first": "$themes",
+		},
+		"demographics": bson.M{
+			"$first": "$demographics",
+		},
+		"relations": bson.M{
+			"$addToSet": bson.M{
+				"$cond": bson.A{
+					bson.M{
+						"$eq": bson.A{"$anime_relation", false},
+					},
+					"$manga_relation",
+					"$anime_relation",
+				},
+			},
+		},
+		"characters": bson.M{
+			"$first": "$characters",
+		},
+		"anime_list": bson.M{
+			"$first": "$anime_list",
+		},
+		"watch_later": bson.M{
+			"$first": "$watch_later",
+		},
+	}}
+
+	cursor, err := mangaModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, set, unwindRelations, unwindSource, setRelation,
+		animeRelationLookup, mangaRelationLookup, unwindAnimeRelation,
+		unwindMangaRelation, group, setAnimeRelation,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": data.ID,
+		}).Error("failed to aggregate manga details: ", err)
+
+		return responses.Manga{}, fmt.Errorf("Failed to aggregate manga details.")
+	}
+
+	var mangaDetails []responses.Manga
+	if err = cursor.All(context.TODO(), &mangaDetails); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": data.ID,
+		}).Error("failed to decode anime details: ", err)
+
+		return responses.Manga{}, fmt.Errorf("Failed to decode manga details.")
+	}
+
+	if len(mangaDetails) > 0 {
+		return mangaDetails[0], nil
+	}
+
+	return responses.Manga{}, nil
+}
+
+func (mangaModel *MangaModel) GetMangaDetailsWithWatchList(data requests.ID, uuid string) (responses.MangaDetails, error) {
+	objectID, _ := primitive.ObjectIDFromHex(data.ID)
+	malID, _ := strconv.Atoi(data.ID)
+
+	match := bson.M{"$match": bson.M{
+		"$or": bson.A{
+			bson.M{
+				"_id": objectID,
+			},
+			bson.M{
+				"mal_id": malID,
+			},
+		},
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"manga_id": bson.M{
+			"$toString": "$_id",
+		},
+	}}
+
+	lookup := bson.M{"$lookup": bson.M{
+		"from": "manga-lists",
+		"let": bson.M{
+			"uuid":     uuid,
+			"manga_id": "$manga_id",
+			"mal_id":   "$mal_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$and": bson.A{
+							bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$manga_id", "$$manga_id"}},
+									bson.M{"$eq": bson.A{"$manga_mal_id", "$$manga_id"}},
+								},
+							},
+							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "manga_list",
+	}}
+
+	unwindWatchList := bson.M{"$unwind": bson.M{
+		"path":                       "$manga_list",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	lookupWatchLater := bson.M{"$lookup": bson.M{
+		"from": "consume-laters",
+		"let": bson.M{
+			"uuid":     uuid,
+			"manga_id": "$manga_id",
+			"mal_id":   "$mal_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$and": bson.A{
+							bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$content_id", "$$manga_id"}},
+									bson.M{"$eq": bson.A{"$content_external_id", "$$mal_id"}},
+								},
+							},
+							bson.M{"$eq": bson.A{"content_type", "manga"}},
+							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "watch_later",
+	}}
+
+	unwindWatchLater := bson.M{"$unwind": bson.M{
+		"path":                       "$watch_later",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	unwindRelations := bson.M{"$unwind": bson.M{
+		"path":                       "$relations",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	unwindSource := bson.M{"$unwind": bson.M{
+		"path":                       "$relations.source",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	setRelation := bson.M{"$set": bson.M{
+		"relations.mal_id": "$relations.source.mal_id",
+		"relations.type":   "$relations.source.type",
+	}}
+
+	animeRelationLookup := bson.M{"$lookup": bson.M{
+		"from": "animes",
+		"let": bson.M{
+			"mal_id":   "$relations.mal_id",
+			"relation": "$relations.relation",
+			"type":     "$relations.type",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$eq": bson.A{"$mal_id", "$$mal_id"},
+					},
+				},
+			},
+			bson.M{
+				"$project": bson.M{
+					"_id": 1,
+					"anime_id": bson.M{
+						"$toString": "$_id",
+					},
+					"mal_id":         1,
+					"title_en":       1,
+					"title_original": 1,
+					"image_url":      1,
+					"relation":       "$$relation",
+					"type":           "$$type",
+				},
+			},
+		},
+		"as": "anime_relation",
+	}}
+
+	mangaRelationLookup := bson.M{"$lookup": bson.M{
+		"from": "mangas",
+		"let": bson.M{
+			"mal_id":   "$relations.mal_id",
+			"relation": "$relations.relation",
+			"type":     "$relations.type",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$eq": bson.A{"$mal_id", "$$mal_id"},
+					},
+				},
+			},
+			bson.M{
+				"$project": bson.M{
+					"_id": 1,
+					"anime_id": bson.M{
+						"$toString": "$_id",
+					},
+					"mal_id":         1,
+					"title_en":       1,
+					"title_original": 1,
+					"image_url":      1,
+					"relation":       "$$relation",
+					"type":           "$$type",
+				},
+			},
+		},
+		"as": "manga_relation",
+	}}
+
+	unwindAnimeRelation := bson.M{"$unwind": bson.M{
+		"path":                       "$anime_relation",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	unwindMangaRelation := bson.M{"$unwind": bson.M{
+		"path":                       "$manga_relation",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	setAnimeRelation := bson.M{"$set": bson.M{
+		"anime_relation": bson.M{
+			"$ifNull": bson.A{"$anime_relation", false},
+		},
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$_id",
+		"title_original": bson.M{
+			"$first": "$title_original",
+		},
+		"title_en": bson.M{
+			"$first": "$title_en",
+		},
+		"title_jp": bson.M{
+			"$first": "$title_jp",
+		},
+		"description": bson.M{
+			"$first": "$description",
+		},
+		"image_url": bson.M{
+			"$first": "$image_url",
+		},
+		"mal_id": bson.M{
+			"$first": "$mal_id",
+		},
+		"mal_score": bson.M{
+			"$first": "$mal_score",
+		},
+		"mal_scored_by": bson.M{
+			"$first": "$mal_scored_by",
+		},
+		"type": bson.M{
+			"$first": "$type",
+		},
+		"chapters": bson.M{
+			"$first": "$chapters",
+		},
+		"volumes": bson.M{
+			"$first": "$volumes",
+		},
+		"status": bson.M{
+			"$first": "$status",
+		},
+		"is_publishing": bson.M{
+			"$first": "$is_publishing",
+		},
+		"published": bson.M{
+			"$first": "$published",
+		},
+		"recommendations": bson.M{
+			"$first": "$recommendations",
+		},
+		"serializations": bson.M{
+			"$first": "$serializations",
+		},
+		"genres": bson.M{
+			"$first": "$genres",
+		},
+		"themes": bson.M{
+			"$first": "$themes",
+		},
+		"demographics": bson.M{
+			"$first": "$demographics",
+		},
+		"relations": bson.M{
+			"$addToSet": bson.M{
+				"$cond": bson.A{
+					bson.M{
+						"$eq": bson.A{"$anime_relation", false},
+					},
+					"$manga_relation",
+					"$anime_relation",
+				},
+			},
+		},
+		"characters": bson.M{
+			"$first": "$characters",
+		},
+		"anime_list": bson.M{
+			"$first": "$anime_list",
+		},
+		"watch_later": bson.M{
+			"$first": "$watch_later",
+		},
+	}}
+
+	cursor, err := mangaModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, set, lookup, unwindWatchList, lookupWatchLater, unwindWatchLater,
+		unwindRelations, unwindSource, setRelation,
+		animeRelationLookup, mangaRelationLookup, unwindAnimeRelation,
+		unwindMangaRelation, group, setAnimeRelation,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": data.ID,
+		}).Error("failed to aggregate manga details: ", err)
+
+		return responses.MangaDetails{}, fmt.Errorf("Failed to aggregate manga details.")
+	}
+
+	var mangaDetails []responses.MangaDetails
+	if err = cursor.All(context.TODO(), &mangaDetails); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": data.ID,
+		}).Error("failed to decode anime details: ", err)
+
+		return responses.MangaDetails{}, fmt.Errorf("Failed to decode manga details.")
+	}
+
+	if len(mangaDetails) > 0 {
+		return mangaDetails[0], nil
+	}
+
+	return responses.MangaDetails{}, nil
 }

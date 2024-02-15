@@ -101,6 +101,85 @@ func (u *UserListController) CreateAnimeList(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdAnimeList})
 }
 
+// Create Manga List
+// @Summary Create Manga List
+// @Description Creates Manga List
+// @Tags user_list
+// @Accept application/json
+// @Produce application/json
+// @Param createmangalist body requests.CreateMangaList true "Create manga List"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 201 {object} models.MangaList
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /list/manga [post]
+func (u *UserListController) CreateMangaList(c *gin.Context) {
+	var data requests.CreateMangaList
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	var (
+		createdMangaList models.MangaList
+		err              error
+	)
+
+	mangaModel := models.NewMangaModel(u.Database)
+	manga, err := mangaModel.GetMangaDetails(requests.ID{
+		ID: data.MangaID,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	if manga.TitleOriginal == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	userModel := models.NewUserModel(u.Database)
+	userListModel := models.NewUserListModel(u.Database)
+
+	isPremium, _ := userModel.IsUserPremium(uid)
+	count, _ := userListModel.GetUserListCount(uid)
+
+	if !isPremium && count >= models.UserListLimit {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": errUserListPremium,
+		})
+
+		return
+	}
+
+	if createdMangaList, err = userListModel.CreateMangaList(uid, data, manga); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	logModel := models.NewLogsModel(u.Database)
+
+	go logModel.CreateLog(uid, requests.CreateLog{
+		LogType:          models.UserListLogType,
+		LogAction:        models.AddLogAction,
+		LogActionDetails: createdMangaList.Status,
+		ContentTitle:     manga.TitleOriginal,
+		ContentImage:     manga.ImageURL,
+		ContentType:      "manga",
+		ContentID:        createdMangaList.MangaID,
+	})
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdMangaList})
+}
+
 // Create Game List
 // @Summary Create Game List
 // @Description Creates Game List

@@ -397,7 +397,10 @@ func (customListModel *CustomListModel) GetCustomListsByUserID(uid *string, data
 			"$toObjectId": "$content_id",
 		},
 		"popularity": bson.M{
-			"$size": "$likes",
+			"$sum": bson.A{
+				bson.M{"$size": "$likes"},
+				bson.M{"$multiply": bson.A{bson.M{"$size": "$bookmarks"}, 3}},
+			},
 		},
 		"bookmark_count": bson.M{
 			"$size": "$bookmarks",

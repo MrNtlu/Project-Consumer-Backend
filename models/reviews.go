@@ -146,6 +146,340 @@ func (reviewModel *ReviewModel) CreateReview(uid string, data requests.CreateRev
 	return convertReviewModelToResponse(*review), nil
 }
 
+func (reviewModel *ReviewModel) GetReviewsByUID(uid string, data requests.SortReview) ([]responses.ReviewDetails, p.PaginationData, error) {
+	var (
+		sortType  string
+		sortOrder int8
+	)
+
+	switch data.Sort {
+	case "popularity":
+		sortType = "popularity"
+		sortOrder = -1
+	case "new":
+		sortType = "created_at"
+		sortOrder = -1
+	case "old":
+		sortType = "created_at"
+		sortOrder = 1
+	}
+
+	match := bson.M{"$match": bson.M{
+		"user_id": uid,
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"is_author": true,
+		"obj_user_id": bson.M{
+			"$toObjectId": "$user_id",
+		},
+		"obj_content_id": bson.M{
+			"$toObjectId": "$content_id",
+		},
+		"obj_likes": bson.M{
+			"$map": bson.M{
+				"input": bson.M{
+					"$slice": bson.A{"$likes", 10},
+				},
+				"as": "likes",
+				"in": bson.M{"$toObjectId": "$$likes"},
+			},
+		},
+		"popularity": bson.M{
+			"$size": "$likes",
+		},
+		"is_liked": false,
+	}}
+
+	lookup := bson.M{"$lookup": bson.M{
+		"from":         "users",
+		"localField":   "obj_user_id",
+		"foreignField": "_id",
+		"as":           "author",
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$author",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	facet := bson.M{"$facet": bson.M{
+		"movies": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "movie"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "movies",
+					"let": bson.M{
+						"content_id":  "$content_id",
+						"external_id": "$content_external_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$tmdb_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"tv": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "tv"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "tv-series",
+					"let": bson.M{
+						"content_id":  "$content_id",
+						"external_id": "$content_external_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$tmdb_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"anime": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "anime"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "animes",
+					"let": bson.M{
+						"content_id":  "$content_id",
+						"external_id": "$content_external_int_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$mal_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"games": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "game"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "games",
+					"let": bson.M{
+						"content_id":  "$content_id",
+						"external_id": "$content_external_int_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$rawg_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       "$title",
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"reviews": bson.M{
+			"$concatArrays": bson.A{"$movies", "$tv", "$anime", "$games"},
+		},
+	}}
+
+	unwindReviews := bson.M{"$unwind": bson.M{
+		"path":                       "$reviews",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	replaceRoot := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$reviews",
+	}}
+
+	unwindContent := bson.M{"$unwind": bson.M{
+		"path":                       "$content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	unwindObjLikes := bson.M{"$unwind": bson.M{
+		"path":                       "$obj_likes",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	likesLookup := bson.M{"$lookup": bson.M{
+		"from": "users",
+		"let": bson.M{
+			"user_id": "$obj_likes",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$eq": bson.A{"$_id", "$$user_id"},
+					},
+				},
+			},
+			bson.M{
+				"$project": bson.M{
+					"_id":        1,
+					"username":   1,
+					"email":      1,
+					"image":      1,
+					"is_premium": 1,
+				},
+			},
+		},
+		"as": "likes",
+	}}
+
+	unwindLikes := bson.M{"$unwind": bson.M{
+		"path":                       "$likes",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$_id",
+		"user_id": bson.M{
+			"$first": "$user_id",
+		},
+		"content_id": bson.M{
+			"$first": "$content_id",
+		},
+		"content_external_id": bson.M{
+			"$first": "$content_external_id",
+		},
+		"content_external_int_id": bson.M{
+			"$first": "$content_external_int_id",
+		},
+		"review": bson.M{
+			"$first": "$review",
+		},
+		"author": bson.M{
+			"$first": "$author",
+		},
+		"popularity": bson.M{
+			"$first": "$popularity",
+		},
+		"content": bson.M{
+			"$first": "$content",
+		},
+		"content_type": bson.M{
+			"$first": "$content_type",
+		},
+		"is_author": bson.M{
+			"$first": "$is_author",
+		},
+		"is_liked": bson.M{
+			"$first": "$is_liked",
+		},
+		"is_spoiler": bson.M{
+			"$first": "$is_spoiler",
+		},
+		"star": bson.M{
+			"$first": "$star",
+		},
+		"likes": bson.M{
+			"$push": "$likes",
+		},
+		"created_at": bson.M{
+			"$first": "$created_at",
+		},
+		"updated_at": bson.M{
+			"$first": "$updated_at",
+		},
+	}}
+
+	paginatedData, err := p.New(reviewModel.ReviewCollection).Context(context.TODO()).Limit(reviewPagination).
+		Page(data.Page).Sort(sortType, sortOrder).Aggregate(
+		match, set, lookup, unwind, facet, project, unwindReviews, replaceRoot,
+		unwindContent, unwindObjLikes, likesLookup, unwindLikes, group,
+	)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"data": data,
+			"uid":  uid,
+		}).Error("failed to aggregate reviews: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to aggregate reviews.")
+	}
+
+	var reviews []responses.ReviewDetails
+	for _, raw := range paginatedData.Data {
+		var review *responses.ReviewDetails
+		if marshalErr := bson.Unmarshal(raw, &review); marshalErr == nil {
+			reviews = append(reviews, *review)
+		}
+	}
+
+	return reviews, paginatedData.Pagination, nil
+}
+
 func (reviewModel *ReviewModel) GetReviewsIndependentFromContent(uid *string, data requests.SortReview) ([]responses.ReviewDetails, p.PaginationData, error) {
 	var (
 		sortType  string

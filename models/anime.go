@@ -707,7 +707,7 @@ func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime
 			"id": data.ID,
 		}).Error("failed to aggregate anime details: ", err)
 
-		return responses.Anime{}, fmt.Errorf("Failed to aggregate anime details with watch list.")
+		return responses.Anime{}, fmt.Errorf("Failed to aggregate anime details.")
 	}
 
 	var animeDetails []responses.Anime
@@ -765,6 +765,7 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 									bson.M{"$eq": bson.A{"$anime_mal_id", "$$anime_id"}},
 								},
 							},
+							bson.M{"$eq": bson.A{"content_type", "anime"}},
 							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
 						},
 					},

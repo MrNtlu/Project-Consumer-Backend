@@ -28,6 +28,13 @@ func userListRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mon
 			anime.PATCH("/inc", userListController.IncrementAnimeListEpisodeByID)
 		}
 
+		manga := baseRoute.Group("/manga").Use(jwtToken.MiddlewareFunc())
+		{
+			manga.POST("", userListController.CreateMangaList)
+			// manga.PATCH("", userListController.UpdateAnimeListByID)
+			// manga.PATCH("/inc", userListController.IncrementAnimeListEpisodeByID)
+		}
+
 		game := baseRoute.Group("/game").Use(jwtToken.MiddlewareFunc())
 		{
 			game.POST("", userListController.CreateGameList)

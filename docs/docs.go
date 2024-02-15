@@ -25,7 +25,7 @@ const docTemplate = `{
     "paths": {
         "/anime": {
             "get": {
-                "description": "Returns manga by sort and filter",
+                "description": "Returns animes by sort and filter",
                 "consumes": [
                     "application/json"
                 ],
@@ -33,17 +33,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "manga"
+                    "anime"
                 ],
-                "summary": "Get Manga by Sort and Filter",
+                "summary": "Get Animes by Sort and Filter",
                 "parameters": [
                     {
-                        "description": "Sort and Filter Manga",
-                        "name": "sortfiltermanga",
+                        "description": "Sort and Filter Anime",
+                        "name": "sortfilteranime",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/requests.SortFilterManga"
+                            "$ref": "#/definitions/requests.SortFilterAnime"
                         }
                     }
                 ],
@@ -53,7 +53,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/responses.Manga"
+                                "$ref": "#/definitions/responses.Anime"
                             }
                         }
                     },
@@ -2022,6 +2022,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/list/manga": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates Manga List",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_list"
+                ],
+                "summary": "Create Manga List",
+                "parameters": [
+                    {
+                        "description": "Create manga List",
+                        "name": "createmangalist",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.CreateMangaList"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.MangaList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/list/movie": {
             "post": {
                 "security": [
@@ -2251,6 +2309,92 @@ const docTemplate = `{
                         "description": "Could not found",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/manga": {
+            "get": {
+                "description": "Returns manga by sort and filter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manga"
+                ],
+                "summary": "Get Manga by Sort and Filter",
+                "parameters": [
+                    {
+                        "description": "Sort and Filter Manga",
+                        "name": "sortfiltermanga",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortFilterManga"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Manga"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/manga/details": {
+            "get": {
+                "description": "Returns Manga details with optional authentication",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manga"
+                ],
+                "summary": "Get Manga Details",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ID"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.MangaDetails"
+                            }
                         }
                     },
                     "500": {
@@ -3062,6 +3206,67 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/responses.ReviewWithContent"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/review/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get Review List by UID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "review"
+                ],
+                "summary": "Get Review List by UID",
+                "parameters": [
+                    {
+                        "description": "Sort Review",
+                        "name": "sortreview",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortReview"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.ReviewDetails"
                             }
                         }
                     },
@@ -4445,6 +4650,41 @@ const docTemplate = `{
                 }
             }
         },
+        "models.MangaList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "manga_id": {
+                    "type": "string"
+                },
+                "manga_mal_id": {
+                    "type": "integer"
+                },
+                "read_chapters": {
+                    "type": "integer"
+                },
+                "read_volumes": {
+                    "type": "integer"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "models.MovieWatchList": {
             "type": "object",
             "properties": {
@@ -4867,6 +5107,50 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "hours_played": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "score": {
+                    "type": "number",
+                    "maximum": 10,
+                    "minimum": 0
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "finished",
+                        "dropped",
+                        "planto"
+                    ]
+                },
+                "times_finished": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "requests.CreateMangaList": {
+            "type": "object",
+            "required": [
+                "manga_id",
+                "manga_mal_id",
+                "read_chapters",
+                "read_volumes",
+                "status"
+            ],
+            "properties": {
+                "manga_id": {
+                    "type": "string"
+                },
+                "manga_mal_id": {
+                    "type": "integer"
+                },
+                "read_chapters": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "read_volumes": {
                     "type": "integer",
                     "minimum": 0
                 },
@@ -6997,6 +7281,12 @@ const docTemplate = `{
                 "chapters": {
                     "type": "integer"
                 },
+                "characters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeCharacter"
+                    }
+                },
                 "demographics": {
                     "type": "array",
                     "items": {
@@ -7015,11 +7305,41 @@ const docTemplate = `{
                 "image_url": {
                     "type": "string"
                 },
+                "is_publishing": {
+                    "type": "boolean"
+                },
                 "mal_id": {
                     "type": "integer"
                 },
                 "mal_score": {
                     "type": "number"
+                },
+                "mal_scored_by": {
+                    "type": "integer"
+                },
+                "published": {
+                    "$ref": "#/definitions/responses.AnimeAirDate"
+                },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeRecommendation"
+                    }
+                },
+                "relations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeRelation"
+                    }
+                },
+                "reviews": {
+                    "$ref": "#/definitions/responses.ReviewSummary"
+                },
+                "serializations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeNameURL"
+                    }
                 },
                 "status": {
                     "type": "string"
@@ -7044,6 +7364,145 @@ const docTemplate = `{
                 },
                 "volumes": {
                     "type": "integer"
+                }
+            }
+        },
+        "responses.MangaDetails": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "chapters": {
+                    "type": "integer"
+                },
+                "characters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeCharacter"
+                    }
+                },
+                "demographics": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeGenre"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "description_extra": {
+                    "type": "string"
+                },
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeGenre"
+                    }
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "is_publishing": {
+                    "type": "boolean"
+                },
+                "mal_id": {
+                    "type": "integer"
+                },
+                "mal_score": {
+                    "type": "number"
+                },
+                "mal_scored_by": {
+                    "type": "integer"
+                },
+                "manga_list": {
+                    "$ref": "#/definitions/responses.MangaReadList"
+                },
+                "published": {
+                    "$ref": "#/definitions/responses.AnimeAirDate"
+                },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeRecommendation"
+                    }
+                },
+                "relations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeRelation"
+                    }
+                },
+                "reviews": {
+                    "$ref": "#/definitions/responses.ReviewSummary"
+                },
+                "serializations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeNameURL"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "themes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeGenre"
+                    }
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_jp": {
+                    "type": "string"
+                },
+                "title_original": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "volumes": {
+                    "type": "integer"
+                },
+                "watch_later": {
+                    "$ref": "#/definitions/responses.ConsumeLater"
+                }
+            }
+        },
+        "responses.MangaReadList": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "manga_id": {
+                    "type": "string"
+                },
+                "manga_mal_id": {
+                    "type": "integer"
+                },
+                "read_chapters": {
+                    "type": "integer"
+                },
+                "read_volumes": {
+                    "type": "integer"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "times_finished": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
                 }
             }
         },

@@ -180,6 +180,45 @@ func (r *ReviewController) CreateReview(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdReview})
 }
 
+// Get Review List by UID
+// @Summary Get Review List by UID
+// @Description Get Review List by UID
+// @Tags review
+// @Accept application/json
+// @Produce application/json
+// @Param sortreview body requests.SortReview true "Sort Review"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} responses.ReviewDetails
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /review/profile [get]
+func (r *ReviewController) GetReviewsByUID(c *gin.Context) {
+	var data requests.SortReview
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	reviewModel := models.NewReviewModel(r.Database)
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	reviews, pagination, err := reviewModel.GetReviewsByUID(uid, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": reviews, "pagination": pagination})
+}
+
 // Get Review List
 // @Summary Get Review List
 // @Description Get Review List independent from content or user id

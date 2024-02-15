@@ -16,21 +16,29 @@ type PreviewManga struct {
 }
 
 type Manga struct {
-	ID            primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
-	TitleOriginal string             `bson:"title_original" json:"title_original"`
-	TitleEn       string             `bson:"title_en" json:"title_en"`
-	TitleJP       string             `bson:"title_jp" json:"title_jp"`
-	Description   string             `bson:"description" json:"description"`
-	ImageURL      string             `bson:"image_url" json:"image_url"`
-	MalID         int64              `bson:"mal_id" json:"mal_id"`
-	MalScore      float64            `bson:"mal_score" json:"mal_score"`
-	Type          string             `bson:"type" json:"type"`
-	Chapters      *int64             `bson:"chapters" json:"chapters"`
-	Volumes       *int64             `bson:"volumes" json:"volumes"`
-	Status        string             `bson:"status" json:"status"`
-	Genres        []AnimeGenre       `bson:"genres" json:"genres"`
-	Themes        []AnimeGenre       `bson:"themes" json:"themes"`
-	Demographics  []AnimeGenre       `bson:"demographics" json:"demographics"`
+	ID              primitive.ObjectID    `bson:"_id,omitempty" json:"_id"`
+	TitleOriginal   string                `bson:"title_original" json:"title_original"`
+	TitleEn         string                `bson:"title_en" json:"title_en"`
+	TitleJP         string                `bson:"title_jp" json:"title_jp"`
+	Description     string                `bson:"description" json:"description"`
+	ImageURL        string                `bson:"image_url" json:"image_url"`
+	MalID           int64                 `bson:"mal_id" json:"mal_id"`
+	MalScore        float64               `bson:"mal_score" json:"mal_score"`
+	MalScoredBy     int64                 `bson:"mal_scored_by" json:"mal_scored_by"`
+	Type            string                `bson:"type" json:"type"`
+	Chapters        *int64                `bson:"chapters" json:"chapters"`
+	Volumes         *int64                `bson:"volumes" json:"volumes"`
+	Status          string                `bson:"status" json:"status"`
+	IsPublishing    bool                  `bson:"is_publishing" json:"is_publishing"`
+	Published       AnimeAirDate          `bson:"published" json:"published"`
+	Recommendations []AnimeRecommendation `bson:"recommendations" json:"recommendations"`
+	Serializations  []AnimeNameURL        `bson:"serializations" json:"serializations"`
+	Genres          []AnimeGenre          `bson:"genres" json:"genres"`
+	Themes          []AnimeGenre          `bson:"themes" json:"themes"`
+	Demographics    []AnimeGenre          `bson:"demographics" json:"demographics"`
+	Relations       []AnimeRelation       `bson:"relations" json:"relations"`
+	Characters      []AnimeCharacter      `bson:"characters" json:"characters"`
+	Review          ReviewSummary         `bson:"reviews" json:"reviews"`
 }
 
 type MangaDetails struct {

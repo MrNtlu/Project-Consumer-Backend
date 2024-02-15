@@ -105,6 +105,29 @@ definitions:
       user_id:
         type: string
     type: object
+  models.MangaList:
+    properties:
+      _id:
+        type: string
+      created_at:
+        type: string
+      manga_id:
+        type: string
+      manga_mal_id:
+        type: integer
+      read_chapters:
+        type: integer
+      read_volumes:
+        type: integer
+      score:
+        type: number
+      status:
+        type: string
+      times_finished:
+        type: integer
+      user_id:
+        type: string
+    type: object
   models.MovieWatchList:
     properties:
       _id:
@@ -410,6 +433,39 @@ definitions:
     required:
     - game_id
     - game_rawg_id
+    - status
+    type: object
+  requests.CreateMangaList:
+    properties:
+      manga_id:
+        type: string
+      manga_mal_id:
+        type: integer
+      read_chapters:
+        minimum: 0
+        type: integer
+      read_volumes:
+        minimum: 0
+        type: integer
+      score:
+        maximum: 10
+        minimum: 0
+        type: number
+      status:
+        enum:
+        - active
+        - finished
+        - dropped
+        - planto
+        type: string
+      times_finished:
+        minimum: 0
+        type: integer
+    required:
+    - manga_id
+    - manga_mal_id
+    - read_chapters
+    - read_volumes
     - status
     type: object
   requests.CreateMovieWatchList:
@@ -1853,6 +1909,10 @@ definitions:
         type: string
       chapters:
         type: integer
+      characters:
+        items:
+          $ref: '#/definitions/responses.AnimeCharacter'
+        type: array
       demographics:
         items:
           $ref: '#/definitions/responses.AnimeGenre'
@@ -1865,10 +1925,30 @@ definitions:
         type: array
       image_url:
         type: string
+      is_publishing:
+        type: boolean
       mal_id:
         type: integer
       mal_score:
         type: number
+      mal_scored_by:
+        type: integer
+      published:
+        $ref: '#/definitions/responses.AnimeAirDate'
+      recommendations:
+        items:
+          $ref: '#/definitions/responses.AnimeRecommendation'
+        type: array
+      relations:
+        items:
+          $ref: '#/definitions/responses.AnimeRelation'
+        type: array
+      reviews:
+        $ref: '#/definitions/responses.ReviewSummary'
+      serializations:
+        items:
+          $ref: '#/definitions/responses.AnimeNameURL'
+        type: array
       status:
         type: string
       themes:
@@ -1885,6 +1965,98 @@ definitions:
         type: string
       volumes:
         type: integer
+    type: object
+  responses.MangaDetails:
+    properties:
+      _id:
+        type: string
+      chapters:
+        type: integer
+      characters:
+        items:
+          $ref: '#/definitions/responses.AnimeCharacter'
+        type: array
+      demographics:
+        items:
+          $ref: '#/definitions/responses.AnimeGenre'
+        type: array
+      description:
+        type: string
+      description_extra:
+        type: string
+      genres:
+        items:
+          $ref: '#/definitions/responses.AnimeGenre'
+        type: array
+      image_url:
+        type: string
+      is_publishing:
+        type: boolean
+      mal_id:
+        type: integer
+      mal_score:
+        type: number
+      mal_scored_by:
+        type: integer
+      manga_list:
+        $ref: '#/definitions/responses.MangaReadList'
+      published:
+        $ref: '#/definitions/responses.AnimeAirDate'
+      recommendations:
+        items:
+          $ref: '#/definitions/responses.AnimeRecommendation'
+        type: array
+      relations:
+        items:
+          $ref: '#/definitions/responses.AnimeRelation'
+        type: array
+      reviews:
+        $ref: '#/definitions/responses.ReviewSummary'
+      serializations:
+        items:
+          $ref: '#/definitions/responses.AnimeNameURL'
+        type: array
+      status:
+        type: string
+      themes:
+        items:
+          $ref: '#/definitions/responses.AnimeGenre'
+        type: array
+      title_en:
+        type: string
+      title_jp:
+        type: string
+      title_original:
+        type: string
+      type:
+        type: string
+      volumes:
+        type: integer
+      watch_later:
+        $ref: '#/definitions/responses.ConsumeLater'
+    type: object
+  responses.MangaReadList:
+    properties:
+      _id:
+        type: string
+      created_at:
+        type: string
+      manga_id:
+        type: string
+      manga_mal_id:
+        type: integer
+      read_chapters:
+        type: integer
+      read_volumes:
+        type: integer
+      score:
+        type: number
+      status:
+        type: string
+      times_finished:
+        type: integer
+      user_id:
+        type: string
     type: object
   responses.Movie:
     properties:
@@ -2715,14 +2887,14 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns manga by sort and filter
+      description: Returns animes by sort and filter
       parameters:
-      - description: Sort and Filter Manga
+      - description: Sort and Filter Anime
         in: body
-        name: sortfiltermanga
+        name: sortfilteranime
         required: true
         schema:
-          $ref: '#/definitions/requests.SortFilterManga'
+          $ref: '#/definitions/requests.SortFilterAnime'
       produces:
       - application/json
       responses:
@@ -2730,15 +2902,15 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/responses.Manga'
+              $ref: '#/definitions/responses.Anime'
             type: array
         "500":
           description: Internal Server Error
           schema:
             type: string
-      summary: Get Manga by Sort and Filter
+      summary: Get Animes by Sort and Filter
       tags:
-      - manga
+      - anime
   /anime/airing:
     get:
       consumes:
@@ -3997,6 +4169,43 @@ paths:
       summary: Get Logs by User ID and date range
       tags:
       - user_list
+  /list/manga:
+    post:
+      consumes:
+      - application/json
+      description: Creates Manga List
+      parameters:
+      - description: Create manga List
+        in: body
+        name: createmangalist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CreateMangaList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.MangaList'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create Manga List
+      tags:
+      - user_list
   /list/movie:
     patch:
       consumes:
@@ -4151,6 +4360,62 @@ paths:
       summary: Create TVSeries Watch List
       tags:
       - user_list
+  /manga:
+    get:
+      consumes:
+      - application/json
+      description: Returns manga by sort and filter
+      parameters:
+      - description: Sort and Filter Manga
+        in: body
+        name: sortfiltermanga
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortFilterManga'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Manga'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Manga by Sort and Filter
+      tags:
+      - manga
+  /manga/details:
+    get:
+      consumes:
+      - application/json
+      description: Returns Manga details with optional authentication
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ID'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.MangaDetails'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Manga Details
+      tags:
+      - manga
   /movie:
     get:
       consumes:
@@ -4678,6 +4943,45 @@ paths:
       security:
       - BearerAuth: []
       summary: Get Liked by User
+      tags:
+      - review
+  /review/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get Review List by UID
+      parameters:
+      - description: Sort Review
+        in: body
+        name: sortreview
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortReview'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.ReviewDetails'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Review List by UID
       tags:
       - review
   /review/social:
