@@ -228,8 +228,6 @@ func (ai *AISuggestionsController) GetAISuggestions(c *gin.Context) {
 		Suggestions: suggestions,
 		CreatedAt:   createdAt,
 	}, "message": "Successfully returned."})
-
-	return
 }
 
 // Generate AI Recommendations
@@ -386,8 +384,6 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 		Suggestions: suggestions,
 		CreatedAt:   createdAt,
 	}})
-
-	return
 }
 
 func getUserListAsString(userListModel *models.UserListModel, uid string) (string, error) {
@@ -475,30 +471,22 @@ func parseResponseString(response []string) ([]string, []string, []string, []str
 	for _, str := range response {
 		if strings.HasPrefix(str, "Movie:") {
 			_, movieName, _ := strings.Cut(str, "Movie:")
-			if strings.HasPrefix(movieName, " ") {
-				movieName = strings.TrimPrefix(movieName, " ")
-			}
+			movieName = strings.TrimPrefix(movieName, " ")
 
 			movieList = append(movieList, movieName)
 		} else if strings.HasPrefix(str, "TV Series:") {
 			_, tvName, _ := strings.Cut(str, "TV Series:")
-			if strings.HasPrefix(tvName, " ") {
-				tvName = strings.TrimPrefix(tvName, " ")
-			}
+			tvName = strings.TrimPrefix(tvName, " ")
 
 			tvList = append(tvList, tvName)
 		} else if strings.HasPrefix(str, "Anime:") {
 			_, animeName, _ := strings.Cut(str, "Anime:")
-			if strings.HasPrefix(animeName, " ") {
-				animeName = strings.TrimPrefix(animeName, " ")
-			}
+			animeName = strings.TrimPrefix(animeName, " ")
 
 			animeList = append(animeList, animeName)
 		} else if strings.HasPrefix(str, "Game:") {
 			_, gameName, _ := strings.Cut(str, "Game:")
-			if strings.HasPrefix(gameName, " ") {
-				gameName = strings.TrimPrefix(gameName, " ")
-			}
+			gameName = strings.TrimPrefix(gameName, " ")
 
 			gameList = append(gameList, gameName)
 		}

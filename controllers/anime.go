@@ -146,6 +146,40 @@ func (a *AnimeController) GetAnimesBySortAndFilter(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": animes})
 }
 
+// Get Popular Animes
+// @Summary Get Popular Animes
+// @Description Returns Popular Animes
+// @Tags anime
+// @Accept application/json
+// @Produce application/json
+// @Param pagination body requests.Pagination true "Pagination"
+// @Success 200 {array} responses.Anime
+// @Failure 500 {string} string
+// @Router /anime/popular [get]
+func (a *AnimeController) GetPopularAnimes(c *gin.Context) {
+	var data requests.Pagination
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	animeModel := models.NewAnimeModel(a.Database)
+
+	animes, pagination, err := animeModel.GetPopularAnimes(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": animes})
+}
+
 // Get Anime Details
 // @Summary Get Anime Details
 // @Description Returns anime details with optional authentication

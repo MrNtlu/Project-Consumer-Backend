@@ -86,6 +86,16 @@ func (animeModel *AnimeModel) GetPreviewUpcomingAnimes() ([]responses.PreviewAni
 }
 
 func (animeModel *AnimeModel) GetPreviewPopularAnimes() ([]responses.PreviewAnime, error) {
+	match := bson.M{"$match": bson.M{
+		"$or": bson.A{
+			bson.M{"status": "Currently Airing"},
+			bson.M{"is_airing": true},
+		},
+		"aired.from": bson.M{
+			"$gte": utils.GetCustomDate(0, -3, 0),
+		},
+	}}
+
 	addFields := bson.M{"$addFields": bson.M{
 		"popularity": bson.M{
 			"$multiply": bson.A{
@@ -101,7 +111,7 @@ func (animeModel *AnimeModel) GetPreviewPopularAnimes() ([]responses.PreviewAnim
 	limit := bson.D{{"$limit", animePaginationLimit}}
 
 	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
-		addFields, sort, limit,
+		match, addFields, sort, limit,
 	})
 	if err != nil {
 		logrus.Error("failed to aggregate popular preview anime: ", err)
@@ -411,6 +421,47 @@ func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek() ([]responses
 	}
 
 	return animeList, nil
+}
+
+func (animeModel *AnimeModel) GetPopularAnimes(data requests.Pagination) ([]responses.Anime, p.PaginationData, error) {
+	match := bson.M{"$match": bson.M{
+		"$or": bson.A{
+			bson.M{"status": "Currently Airing"},
+			bson.M{"is_airing": true},
+		},
+		"aired.from": bson.M{
+			"$gte": utils.GetCustomDate(0, -3, 0),
+		},
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"popularity": bson.M{
+			"$multiply": bson.A{
+				"$mal_score", "$mal_scored_by",
+			},
+		},
+	}}
+
+	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animePaginationLimit).
+		Page(data.Page).Sort("popularity", -1).Aggregate(match, addFields)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+			"match":   match,
+		}).Error("failed to aggregate popular animes: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get popular anime.")
+	}
+
+	var animes []responses.Anime
+	for _, raw := range paginatedData.Data {
+		var anime *responses.Anime
+		if marshalErr := bson.Unmarshal(raw, &anime); marshalErr == nil {
+			animes = append(animes, *anime)
+		}
+	}
+
+	return animes, paginatedData.Pagination, nil
 }
 
 func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterAnime) ([]responses.Anime, p.PaginationData, error) {

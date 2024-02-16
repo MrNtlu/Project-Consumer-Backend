@@ -2960,6 +2960,34 @@ paths:
       summary: Get Anime Details
       tags:
       - anime
+  /anime/popular:
+    get:
+      consumes:
+      - application/json
+      description: Returns Popular Animes
+      parameters:
+      - description: Pagination
+        in: body
+        name: pagination
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Pagination'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Anime'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Popular Animes
+      tags:
+      - anime
   /anime/search:
     get:
       consumes:
