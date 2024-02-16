@@ -12,6 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+//lint:file-ignore ST1005 Ignore all
+
 type AISuggestionsModel struct {
 	Collection *mongo.Collection
 }

@@ -15,6 +15,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+//lint:file-ignore ST1005 Ignore all
+
 const (
 	UserListLimit     = 175
 	ConsumeLaterLimit = 50

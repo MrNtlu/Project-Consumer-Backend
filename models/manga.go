@@ -16,6 +16,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+//lint:file-ignore ST1005 Ignore all
+
 type MangaModel struct {
 	Collection *mongo.Collection
 }
@@ -47,6 +49,11 @@ func (mangaModel *MangaModel) GetPreviewCurrentlyPublishingManga() ([]responses.
 	opts := options.Find().SetSort(bson.M{"mal_score": -1}).SetLimit(mangaPaginationLimit)
 
 	cursor, err := mangaModel.Collection.Find(context.TODO(), match, opts)
+	if err != nil {
+		logrus.Error("failed to find preview publishing manga: ", err)
+
+		return nil, fmt.Errorf("Failed to find preview publishing manga.")
+	}
 
 	var results []responses.PreviewManga
 	if err = cursor.All(context.TODO(), &results); err != nil {
@@ -63,6 +70,11 @@ func (mangaModel *MangaModel) GetPreviewTopManga() ([]responses.PreviewManga, er
 	opts := options.Find().SetSort(bson.M{"mal_score": -1}).SetLimit(mangaPaginationLimit)
 
 	cursor, err := mangaModel.Collection.Find(context.TODO(), filter, opts)
+	if err != nil {
+		logrus.Error("failed to find preview top manga: ", err)
+
+		return nil, fmt.Errorf("Failed to find preview top manga.")
+	}
 
 	var results []responses.PreviewManga
 	if err = cursor.All(context.TODO(), &results); err != nil {

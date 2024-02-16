@@ -16,6 +16,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+//lint:file-ignore ST1005 Ignore all
+
 type TVModel struct {
 	Collection *mongo.Collection
 }
@@ -41,6 +43,11 @@ func (tvModel *TVModel) GetUpcomingPreviewTVSeries() ([]responses.PreviewTVSerie
 	opts := options.Find().SetSort(bson.M{"tmdb_popularity": -1}).SetLimit(tvSeriesUpcomingPaginationLimit)
 
 	cursor, err := tvModel.Collection.Find(context.TODO(), match, opts)
+	if err != nil {
+		logrus.Error("failed to find preview upcoming: ", err)
+
+		return nil, fmt.Errorf("Failed to find preview tv series.")
+	}
 
 	var results []responses.PreviewTVSeries
 	if err = cursor.All(context.TODO(), &results); err != nil {
@@ -286,6 +293,10 @@ func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek() ([]responses.Day
 		},
 	}}
 
+	sortByPopularity := bson.M{"$sort": bson.M{
+		"tmdb_popularity": 1,
+	}}
+
 	group := bson.M{"$group": bson.M{
 		"_id": "$dayOfWeek",
 		"data": bson.M{
@@ -293,30 +304,30 @@ func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek() ([]responses.Day
 		},
 	}}
 
+	setDataSlice := bson.M{"$set": bson.M{
+		"data": bson.M{
+			"$slice": bson.A{"$data", 25},
+		},
+		"day_of_week": "$_id",
+	}}
+
 	sort := bson.M{"$sort": bson.M{
 		"_id": 1,
 	}}
 
-	setSlice := bson.M{"$set": bson.M{
-		"day_of_week": "$_id",
-		"data": bson.M{
-			"$slice": bson.A{"$data", 25},
-		},
-	}}
-
-	sortArray := bson.M{"$set": bson.M{
-		"data": bson.M{
-			"$sortArray": bson.M{
-				"input": "$data",
-				"sortBy": bson.M{
-					"tmdb_popularity": -1,
-				},
-			},
-		},
-	}}
+	// sortArray := bson.M{"$set": bson.M{
+	// 	"data": bson.M{
+	// 		"$sortArray": bson.M{
+	// 			"input": "$data",
+	// 			"sortBy": bson.M{
+	// 				"tmdb_popularity": -1,
+	// 			},
+	// 		},
+	// 	},
+	// }}
 
 	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, set, airDateNotNull, addFields, group, sort, setSlice, sortArray,
+		match, set, airDateNotNull, addFields, sortByPopularity, group, setDataSlice, sort,
 	})
 	if err != nil {
 		logrus.Error("failed to aggregate currently airing tv series: ", err)

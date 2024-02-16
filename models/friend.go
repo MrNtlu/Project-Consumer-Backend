@@ -13,6 +13,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+//lint:file-ignore ST1005 Ignore all
+
 type FriendModel struct {
 	RequestCollection      *mongo.Collection
 	ShareAccountCollection *mongo.Collection

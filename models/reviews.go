@@ -17,6 +17,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+//lint:file-ignore ST1005 Ignore all
+
 type ReviewModel struct {
 	ReviewCollection *mongo.Collection
 }

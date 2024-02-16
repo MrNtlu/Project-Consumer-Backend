@@ -17,6 +17,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+//lint:file-ignore ST1005 Ignore all
+
 type GameModel struct {
 	Collection *mongo.Collection
 }
@@ -93,6 +95,11 @@ func (gameModel *GameModel) GetPreviewTopGames() ([]responses.PreviewGame, error
 	opts := options.Find().SetSort(bson.M{"metacritic_score": -1}).SetLimit(gamePaginationLimit)
 
 	cursor, err := gameModel.Collection.Find(context.TODO(), filter, opts)
+	if err != nil {
+		logrus.Error("failed to find top games: ", err)
+
+		return nil, fmt.Errorf("Failed to find preview top games.")
+	}
 
 	var results []responses.PreviewGame
 	if err = cursor.All(context.TODO(), &results); err != nil {

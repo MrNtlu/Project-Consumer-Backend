@@ -17,6 +17,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+//lint:file-ignore ST1005 Ignore all
+
 type MovieModel struct {
 	Collection *mongo.Collection
 }
@@ -49,6 +51,11 @@ func (movieModel *MovieModel) GetUpcomingPreviewMovies() ([]responses.PreviewMov
 	opts := options.Find().SetSort(bson.M{"tmdb_popularity": -1}).SetLimit(movieUpcomingPaginationLimit)
 
 	cursor, err := movieModel.Collection.Find(context.TODO(), match, opts)
+	if err != nil {
+		logrus.Error("failed to find preview upcoming: ", err)
+
+		return nil, fmt.Errorf("Failed to find preview upcoming movies.")
+	}
 
 	var results []responses.PreviewMovie
 	if err = cursor.All(context.TODO(), &results); err != nil {
@@ -65,6 +72,11 @@ func (movieModel *MovieModel) GetPopularPreviewMovies() ([]responses.PreviewMovi
 	opts := options.Find().SetSort(bson.M{"tmdb_popularity": -1}).SetLimit(moviePaginationLimit)
 
 	cursor, err := movieModel.Collection.Find(context.TODO(), filter, opts)
+	if err != nil {
+		logrus.Error("failed to find popular upcoming: ", err)
+
+		return nil, fmt.Errorf("Failed to find popular movies.")
+	}
 
 	var results []responses.PreviewMovie
 	if err = cursor.All(context.TODO(), &results); err != nil {
@@ -122,6 +134,11 @@ func (movieModel *MovieModel) GetInTheaterPreviewMovies() ([]responses.PreviewMo
 	opts := options.Find().SetSort(bson.M{"tmdb_popularity": -1}).SetLimit(movieUpcomingPaginationLimit)
 
 	cursor, err := movieModel.Collection.Find(context.TODO(), match, opts)
+	if err != nil {
+		logrus.Error("failed to find preview in theater movies: ", err)
+
+		return nil, fmt.Errorf("Failed to find preview in theater movies.")
+	}
 
 	var results []responses.PreviewMovie
 	if err = cursor.All(context.TODO(), &results); err != nil {

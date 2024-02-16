@@ -14,6 +14,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+//lint:file-ignore ST1005 Ignore all
+
 type CustomListModel struct {
 	Collection *mongo.Collection
 }
@@ -737,9 +739,7 @@ func (customListModel *CustomListModel) GetLikedCustomLists(uid string, data req
 		sortOrder = -1
 	}
 
-	var bookmarkAggregation primitive.M
-
-	bookmarkAggregation = bson.M{
+	var bookmarkAggregation = bson.M{
 		"$cond": bson.M{
 			"if": bson.M{
 				"$in": bson.A{
@@ -1098,9 +1098,7 @@ func (customListModel *CustomListModel) GetBookmarkedCustomLists(uid string, dat
 		sortOrder = -1
 	}
 
-	var likeAggregation primitive.M
-
-	likeAggregation = bson.M{
+	var likeAggregation = bson.M{
 		"$cond": bson.M{
 			"if": bson.M{
 				"$in": bson.A{

@@ -18,6 +18,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+//lint:file-ignore ST1005 Ignore all
+
 type AnimeModel struct {
 	Collection *mongo.Collection
 }
@@ -122,6 +124,11 @@ func (animeModel *AnimeModel) GetPreviewTopAnimes() ([]responses.PreviewAnime, e
 	opts := options.Find().SetSort(bson.M{"mal_score": -1}).SetLimit(animePaginationLimit)
 
 	cursor, err := animeModel.Collection.Find(context.TODO(), filter, opts)
+	if err != nil {
+		logrus.Error("failed to find preview top animes: ", err)
+
+		return nil, fmt.Errorf("Failed to find preview top animes.")
+	}
 
 	var results []responses.PreviewAnime
 	if err = cursor.All(context.TODO(), &results); err != nil {
@@ -377,12 +384,18 @@ func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek() ([]responses
 		},
 	}}
 
+	setDataSlice := bson.M{"$set": bson.M{
+		"data": bson.M{
+			"$slice": bson.A{"$data", 25},
+		},
+	}}
+
 	sortByWeekDay := bson.M{"$sort": bson.M{
 		"_id": 1,
 	}}
 
 	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, addFields, sortByScore, group, sortByWeekDay,
+		match, addFields, sortByScore, group, setDataSlice, sortByWeekDay,
 	})
 	if err != nil {
 		logrus.Error("failed to aggregate currently airing animes: ", err)
