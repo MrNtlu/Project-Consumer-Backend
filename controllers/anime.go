@@ -246,6 +246,8 @@ func (a *AnimeController) GetAnimeDetails(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"data": animeDetailsWithWatchList,
 		})
+
+		return
 	} else {
 		animeDetails, err := animeModel.GetAnimeDetails(data)
 		if err != nil {
@@ -275,6 +277,8 @@ func (a *AnimeController) GetAnimeDetails(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"data": animeDetails,
 		})
+
+		return
 	}
 }
 
