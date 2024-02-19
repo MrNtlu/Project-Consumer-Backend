@@ -271,7 +271,7 @@ func (customListModel *CustomListModel) DeleteAllCustomListsByUserID(uid string)
 	return nil
 }
 
-func (customListModel *CustomListModel) GetCustomListsByUserID(uid *string, data requests.SortCustomList, hidePrivate bool) ([]responses.CustomList, error) {
+func (customListModel *CustomListModel) GetCustomListsByUserID(uid *string, data requests.SortCustomList, hidePrivate, isSocial bool) ([]responses.CustomList, error) {
 	var (
 		sortType            string
 		sortOrder           int8
@@ -305,7 +305,11 @@ func (customListModel *CustomListModel) GetCustomListsByUserID(uid *string, data
 				"else": false,
 			},
 		}
-		if hidePrivate {
+		if isSocial {
+			match = bson.M{"$match": bson.M{
+				"is_private": false,
+			}}
+		} else if hidePrivate {
 			match = bson.M{"$match": bson.M{
 				"user_id":    *uid,
 				"is_private": false,

@@ -745,6 +745,15 @@ func (userListModel *UserListModel) GetUserListCount(uid string) (int64, error) 
 		return -1, err
 	}
 
+	// mangaCount, err := userListModel.MangaListCollection.CountDocuments(context.TODO(), bson.M{"user_id": uid})
+	// if err != nil {
+	// 	logrus.WithFields(logrus.Fields{
+	// 		"uid": uid,
+	// 	}).Error("failed to count manga list: ", err)
+
+	// 	return -1, err
+	// }
+
 	return (movieCount + tvCount + animeCount + gameCount), nil
 }
 
@@ -794,6 +803,39 @@ func (userListModel *UserListModel) GetAnimeListByUserIdAndAnimeId(uid, animeId 
 	}
 
 	return animeList
+}
+
+func (userListModel *UserListModel) GetBaseMangaListByID(mangaListID string) (MangaList, error) {
+	objectID, _ := primitive.ObjectIDFromHex(mangaListID)
+
+	result := userListModel.MangaListCollection.FindOne(context.TODO(), bson.M{"_id": objectID})
+
+	var mangaList MangaList
+	if err := result.Decode(&mangaList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"id": mangaListID,
+		}).Error("failed to find manga list by id: ", err)
+
+		return MangaList{}, fmt.Errorf("Failed to find manga list by id.")
+	}
+
+	return mangaList, nil
+}
+
+func (userListModel *UserListModel) GetMangaListByUserIdAndMangaId(uid, mangaId string) MangaList {
+	result := userListModel.MangaListCollection.FindOne(context.TODO(), bson.M{"user_id": uid, "manga_id": mangaId})
+
+	var mangaList MangaList
+	if err := result.Decode(&mangaList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"user_id":  uid,
+			"manga_id": mangaId,
+		}).Error("failed to find manga list by user id and manga id: ", err)
+
+		return MangaList{}
+	}
+
+	return mangaList
 }
 
 func (userListModel *UserListModel) GetBaseGameListByID(gameListID string) (GameList, error) {
@@ -1182,6 +1224,79 @@ func (userListModel *UserListModel) GetGameListByUserID(uid string) ([]responses
 		}).Error("failed to decode game watch list: ", err)
 
 		return nil, fmt.Errorf("Failed to decode game watch list.")
+	}
+
+	return userList, nil
+}
+
+func (userListModel *UserListModel) GetMangaListByUserID(uid string) ([]responses.MangaList, error) {
+	match := bson.M{"$match": bson.M{
+		"user_id": uid,
+	}}
+
+	addFields := bson.M{"$addFields": bson.M{
+		"manga_obj_id": bson.M{
+			"$toObjectId": "$manga_id",
+		},
+	}}
+
+	mangaListLookup := bson.M{"$lookup": bson.M{
+		"from": "mangas",
+		"let": bson.M{
+			"manga_obj_id": "$manga_obj_id",
+			"manga_mal_id": "$manga_mal_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$or": bson.A{
+							bson.M{
+								"$eq": bson.A{"$_id", "$$manga_obj_id"},
+							},
+							bson.M{
+								"$eq": bson.A{
+									"$mal_id",
+									"$$manga_mal_id",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"as": "manga",
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$manga",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"title_original": "$manga.title_original",
+		"score":          1,
+	}}
+
+	cursor, err := userListModel.MangaListCollection.Aggregate(context.TODO(), bson.A{
+		match, addFields, mangaListLookup, unwind, project,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to aggregate manga read list: ", err)
+
+		return nil, fmt.Errorf("Failed to aggregate manga read list.")
+	}
+
+	var userList []responses.MangaList
+	if err = cursor.All(context.TODO(), &userList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to decode manga watch list: ", err)
+
+		return nil, fmt.Errorf("Failed to decode manga watch list.")
 	}
 
 	return userList, nil
@@ -2373,6 +2488,8 @@ func (userListModel *UserListModel) DeleteListByUserIDAndType(uid string, data r
 		collection = *userListModel.MovieWatchListCollection
 	case "tv":
 		collection = *userListModel.TVSeriesWatchListCollection
+	case "manga":
+		collection = *userListModel.MangaListCollection
 	}
 
 	count, err := collection.DeleteOne(context.TODO(), bson.M{
@@ -2400,11 +2517,12 @@ func (userListModel *UserListModel) DeleteUserListByUserID(uid string) {
 		}).Error("failed to delete user list by user id: ", err)
 	}
 
-	collections := [4]mongo.Collection{
+	collections := [5]mongo.Collection{
 		*userListModel.AnimeListCollection,
 		*userListModel.GameListCollection,
 		*userListModel.MovieWatchListCollection,
 		*userListModel.TVSeriesWatchListCollection,
+		*userListModel.MangaListCollection,
 	}
 
 	for i := 0; i < len(collections); i++ {

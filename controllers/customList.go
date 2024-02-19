@@ -353,7 +353,7 @@ func (cl *CustomListController) GetCustomListsByUserID(c *gin.Context) {
 	if OK && uid != nil {
 		userId := uid.(string)
 
-		customLists, err := customListModel.GetCustomListsByUserID(&userId, data, false)
+		customLists, err := customListModel.GetCustomListsByUserID(&userId, data, false, false)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -364,7 +364,7 @@ func (cl *CustomListController) GetCustomListsByUserID(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{"data": customLists})
 	} else {
-		customLists, err := customListModel.GetCustomListsByUserID(nil, data, false)
+		customLists, err := customListModel.GetCustomListsByUserID(nil, data, false, false)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),

@@ -35,7 +35,6 @@ const (
 
 //TODO Endpoints
 // Increase premium threshhold for comics and manga
-// Sort/Filter status, demographics, themes, genres,
 // Currently Publishing
 // Top Rated
 // Popularity

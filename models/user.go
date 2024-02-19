@@ -31,8 +31,6 @@ func NewUserModel(mongoDB *db.MongoDB) *UserModel {
 const legendMovieThreshold = 7
 const legendTVThreshold = 2
 const legendAnimeThreshold = 3
-
-//lint:ignore U1000 Will be used
 const legendMangaThreshold = 3
 const legendGameThreshold = 3
 const legendGameHoursPlayedThreshold = 350
