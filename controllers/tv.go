@@ -244,6 +244,40 @@ func (tv *TVController) GetPopularActors(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": actors})
 }
 
+// Get Popular Streaming Platforms
+// @Summary Get Popular Streaming Platforms
+// @Description Returns Popular Streaming Platforms
+// @Tags tv
+// @Accept application/json
+// @Produce application/json
+// @Param regionfilters body requests.RegionFilters true "Region Filters"
+// @Success 200 {array} responses.StreamingPlatform
+// @Failure 500 {string} string
+// @Router /tv/popular-streaming-services [get]
+func (tv *TVController) GetPopularStreamingServices(c *gin.Context) {
+	var data requests.RegionFilters
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	tvModel := models.NewTVModel(tv.Database)
+
+	actors, err := tvModel.GetPopularStreamingServices(data.Region)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": actors})
+}
+
 // Get TV Series by Actors
 // @Summary Get TV Series by Actors
 // @Description Returns TV Series by Actors

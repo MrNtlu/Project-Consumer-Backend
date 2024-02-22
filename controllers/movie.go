@@ -254,6 +254,40 @@ func (m *MovieController) GetPopularActors(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": actors})
 }
 
+// Get Popular Streaming Services
+// @Summary Get Popular Streaming Services
+// @Description Returns Popular Streaming Services
+// @Tags movie
+// @Accept application/json
+// @Produce application/json
+// @Param regionfilters body requests.RegionFilters true "Region Filters"
+// @Success 200 {array} responses.StreamingPlatform
+// @Failure 500 {string} string
+// @Router /movie/popular-streaming-services [get]
+func (m *MovieController) GetPopularStreamingServices(c *gin.Context) {
+	var data requests.RegionFilters
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	movieModel := models.NewMovieModel(m.Database)
+
+	streamingPlatforms, err := movieModel.GetPopularStreamingServices(data.Region)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": streamingPlatforms})
+}
+
 // Get Movies by Actors
 // @Summary Get Movies by Actors
 // @Description Returns Movies by Actors

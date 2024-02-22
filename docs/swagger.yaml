@@ -657,6 +657,13 @@ definitions:
     required:
     - page
     type: object
+  requests.RegionFilters:
+    properties:
+      region:
+        type: string
+    required:
+    - region
+    type: object
   requests.Register:
     properties:
       email_address:
@@ -2988,6 +2995,48 @@ paths:
       summary: Get Popular Animes
       tags:
       - anime
+  /anime/popular-streaming-services:
+    get:
+      consumes:
+      - application/json
+      description: Returns Popular Streaming Services
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.AnimeNameURL'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Popular Streaming Services
+      tags:
+      - anime
+  /anime/popular-studios:
+    get:
+      consumes:
+      - application/json
+      description: Returns Popular Studios
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.AnimeNameURL'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Popular Studios
+      tags:
+      - anime
   /anime/search:
     get:
       consumes:
@@ -4556,6 +4605,34 @@ paths:
       summary: Get Popular Actors
       tags:
       - movie
+  /movie/popular-streaming-services:
+    get:
+      consumes:
+      - application/json
+      description: Returns Popular Streaming Services
+      parameters:
+      - description: Region Filters
+        in: body
+        name: regionfilters
+        required: true
+        schema:
+          $ref: '#/definitions/requests.RegionFilters'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.StreamingPlatform'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Popular Streaming Services
+      tags:
+      - movie
   /movie/search:
     get:
       consumes:
@@ -5278,6 +5355,34 @@ paths:
           schema:
             type: string
       summary: Get Popular Actors
+      tags:
+      - tv
+  /tv/popular-streaming-services:
+    get:
+      consumes:
+      - application/json
+      description: Returns Popular Streaming Platforms
+      parameters:
+      - description: Region Filters
+        in: body
+        name: regionfilters
+        required: true
+        schema:
+          $ref: '#/definitions/requests.RegionFilters'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.StreamingPlatform'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Popular Streaming Platforms
       tags:
       - tv
   /tv/search:

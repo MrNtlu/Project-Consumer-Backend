@@ -34,6 +34,7 @@ const (
 	movieSearchLimit             = 50
 	moviePaginationLimit         = 40
 	movieActorsLimit             = 50
+	popularPlatformsLimit        = 15
 )
 
 func (movieModel *MovieModel) GetUpcomingPreviewMovies() ([]responses.PreviewMovie, error) {
@@ -620,6 +621,88 @@ func (movieModel *MovieModel) GetMoviesByActor(data requests.IDPagination) ([]re
 	}
 
 	return movies, paginatedData.Pagination, nil
+}
+
+func (movieModel *MovieModel) GetPopularStreamingServices(region string) ([]responses.StreamingPlatform, error) {
+	match := bson.M{"$match": bson.M{
+		"streaming.country_code": region,
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"_id": 1,
+		"streaming": bson.M{
+			"$slice": bson.A{
+				bson.M{
+					"$filter": bson.M{
+						"input": "$streaming",
+						"cond": bson.M{
+							"$eq": bson.A{
+								"$$this.country_code", region,
+							},
+						},
+					},
+				},
+				1,
+			},
+		},
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$streaming",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"streaming": "$streaming.streaming_platforms",
+	}}
+
+	unwindAgain := bson.M{"$unwind": bson.M{
+		"path":                       "$streaming",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$streaming.name",
+		"name": bson.M{
+			"$first": "$streaming.name",
+		},
+		"logo": bson.M{
+			"$first": "$streaming.logo",
+		},
+		"count": bson.M{
+			"$sum": 1,
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"count": -1,
+	}}
+
+	limit := bson.M{"$limit": popularPlatformsLimit}
+
+	cursor, err := movieModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, project, unwind, set, unwindAgain, group, sort, limit,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"region": region,
+		}).Error("failed to aggregate platforms: ", err)
+
+		return nil, fmt.Errorf("Failed to get top platforms.")
+	}
+
+	var streamingPlatforms []responses.StreamingPlatform
+	if err := cursor.All(context.TODO(), &streamingPlatforms); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"region": region,
+		}).Error("failed to decode platforms: ", err)
+
+		return nil, fmt.Errorf("Failed to decode top platforms.")
+	}
+
+	return streamingPlatforms, nil
 }
 
 func (movieModel *MovieModel) SearchMovieByTitle(data requests.Search) ([]responses.Movie, p.PaginationData, error) {

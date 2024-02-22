@@ -17,6 +17,7 @@ func movieRouter(router *gin.RouterGroup, mongoDB *db.MongoDB) {
 		movie.GET("", movieController.GetMoviesBySortAndFilter)
 		movie.GET("/actor", movieController.GetMoviesByActor)
 		movie.GET("/popular-actors", movieController.GetPopularActors)
+		movie.GET("/popular-streaming-services", movieController.GetPopularStreamingServices)
 		movie.Use(helpers.OptionalTokenCheck).GET("/details", movieController.GetMovieDetails)
 		movie.GET("/search", movieController.SearchMovieByTitle)
 		movie.GET("/theaters", movieController.GetMoviesInTheater)

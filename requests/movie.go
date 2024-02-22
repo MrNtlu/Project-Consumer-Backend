@@ -9,3 +9,7 @@ type SortFilterMovie struct {
 	Sort                string  `form:"sort" binding:"required,oneof=top popularity new old"`
 	Page                int64   `form:"page" json:"page" binding:"required,number,min=1"`
 }
+
+type RegionFilters struct {
+	Region string `form:"region" binding:"required"`
+}

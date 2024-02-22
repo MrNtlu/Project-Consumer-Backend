@@ -184,6 +184,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/anime/popular-streaming-services": {
+            "get": {
+                "description": "Returns Popular Streaming Services",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "anime"
+                ],
+                "summary": "Get Popular Streaming Services",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.AnimeNameURL"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/anime/popular-studios": {
+            "get": {
+                "description": "Returns Popular Studios",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "anime"
+                ],
+                "summary": "Get Popular Studios",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.AnimeNameURL"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/anime/search": {
             "get": {
                 "description": "Search animes",
@@ -2621,6 +2685,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/movie/popular-streaming-services": {
+            "get": {
+                "description": "Returns Popular Streaming Services",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movie"
+                ],
+                "summary": "Get Popular Streaming Services",
+                "parameters": [
+                    {
+                        "description": "Region Filters",
+                        "name": "regionfilters",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.RegionFilters"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.StreamingPlatform"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/movie/search": {
             "get": {
                 "description": "Search movies",
@@ -3729,6 +3836,49 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/responses.ActorDetails"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/tv/popular-streaming-services": {
+            "get": {
+                "description": "Returns Popular Streaming Platforms",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tv"
+                ],
+                "summary": "Get Popular Streaming Platforms",
+                "parameters": [
+                    {
+                        "description": "Region Filters",
+                        "name": "regionfilters",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.RegionFilters"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.StreamingPlatform"
                             }
                         }
                     },
@@ -5480,6 +5630,17 @@ const docTemplate = `{
                 "page": {
                     "type": "integer",
                     "minimum": 1
+                }
+            }
+        },
+        "requests.RegionFilters": {
+            "type": "object",
+            "required": [
+                "region"
+            ],
+            "properties": {
+                "region": {
+                    "type": "string"
                 }
             }
         },

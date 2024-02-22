@@ -1055,6 +1055,112 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 	return responses.AnimeDetails{}, nil
 }
 
+func (animeModel *AnimeModel) GetPopularStreamingServices() ([]responses.AnimeNameURL, error) {
+	match := bson.M{"$match": bson.M{
+		"streaming": bson.M{
+			"$not": bson.M{
+				"$size": 0,
+			},
+		},
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$streaming",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$streaming.name",
+		"name": bson.M{
+			"$first": "$streaming.name",
+		},
+		"url": bson.M{
+			"$first": "$streaming.url",
+		},
+		"count": bson.M{
+			"$sum": 1,
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"count": -1,
+	}}
+
+	limit := bson.M{"$limit": popularPlatformsLimit}
+
+	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, unwind, group, sort, limit,
+	})
+	if err != nil {
+		logrus.Error("failed to aggregate platforms: ", err)
+
+		return nil, fmt.Errorf("Failed to get popular platforms.")
+	}
+
+	var streamingPlatforms []responses.AnimeNameURL
+	if err := cursor.All(context.TODO(), &streamingPlatforms); err != nil {
+		logrus.Error("failed to decode platforms: ", err)
+
+		return nil, fmt.Errorf("Failed to decode popular platforms.")
+	}
+
+	return streamingPlatforms, nil
+}
+
+func (animeModel *AnimeModel) GetPopularStudios() ([]responses.AnimeNameURL, error) {
+	match := bson.M{"$match": bson.M{
+		"studios": bson.M{
+			"$not": bson.M{
+				"$size": 0,
+			},
+		},
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$studios",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$studios.name",
+		"name": bson.M{
+			"$first": "$studios.name",
+		},
+		"url": bson.M{
+			"$first": "$studios.url",
+		},
+		"count": bson.M{
+			"$sum": 1,
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"count": -1,
+	}}
+
+	limit := bson.M{"$limit": popularPlatformsLimit}
+
+	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, unwind, group, sort, limit,
+	})
+	if err != nil {
+		logrus.Error("failed to aggregate studios: ", err)
+
+		return nil, fmt.Errorf("Failed to get popular studios.")
+	}
+
+	var studios []responses.AnimeNameURL
+	if err := cursor.All(context.TODO(), &studios); err != nil {
+		logrus.Error("failed to decode studios: ", err)
+
+		return nil, fmt.Errorf("Failed to decode popular studios.")
+	}
+
+	return studios, nil
+}
+
 func getSeasonFromMonth() string {
 	switch int(time.Now().Month()) {
 	case 12, 1, 2:

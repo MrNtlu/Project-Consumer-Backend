@@ -180,6 +180,54 @@ func (a *AnimeController) GetPopularAnimes(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": animes})
 }
 
+// Get Popular Streaming Services
+// @Summary Get Popular Streaming Services
+// @Description Returns Popular Streaming Services
+// @Tags anime
+// @Accept application/json
+// @Produce application/json
+// @Success 200 {array} responses.AnimeNameURL
+// @Failure 500 {string} string
+// @Router /anime/popular-streaming-services [get]
+func (a *AnimeController) GetPopularStreamingServices(c *gin.Context) {
+	animeModel := models.NewAnimeModel(a.Database)
+
+	popularStreamingServices, err := animeModel.GetPopularStreamingServices()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": popularStreamingServices})
+}
+
+// Get Popular Studios
+// @Summary Get Popular Studios
+// @Description Returns Popular Studios
+// @Tags anime
+// @Accept application/json
+// @Produce application/json
+// @Success 200 {array} responses.AnimeNameURL
+// @Failure 500 {string} string
+// @Router /anime/popular-studios [get]
+func (a *AnimeController) GetPopularStudios(c *gin.Context) {
+	animeModel := models.NewAnimeModel(a.Database)
+
+	popularStudios, err := animeModel.GetPopularStudios()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": popularStudios})
+}
+
 // Get Anime Details
 // @Summary Get Anime Details
 // @Description Returns anime details with optional authentication
