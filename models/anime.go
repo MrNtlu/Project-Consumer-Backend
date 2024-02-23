@@ -64,7 +64,7 @@ func (animeModel *AnimeModel) GetPreviewUpcomingAnimes() ([]responses.PreviewAni
 		"popularity": -1,
 	}}
 
-	limit := bson.D{{"$limit", animeUpcomingPaginationLimit}}
+	limit := bson.M{"$limit": animeUpcomingPaginationLimit}
 
 	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
 		match, addFields, addPopularityFields, sort, limit,
@@ -108,7 +108,7 @@ func (animeModel *AnimeModel) GetPreviewPopularAnimes() ([]responses.PreviewAnim
 		"popularity": -1,
 	}}
 
-	limit := bson.D{{"$limit", animePaginationLimit}}
+	limit := bson.M{"$limit": animePaginationLimit}
 
 	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
 		match, addFields, sort, limit,

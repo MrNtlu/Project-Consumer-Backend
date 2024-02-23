@@ -79,7 +79,7 @@ func (tvModel *TVModel) GetPopularPreviewTVSeries() ([]responses.PreviewTVSeries
 		"tmdb_popularity": -1,
 	}}
 
-	limit := bson.D{{"$limit", tvSeriesPaginationLimit}}
+	limit := bson.M{"$limit": tvSeriesPaginationLimit}
 
 	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
 		set, sort, limit,
@@ -113,7 +113,7 @@ func (tvModel *TVModel) GetTopPreviewTVSeries() ([]responses.PreviewTVSeries, er
 		"top_rated": -1,
 	}}
 
-	limit := bson.D{{"$limit", tvSeriesPaginationLimit}}
+	limit := bson.M{"$limit": tvSeriesPaginationLimit}
 
 	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
 		addFields, sort, limit,

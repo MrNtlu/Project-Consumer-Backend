@@ -13,5 +13,6 @@ func previewRouter(router *gin.RouterGroup, mongoDB *db.MongoDB) {
 	preview := router.Group("/preview")
 	{
 		preview.GET("", previewController.GetHomePreview)
+		preview.GET("/v2", previewController.GetHomePreviewV2)
 	}
 }

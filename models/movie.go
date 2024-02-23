@@ -102,7 +102,7 @@ func (movieModel *MovieModel) GetTopPreviewMovies() ([]responses.PreviewMovie, e
 		"top_rated": -1,
 	}}
 
-	limit := bson.D{{"$limit", moviePaginationLimit}}
+	limit := bson.M{"$limit": moviePaginationLimit}
 
 	cursor, err := movieModel.Collection.Aggregate(context.TODO(), bson.A{
 		addFields, sort, limit,

@@ -98,7 +98,7 @@ func (mangaModel *MangaModel) GetPreviewPopularManga() ([]responses.PreviewManga
 		"popularity": -1,
 	}}
 
-	limit := bson.D{{"$limit", mangaPaginationLimit}}
+	limit := bson.M{"$limit": mangaPaginationLimit}
 
 	cursor, err := mangaModel.Collection.Aggregate(context.TODO(), bson.A{
 		addFields, sort, limit,

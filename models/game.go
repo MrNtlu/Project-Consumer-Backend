@@ -69,7 +69,7 @@ func (gameModel *GameModel) GetPreviewUpcomingGames() ([]responses.PreviewGame, 
 		"popularity":       -1,
 	}}
 
-	limit := bson.D{{"$limit", gameUpcomingPaginationLimit}}
+	limit := bson.M{"$limit": gameUpcomingPaginationLimit}
 
 	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
 		match, addFields, addPopularityFields, sort, limit,
@@ -124,7 +124,8 @@ func (gameModel *GameModel) GetPreviewPopularGames() ([]responses.PreviewGame, e
 		"popularity": -1,
 	}}
 
-	limit := bson.D{{"$limit", gamePaginationLimit}}
+	limit := bson.M{"$limit": gamePaginationLimit}
+
 	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
 		addFields, sort, limit,
 	})
