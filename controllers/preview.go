@@ -268,6 +268,8 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 // @Success 200 {array} responses.PreviewGame
 // @Success 200 {array} responses.PreviewManga
 // @Success 200 {array} responses.ActorDetails
+// @Success 200 {array} responses.StreamingPlatform
+// @Success 200 {array} responses.AnimeNameURL
 // @Failure 500 {string} string
 // @Router /preview/v2 [get]
 func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
@@ -509,7 +511,7 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 		},
 		"anime": gin.H{
 			"upcoming": upcomingAnimes, "top": topRatedAnimes, "popular": popularAnimes,
-			"extra": dayOfWeekAnimeList.Data, "streaming_platforms": animePopularSP, "studios": animePopularStudios,
+			"extra": dayOfWeekAnimeList.Data, "anime_streaming_platforms": animePopularSP, "studios": animePopularStudios,
 		},
 		"game":  gin.H{"upcoming": upcomingGames, "top": topRatedGames, "popular": popularGames, "extra": nil},
 		"manga": gin.H{"upcoming": publishingManga, "top": topRatedManga, "popular": popularManga, "extra": nil},

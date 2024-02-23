@@ -3085,6 +3085,49 @@
                 }
             }
         },
+        "/preview/v2": {
+            "get": {
+                "description": "Returns previews",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "preview"
+                ],
+                "summary": "Get Previews",
+                "parameters": [
+                    {
+                        "description": "Region Filters",
+                        "name": "regionfilters",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.RegionFilters"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.AnimeNameURL"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/review": {
             "get": {
                 "security": [

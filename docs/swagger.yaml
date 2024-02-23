@@ -4925,6 +4925,34 @@ paths:
       summary: Get Previews
       tags:
       - preview
+  /preview/v2:
+    get:
+      consumes:
+      - application/json
+      description: Returns previews
+      parameters:
+      - description: Region Filters
+        in: body
+        name: regionfilters
+        required: true
+        schema:
+          $ref: '#/definitions/requests.RegionFilters'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.AnimeNameURL'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Previews
+      tags:
+      - preview
   /review:
     delete:
       consumes:
