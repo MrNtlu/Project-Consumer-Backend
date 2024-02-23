@@ -623,7 +623,7 @@ func (movieModel *MovieModel) GetMoviesByActor(data requests.IDPagination) ([]re
 	return movies, paginatedData.Pagination, nil
 }
 
-func (movieModel *MovieModel) GetPopularStreamingServices(region string) ([]responses.StreamingPlatform, error) {
+func (movieModel *MovieModel) GetPopularStreamingPlatforms(region string) ([]responses.StreamingPlatform, error) {
 	match := bson.M{"$match": bson.M{
 		"streaming.country_code": region,
 	}}
@@ -703,6 +703,43 @@ func (movieModel *MovieModel) GetPopularStreamingServices(region string) ([]resp
 	}
 
 	return streamingPlatforms, nil
+}
+
+func (movieModel *MovieModel) GetMoviesByStreamingPlatform(data requests.FilterByStreamingPlatformAndRegion) ([]responses.Movie, p.PaginationData, error) {
+	var (
+		sortType  string
+		sortOrder int8
+	)
+
+	switch data.Sort {
+	case "popularity":
+		sortType = "tmdb_popularity"
+		sortOrder = -1
+	case "new":
+		sortType = "release_date"
+		sortOrder = -1
+	case "old":
+		sortType = "release_date"
+		sortOrder = 1
+	}
+
+	match := bson.M{
+		"streaming.country_code":             data.Region,
+		"streaming.streaming_platforms.name": data.StreamingPlatform,
+	}
+
+	var movies []responses.Movie
+	paginatedData, err := p.New(movieModel.Collection).Context(context.TODO()).Limit(moviePaginationLimit).
+		Page(data.Page).Sort(sortType, sortOrder).Filter(match).Decode(&movies).Find()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate movies by streaming platforms: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get movies by streaming platforms.")
+	}
+
+	return movies, paginatedData.Pagination, nil
 }
 
 func (movieModel *MovieModel) SearchMovieByTitle(data requests.Search) ([]responses.Movie, p.PaginationData, error) {

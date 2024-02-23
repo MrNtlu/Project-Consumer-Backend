@@ -254,17 +254,17 @@ func (m *MovieController) GetPopularActors(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": actors})
 }
 
-// Get Popular Streaming Services
-// @Summary Get Popular Streaming Services
-// @Description Returns Popular Streaming Services
+// Get Popular Streaming Platforms
+// @Summary Get Popular Streaming Platforms
+// @Description Returns Popular Streaming Platforms
 // @Tags movie
 // @Accept application/json
 // @Produce application/json
 // @Param regionfilters body requests.RegionFilters true "Region Filters"
 // @Success 200 {array} responses.StreamingPlatform
 // @Failure 500 {string} string
-// @Router /movie/popular-streaming-services [get]
-func (m *MovieController) GetPopularStreamingServices(c *gin.Context) {
+// @Router /movie/popular-streaming-platforms [get]
+func (m *MovieController) GetPopularStreamingPlatforms(c *gin.Context) {
 	var data requests.RegionFilters
 	if err := c.ShouldBindQuery(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -276,7 +276,7 @@ func (m *MovieController) GetPopularStreamingServices(c *gin.Context) {
 
 	movieModel := models.NewMovieModel(m.Database)
 
-	streamingPlatforms, err := movieModel.GetPopularStreamingServices(data.Region)
+	streamingPlatforms, err := movieModel.GetPopularStreamingPlatforms(data.Region)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -311,6 +311,40 @@ func (m *MovieController) GetMoviesByActor(c *gin.Context) {
 	movieModel := models.NewMovieModel(m.Database)
 
 	movies, pagination, err := movieModel.GetMoviesByActor(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": movies})
+}
+
+// Get Movies by Streaming Platform
+// @Summary Get Movies by Streaming Platform
+// @Description Returns Movies by Streaming Platform
+// @Tags movie
+// @Accept application/json
+// @Produce application/json
+// @Param filterbystreamingplatformandregion body requests.FilterByStreamingPlatformAndRegion true "Filter By Streaming Platform And Region"
+// @Success 200 {array} responses.Movie
+// @Failure 500 {string} string
+// @Router /movie/streaming-platforms [get]
+func (m *MovieController) GetMoviesByStreamingPlatform(c *gin.Context) {
+	var data requests.FilterByStreamingPlatformAndRegion
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	movieModel := models.NewMovieModel(m.Database)
+
+	movies, pagination, err := movieModel.GetMoviesByStreamingPlatform(data)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

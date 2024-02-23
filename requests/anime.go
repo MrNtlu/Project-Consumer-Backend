@@ -16,3 +16,15 @@ type SortFilterAnime struct {
 	Sort         string  `form:"sort" binding:"required,oneof=top popularity new old"`
 	Page         int64   `form:"page" json:"page" binding:"required,number,min=1"`
 }
+
+type FilterByStreamingPlatform struct {
+	StreamingPlatform string `form:"platform" binding:"required"`
+	Sort              string `form:"sort" binding:"required,oneof=popularity new old"`
+	Page              int64  `form:"page" json:"page" binding:"required,number,min=1"`
+}
+
+type FilterByStudio struct {
+	Studio string `form:"studio" binding:"required"`
+	Sort   string `form:"sort" binding:"required,oneof=popularity new old"`
+	Page   int64  `form:"page" json:"page" binding:"required,number,min=1"`
+}

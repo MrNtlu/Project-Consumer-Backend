@@ -184,9 +184,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/anime/popular-streaming-services": {
+        "/anime/popular-streaming-platforms": {
             "get": {
-                "description": "Returns Popular Streaming Services",
+                "description": "Returns Popular Streaming Platforms",
                 "consumes": [
                     "application/json"
                 ],
@@ -196,7 +196,7 @@ const docTemplate = `{
                 "tags": [
                     "anime"
                 ],
-                "summary": "Get Popular Streaming Services",
+                "summary": "Get Popular Streaming Platforms",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -312,6 +312,92 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/requests.SortByYearSeasonAnime"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Anime"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/anime/streaming-platforms": {
+            "get": {
+                "description": "Returns Animes by Streaming Platform",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "anime"
+                ],
+                "summary": "Get Animes by Streaming Platform",
+                "parameters": [
+                    {
+                        "description": "Filter By Streaming Platform",
+                        "name": "filterbystreamingplatform",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.FilterByStreamingPlatform"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Anime"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/anime/studios": {
+            "get": {
+                "description": "Returns Animes by Studios",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "anime"
+                ],
+                "summary": "Get Animes by Studios",
+                "parameters": [
+                    {
+                        "description": "Filter By Studio",
+                        "name": "filterbystudio",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.FilterByStudio"
                         }
                     }
                 ],
@@ -2685,9 +2771,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/movie/popular-streaming-services": {
+        "/movie/popular-streaming-platforms": {
             "get": {
-                "description": "Returns Popular Streaming Services",
+                "description": "Returns Popular Streaming Platforms",
                 "consumes": [
                     "application/json"
                 ],
@@ -2697,7 +2783,7 @@ const docTemplate = `{
                 "tags": [
                     "movie"
                 ],
-                "summary": "Get Popular Streaming Services",
+                "summary": "Get Popular Streaming Platforms",
                 "parameters": [
                     {
                         "description": "Region Filters",
@@ -2749,6 +2835,49 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/requests.Search"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.Movie"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/movie/streaming-platforms": {
+            "get": {
+                "description": "Returns Movies by Streaming Platform",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movie"
+                ],
+                "summary": "Get Movies by Streaming Platform",
+                "parameters": [
+                    {
+                        "description": "Filter By Streaming Platform And Region",
+                        "name": "filterbystreamingplatformandregion",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.FilterByStreamingPlatformAndRegion"
                         }
                     }
                 ],
@@ -3912,6 +4041,49 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/requests.Search"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.TVSeries"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/tv/streaming-services": {
+            "get": {
+                "description": "Returns TV Series by Actors",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tv"
+                ],
+                "summary": "Get TV Series by Actors",
+                "parameters": [
+                    {
+                        "description": "Filter By Streaming Platform And Region",
+                        "name": "filterbystreamingplatformandregion",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.FilterByStreamingPlatformAndRegion"
                         }
                     }
                 ],
@@ -5538,6 +5710,85 @@ const docTemplate = `{
                         "tv",
                         "manga"
                     ]
+                }
+            }
+        },
+        "requests.FilterByStreamingPlatform": {
+            "type": "object",
+            "required": [
+                "page",
+                "sort",
+                "streamingPlatform"
+            ],
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "new",
+                        "old"
+                    ]
+                },
+                "streamingPlatform": {
+                    "type": "string"
+                }
+            }
+        },
+        "requests.FilterByStreamingPlatformAndRegion": {
+            "type": "object",
+            "required": [
+                "page",
+                "region",
+                "sort",
+                "streamingPlatform"
+            ],
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "region": {
+                    "type": "string"
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "new",
+                        "old"
+                    ]
+                },
+                "streamingPlatform": {
+                    "type": "string"
+                }
+            }
+        },
+        "requests.FilterByStudio": {
+            "type": "object",
+            "required": [
+                "page",
+                "sort",
+                "studio"
+            ],
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "new",
+                        "old"
+                    ]
+                },
+                "studio": {
+                    "type": "string"
                 }
             }
         },

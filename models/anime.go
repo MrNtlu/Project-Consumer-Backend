@@ -1055,7 +1055,7 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 	return responses.AnimeDetails{}, nil
 }
 
-func (animeModel *AnimeModel) GetPopularStreamingServices() ([]responses.AnimeNameURL, error) {
+func (animeModel *AnimeModel) GetPopularStreamingPlatforms() ([]responses.AnimeNameURL, error) {
 	match := bson.M{"$match": bson.M{
 		"streaming": bson.M{
 			"$not": bson.M{
@@ -1106,6 +1106,42 @@ func (animeModel *AnimeModel) GetPopularStreamingServices() ([]responses.AnimeNa
 	}
 
 	return streamingPlatforms, nil
+}
+
+func (animeModel *AnimeModel) GetAnimesByStreamingPlatform(data requests.FilterByStreamingPlatform) ([]responses.Anime, p.PaginationData, error) {
+	var (
+		sortType  string
+		sortOrder int8
+	)
+
+	switch data.Sort {
+	case "popularity":
+		sortType = "mal_score"
+		sortOrder = -1
+	case "new":
+		sortType = "aired.from"
+		sortOrder = -1
+	case "old":
+		sortType = "aired.from"
+		sortOrder = 1
+	}
+
+	match := bson.M{
+		"streaming.name": data.StreamingPlatform,
+	}
+
+	var animes []responses.Anime
+	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animePaginationLimit).
+		Page(data.Page).Sort(sortType, sortOrder).Filter(match).Decode(&animes).Find()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate animes by streaming platforms: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get animes by streaming platforms.")
+	}
+
+	return animes, paginatedData.Pagination, nil
 }
 
 func (animeModel *AnimeModel) GetPopularStudios() ([]responses.AnimeNameURL, error) {
@@ -1159,6 +1195,42 @@ func (animeModel *AnimeModel) GetPopularStudios() ([]responses.AnimeNameURL, err
 	}
 
 	return studios, nil
+}
+
+func (animeModel *AnimeModel) GetAnimesByStudios(data requests.FilterByStudio) ([]responses.Anime, p.PaginationData, error) {
+	var (
+		sortType  string
+		sortOrder int8
+	)
+
+	switch data.Sort {
+	case "popularity":
+		sortType = "mal_score"
+		sortOrder = -1
+	case "new":
+		sortType = "aired.from"
+		sortOrder = -1
+	case "old":
+		sortType = "aired.from"
+		sortOrder = 1
+	}
+
+	match := bson.M{
+		"studios.name": data.Studio,
+	}
+
+	var animes []responses.Anime
+	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animePaginationLimit).
+		Page(data.Page).Sort(sortType, sortOrder).Filter(match).Decode(&animes).Find()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate animes by streaming platforms: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get animes by streaming platforms.")
+	}
+
+	return animes, paginatedData.Pagination, nil
 }
 
 func getSeasonFromMonth() string {

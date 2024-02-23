@@ -596,6 +596,63 @@ definitions:
     - id
     - type
     type: object
+  requests.FilterByStreamingPlatform:
+    properties:
+      page:
+        minimum: 1
+        type: integer
+      sort:
+        enum:
+        - popularity
+        - new
+        - old
+        type: string
+      streamingPlatform:
+        type: string
+    required:
+    - page
+    - sort
+    - streamingPlatform
+    type: object
+  requests.FilterByStreamingPlatformAndRegion:
+    properties:
+      page:
+        minimum: 1
+        type: integer
+      region:
+        type: string
+      sort:
+        enum:
+        - popularity
+        - new
+        - old
+        type: string
+      streamingPlatform:
+        type: string
+    required:
+    - page
+    - region
+    - sort
+    - streamingPlatform
+    type: object
+  requests.FilterByStudio:
+    properties:
+      page:
+        minimum: 1
+        type: integer
+      sort:
+        enum:
+        - popularity
+        - new
+        - old
+        type: string
+      studio:
+        type: string
+    required:
+    - page
+    - sort
+    - studio
+    type: object
   requests.ForgotPassword:
     properties:
       email_address:
@@ -2995,11 +3052,11 @@ paths:
       summary: Get Popular Animes
       tags:
       - anime
-  /anime/popular-streaming-services:
+  /anime/popular-streaming-platforms:
     get:
       consumes:
       - application/json
-      description: Returns Popular Streaming Services
+      description: Returns Popular Streaming Platforms
       produces:
       - application/json
       responses:
@@ -3013,7 +3070,7 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Get Popular Streaming Services
+      summary: Get Popular Streaming Platforms
       tags:
       - anime
   /anime/popular-studios:
@@ -3091,6 +3148,62 @@ paths:
           schema:
             type: string
       summary: Get Animes by Year and Season
+      tags:
+      - anime
+  /anime/streaming-platforms:
+    get:
+      consumes:
+      - application/json
+      description: Returns Animes by Streaming Platform
+      parameters:
+      - description: Filter By Streaming Platform
+        in: body
+        name: filterbystreamingplatform
+        required: true
+        schema:
+          $ref: '#/definitions/requests.FilterByStreamingPlatform'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Anime'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Animes by Streaming Platform
+      tags:
+      - anime
+  /anime/studios:
+    get:
+      consumes:
+      - application/json
+      description: Returns Animes by Studios
+      parameters:
+      - description: Filter By Studio
+        in: body
+        name: filterbystudio
+        required: true
+        schema:
+          $ref: '#/definitions/requests.FilterByStudio'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Anime'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Animes by Studios
       tags:
       - anime
   /anime/upcoming:
@@ -4605,11 +4718,11 @@ paths:
       summary: Get Popular Actors
       tags:
       - movie
-  /movie/popular-streaming-services:
+  /movie/popular-streaming-platforms:
     get:
       consumes:
       - application/json
-      description: Returns Popular Streaming Services
+      description: Returns Popular Streaming Platforms
       parameters:
       - description: Region Filters
         in: body
@@ -4630,7 +4743,7 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Get Popular Streaming Services
+      summary: Get Popular Streaming Platforms
       tags:
       - movie
   /movie/search:
@@ -4659,6 +4772,34 @@ paths:
           schema:
             type: string
       summary: Search Movie
+      tags:
+      - movie
+  /movie/streaming-platforms:
+    get:
+      consumes:
+      - application/json
+      description: Returns Movies by Streaming Platform
+      parameters:
+      - description: Filter By Streaming Platform And Region
+        in: body
+        name: filterbystreamingplatformandregion
+        required: true
+        schema:
+          $ref: '#/definitions/requests.FilterByStreamingPlatformAndRegion'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.Movie'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Movies by Streaming Platform
       tags:
       - movie
   /movie/theaters:
@@ -5411,6 +5552,34 @@ paths:
           schema:
             type: string
       summary: Search TV Series
+      tags:
+      - tv
+  /tv/streaming-services:
+    get:
+      consumes:
+      - application/json
+      description: Returns TV Series by Actors
+      parameters:
+      - description: Filter By Streaming Platform And Region
+        in: body
+        name: filterbystreamingplatformandregion
+        required: true
+        schema:
+          $ref: '#/definitions/requests.FilterByStreamingPlatformAndRegion'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.TVSeries'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get TV Series by Actors
       tags:
       - tv
   /tv/upcoming:

@@ -683,7 +683,7 @@ func (tvModel *TVModel) GetTVSeriesByActor(data requests.IDPagination) ([]respon
 	return tvList, paginatedData.Pagination, nil
 }
 
-func (tvModel *TVModel) GetPopularStreamingServices(region string) ([]responses.StreamingPlatform, error) {
+func (tvModel *TVModel) GetPopularStreamingPlatforms(region string) ([]responses.StreamingPlatform, error) {
 	match := bson.M{"$match": bson.M{
 		"streaming.country_code": region,
 	}}
@@ -763,6 +763,43 @@ func (tvModel *TVModel) GetPopularStreamingServices(region string) ([]responses.
 	}
 
 	return streamingPlatforms, nil
+}
+
+func (tvModel *TVModel) GetTVSeriesByStreamingPlatform(data requests.FilterByStreamingPlatformAndRegion) ([]responses.TVSeries, p.PaginationData, error) {
+	match := bson.M{
+		"streaming.country_code":             data.Region,
+		"streaming.streaming_platforms.name": data.StreamingPlatform,
+	}
+
+	var (
+		sortType  string
+		sortOrder int8
+	)
+
+	switch data.Sort {
+	case "popularity":
+		sortType = "tmdb_popularity"
+		sortOrder = -1
+	case "new":
+		sortType = "release_date"
+		sortOrder = -1
+	case "old":
+		sortType = "release_date"
+		sortOrder = 1
+	}
+
+	var tvList []responses.TVSeries
+	paginatedData, err := p.New(tvModel.Collection).Context(context.TODO()).Limit(tvSeriesPaginationLimit).
+		Page(data.Page).Sort(sortType, sortOrder).Filter(match).Decode(&tvList).Find()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate tv series by streaming platform: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get tv series by streaming platform.")
+	}
+
+	return tvList, paginatedData.Pagination, nil
 }
 
 func (tvModel *TVModel) SearchTVSeriesByTitle(data requests.Search) ([]responses.TVSeries, p.PaginationData, error) {

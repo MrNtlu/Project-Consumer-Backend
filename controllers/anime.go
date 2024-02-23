@@ -180,19 +180,19 @@ func (a *AnimeController) GetPopularAnimes(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": animes})
 }
 
-// Get Popular Streaming Services
-// @Summary Get Popular Streaming Services
-// @Description Returns Popular Streaming Services
+// Get Popular Streaming Platforms
+// @Summary Get Popular Streaming Platforms
+// @Description Returns Popular Streaming Platforms
 // @Tags anime
 // @Accept application/json
 // @Produce application/json
 // @Success 200 {array} responses.AnimeNameURL
 // @Failure 500 {string} string
-// @Router /anime/popular-streaming-services [get]
-func (a *AnimeController) GetPopularStreamingServices(c *gin.Context) {
+// @Router /anime/popular-streaming-platforms [get]
+func (a *AnimeController) GetPopularStreamingPlatforms(c *gin.Context) {
 	animeModel := models.NewAnimeModel(a.Database)
 
-	popularStreamingServices, err := animeModel.GetPopularStreamingServices()
+	popularStreamingPlatforms, err := animeModel.GetPopularStreamingPlatforms()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -201,7 +201,41 @@ func (a *AnimeController) GetPopularStreamingServices(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": popularStreamingServices})
+	c.JSON(http.StatusOK, gin.H{"data": popularStreamingPlatforms})
+}
+
+// Get Animes by Streaming Platform
+// @Summary Get Animes by Streaming Platform
+// @Description Returns Animes by Streaming Platform
+// @Tags anime
+// @Accept application/json
+// @Produce application/json
+// @Param filterbystreamingplatform body requests.FilterByStreamingPlatform true "Filter By Streaming Platform"
+// @Success 200 {array} responses.Anime
+// @Failure 500 {string} string
+// @Router /anime/streaming-platforms [get]
+func (a *AnimeController) GetAnimesByStreamingPlatform(c *gin.Context) {
+	var data requests.FilterByStreamingPlatform
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	animeModel := models.NewAnimeModel(a.Database)
+
+	animes, pagination, err := animeModel.GetAnimesByStreamingPlatform(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": animes})
 }
 
 // Get Popular Studios
@@ -226,6 +260,40 @@ func (a *AnimeController) GetPopularStudios(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": popularStudios})
+}
+
+// Get Animes by Studios
+// @Summary Get Animes by Studios
+// @Description Returns Animes by Studios
+// @Tags anime
+// @Accept application/json
+// @Produce application/json
+// @Param filterbystudio body requests.FilterByStudio true "Filter By Studio"
+// @Success 200 {array} responses.Anime
+// @Failure 500 {string} string
+// @Router /anime/studios [get]
+func (a *AnimeController) GetAnimesByStudios(c *gin.Context) {
+	var data requests.FilterByStudio
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	animeModel := models.NewAnimeModel(a.Database)
+
+	animes, pagination, err := animeModel.GetAnimesByStudios(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": animes})
 }
 
 // Get Anime Details

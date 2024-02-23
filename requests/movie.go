@@ -13,3 +13,10 @@ type SortFilterMovie struct {
 type RegionFilters struct {
 	Region string `form:"region" binding:"required"`
 }
+
+type FilterByStreamingPlatformAndRegion struct {
+	Region            string `form:"region" binding:"required"`
+	StreamingPlatform string `form:"platform" binding:"required"`
+	Sort              string `form:"sort" binding:"required,oneof=popularity new old"`
+	Page              int64  `form:"page" json:"page" binding:"required,number,min=1"`
+}

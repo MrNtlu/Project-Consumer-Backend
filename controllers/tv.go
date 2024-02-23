@@ -254,7 +254,7 @@ func (tv *TVController) GetPopularActors(c *gin.Context) {
 // @Success 200 {array} responses.StreamingPlatform
 // @Failure 500 {string} string
 // @Router /tv/popular-streaming-services [get]
-func (tv *TVController) GetPopularStreamingServices(c *gin.Context) {
+func (tv *TVController) GetPopularStreamingPlatforms(c *gin.Context) {
 	var data requests.RegionFilters
 	if err := c.ShouldBindQuery(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -266,7 +266,7 @@ func (tv *TVController) GetPopularStreamingServices(c *gin.Context) {
 
 	tvModel := models.NewTVModel(tv.Database)
 
-	actors, err := tvModel.GetPopularStreamingServices(data.Region)
+	actors, err := tvModel.GetPopularStreamingPlatforms(data.Region)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -301,6 +301,40 @@ func (tv *TVController) GetTVSeriesByActor(c *gin.Context) {
 	tvModel := models.NewTVModel(tv.Database)
 
 	tvSeries, pagination, err := tvModel.GetTVSeriesByActor(data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": tvSeries})
+}
+
+// Get TV Series by Actors
+// @Summary Get TV Series by Actors
+// @Description Returns TV Series by Actors
+// @Tags tv
+// @Accept application/json
+// @Produce application/json
+// @Param filterbystreamingplatformandregion body requests.FilterByStreamingPlatformAndRegion true "Filter By Streaming Platform And Region"
+// @Success 200 {array} responses.TVSeries
+// @Failure 500 {string} string
+// @Router /tv/streaming-services [get]
+func (tv *TVController) GetTVSeriesByStreamingPlatform(c *gin.Context) {
+	var data requests.FilterByStreamingPlatformAndRegion
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	tvModel := models.NewTVModel(tv.Database)
+
+	tvSeries, pagination, err := tvModel.GetTVSeriesByStreamingPlatform(data)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
