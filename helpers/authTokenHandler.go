@@ -16,6 +16,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+//lint:file-ignore ST1005 Ignore all
+
 var identityKey = "id"
 var (
 	errMissingAuth   = errors.New("Missing email or password")
@@ -32,8 +34,8 @@ func SetupJWTHandler(mongoDB *db.MongoDB) *jwt.GinJWTMiddleware {
 	authMiddleware, err := jwt.New(&jwt.GinJWTMiddleware{
 		Realm:       "project-consumer",
 		Key:         []byte(os.Getenv("JWT_SECRET_KEY")),
-		Timeout:     time.Hour * 336,  // 2 weeks
-		MaxRefresh:  time.Hour * 1460, // 2 months
+		Timeout:     time.Hour * 730,  // 1 month
+		MaxRefresh:  time.Hour * 2190, // 3 months
 		IdentityKey: identityKey,
 		Authenticator: func(c *gin.Context) (interface{}, error) {
 			var data requests.Login
@@ -82,11 +84,11 @@ func SetupJWTHandler(mongoDB *db.MongoDB) *jwt.GinJWTMiddleware {
 			})
 		},
 		LoginResponse: func(c *gin.Context, code int, token string, expire time.Time) {
-			c.SetCookie("access_token", token, 259200, "/", os.Getenv("BASE_URI"), true, true)
+			c.SetCookie("access_token", token, 2592000, "/", os.Getenv("BASE_URI"), true, true)
 			c.JSON(http.StatusOK, gin.H{"access_token": token})
 		},
 		RefreshResponse: func(c *gin.Context, code int, token string, expire time.Time) {
-			c.SetCookie("access_token", token, 259200, "/", os.Getenv("BASE_URI"), true, true)
+			c.SetCookie("access_token", token, 2592000, "/", os.Getenv("BASE_URI"), true, true)
 			c.JSON(http.StatusOK, gin.H{"access_token": token})
 		},
 		TokenLookup:    "header: Authorization, cookie: access_token",
