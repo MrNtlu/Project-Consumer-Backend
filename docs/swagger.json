@@ -288,49 +288,6 @@
                 }
             }
         },
-        "/anime/season": {
-            "get": {
-                "description": "Returns animes by year and season",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "anime"
-                ],
-                "summary": "Get Animes by Year and Season",
-                "parameters": [
-                    {
-                        "description": "Sort Anime By Year and Season",
-                        "name": "sortbyyearseasonanime",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.SortByYearSeasonAnime"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.Anime"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/anime/streaming-platforms": {
             "get": {
                 "description": "Returns Animes by Streaming Platform",
@@ -5989,41 +5946,6 @@
                 }
             }
         },
-        "requests.SortByYearSeasonAnime": {
-            "type": "object",
-            "required": [
-                "page",
-                "season",
-                "sort",
-                "year"
-            ],
-            "properties": {
-                "page": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "season": {
-                    "type": "string",
-                    "enum": [
-                        "winter",
-                        "summer",
-                        "fall",
-                        "spring"
-                    ]
-                },
-                "sort": {
-                    "type": "string",
-                    "enum": [
-                        "popularity",
-                        "new",
-                        "old"
-                    ]
-                },
-                "year": {
-                    "type": "integer"
-                }
-            }
-        },
         "requests.SortCustomList": {
             "type": "object",
             "required": [
@@ -6049,7 +5971,9 @@
             "type": "object",
             "required": [
                 "page",
-                "sort"
+                "season",
+                "sort",
+                "year"
             ],
             "properties": {
                 "demographics": {
@@ -6061,6 +5985,15 @@
                 "page": {
                     "type": "integer",
                     "minimum": 1
+                },
+                "season": {
+                    "type": "string",
+                    "enum": [
+                        "winter",
+                        "summer",
+                        "fall",
+                        "spring"
+                    ]
                 },
                 "sort": {
                     "type": "string",
@@ -6084,6 +6017,9 @@
                 },
                 "themes": {
                     "type": "string"
+                },
+                "year": {
+                    "type": "integer"
                 }
             }
         },
@@ -9141,6 +9077,9 @@
                 "level": {
                     "type": "integer"
                 },
+                "max_streak": {
+                    "type": "integer"
+                },
                 "membership_type": {
                     "type": "integer"
                 },
@@ -9155,6 +9094,9 @@
                     "items": {
                         "$ref": "#/definitions/responses.ReviewWithContent"
                     }
+                },
+                "streak": {
+                    "type": "integer"
                 },
                 "tv_count": {
                     "type": "integer"

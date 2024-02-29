@@ -54,40 +54,6 @@ func (a *AnimeController) GetUpcomingAnimesBySort(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": upcomingAnimes})
 }
 
-// Get Animes By Year and Season
-// @Summary Get Animes by Year and Season
-// @Description Returns animes by year and season
-// @Tags anime
-// @Accept application/json
-// @Produce application/json
-// @Param sortbyyearseasonanime body requests.SortByYearSeasonAnime true "Sort Anime By Year and Season"
-// @Success 200 {array} responses.Anime
-// @Failure 500 {string} string
-// @Router /anime/season [get]
-func (a *AnimeController) GetAnimesByYearAndSeason(c *gin.Context) {
-	var data requests.SortByYearSeasonAnime
-	if err := c.ShouldBindQuery(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": validatorErrorHandler(err),
-		})
-
-		return
-	}
-
-	animeModel := models.NewAnimeModel(a.Database)
-
-	animes, pagination, err := animeModel.GetAnimesByYearAndSeason(data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": animes})
-}
-
 // Get Upcoming Animes
 // @Summary Get Upcoming Animes by Day of Week
 // @Description Returns upcoming animes by day of week

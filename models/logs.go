@@ -86,6 +86,69 @@ func (logsModel *LogsModel) CreateLog(uid string, data requests.CreateLog) {
 	}
 }
 
+func (logsModel *LogsModel) GetLogStreak(uid string) (int, int) {
+	match := bson.M{"$match": bson.M{
+		"user_id": uid,
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"created_at": bson.M{
+			"$dateToString": bson.M{
+				"format": "%Y-%m-%d",
+				"date":   "$created_at",
+			},
+		},
+	}}
+
+	setToDate := bson.M{"$set": bson.M{
+		"created_at": bson.M{
+			"$toDate": "$created_at",
+		},
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$user_id",
+		"dates": bson.M{
+			"$addToSet": "$created_at",
+		},
+	}}
+
+	setSort := bson.M{"$set": bson.M{
+		"dates": bson.M{
+			"$sortArray": bson.M{
+				"input":  "$dates",
+				"sortBy": 1,
+			},
+		},
+	}}
+
+	cursor, err := logsModel.LogsCollection.Aggregate(context.TODO(), bson.A{
+		match, set, setToDate, group, setSort,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to aggregate logs: ", err)
+
+		return 0, 0
+	}
+
+	var logs []responses.LogDates
+	if err = cursor.All(context.TODO(), &logs); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to decode logs: ", err)
+
+		return 0, 0
+	}
+
+	if len(logs) > 0 {
+		return calculateStreak(logs[0])
+	}
+
+	return 0, 0
+}
+
 func (logsModel *LogsModel) GetLogsByDateRange(uid string, data requests.LogsByDateRange) ([]responses.LogsByRange, error) {
 	dateString := "2006-01-02"
 
@@ -164,4 +227,46 @@ func (logsModel *LogsModel) DeleteLogsByUserID(uid string) {
 			"uid": uid,
 		}).Error("failed to delete logs by user id: ", err)
 	}
+}
+
+func calculateStreak(logs responses.LogDates) (int, int) {
+	var (
+		logDates      []time.Time
+		maxStreak     int
+		currentStreak int
+	)
+
+	logDates = logs.Dates
+	maxStreak = 0
+	currentStreak = 0
+
+	for i := 1; i < len(logDates); i++ {
+		prevDate := logDates[i-1]
+		currentDate := logDates[i]
+
+		currentTime := time.Now()
+		today, _ := time.Parse("2006-01-02", currentTime.Format("2006-01-02"))
+
+		if currentDate.Sub(prevDate).Hours() == 24 {
+			currentStreak = currentStreak + 1
+		}
+
+		if maxStreak < currentStreak {
+			maxStreak = currentStreak
+		}
+
+		if currentDate.Sub(prevDate).Hours() != 24 {
+			currentStreak = 0
+		}
+
+		if i == len(logDates) && today.Sub(currentDate).Hours() > 47 {
+			currentStreak = 0
+		}
+
+		if i == (len(logDates)-1) && today.Sub(currentDate).Hours() == 24 {
+			currentStreak = currentStreak + 1
+		}
+	}
+
+	return maxStreak, currentStreak
 }

@@ -14,7 +14,6 @@ func animeRouter(router *gin.RouterGroup, mongoDB *db.MongoDB) {
 	anime := router.Group("/anime")
 	{
 		anime.GET("/upcoming", animeController.GetUpcomingAnimesBySort)
-		anime.GET("/season", animeController.GetAnimesByYearAndSeason) //TODO Check or delete
 		anime.GET("/airing", animeController.GetCurrentlyAiringAnimesByDayOfWeek)
 		anime.GET("", animeController.GetAnimesBySortAndFilter)
 		anime.GET("/streaming-platforms", animeController.GetAnimesByStreamingPlatform)

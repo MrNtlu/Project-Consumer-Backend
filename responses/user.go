@@ -44,6 +44,8 @@ type UserInfo struct {
 	Image                   string              `bson:"image" json:"image"`
 	FCMToken                string              `bson:"fcm_token" json:"fcm_token"`
 	Level                   int                 `bson:"level" json:"level"`
+	Streak                  int                 `bson:"streak" json:"streak"`
+	MaxStreak               int                 `bson:"max_streak" json:"max_streak"`
 	AnimeCount              int                 `bson:"anime_count" json:"anime_count"`
 	GameCount               int                 `bson:"game_count" json:"game_count"`
 	MovieCount              int                 `bson:"movie_count" json:"movie_count"`

@@ -758,32 +758,6 @@ definitions:
     required:
     - username
     type: object
-  requests.SortByYearSeasonAnime:
-    properties:
-      page:
-        minimum: 1
-        type: integer
-      season:
-        enum:
-        - winter
-        - summer
-        - fall
-        - spring
-        type: string
-      sort:
-        enum:
-        - popularity
-        - new
-        - old
-        type: string
-      year:
-        type: integer
-    required:
-    - page
-    - season
-    - sort
-    - year
-    type: object
   requests.SortCustomList:
     properties:
       sort:
@@ -808,6 +782,13 @@ definitions:
       page:
         minimum: 1
         type: integer
+      season:
+        enum:
+        - winter
+        - summer
+        - fall
+        - spring
+        type: string
       sort:
         enum:
         - top
@@ -825,9 +806,13 @@ definitions:
         type: string
       themes:
         type: string
+      year:
+        type: integer
     required:
     - page
+    - season
     - sort
+    - year
     type: object
   requests.SortFilterConsumeLater:
     properties:
@@ -2873,6 +2858,8 @@ definitions:
         type: array
       level:
         type: integer
+      max_streak:
+        type: integer
       membership_type:
         type: integer
       movie_count:
@@ -2883,6 +2870,8 @@ definitions:
         items:
           $ref: '#/definitions/responses.ReviewWithContent'
         type: array
+      streak:
+        type: integer
       tv_count:
         type: integer
       tv_watched_episodes:
@@ -3120,34 +3109,6 @@ paths:
           schema:
             type: string
       summary: Search Anime
-      tags:
-      - anime
-  /anime/season:
-    get:
-      consumes:
-      - application/json
-      description: Returns animes by year and season
-      parameters:
-      - description: Sort Anime By Year and Season
-        in: body
-        name: sortbyyearseasonanime
-        required: true
-        schema:
-          $ref: '#/definitions/requests.SortByYearSeasonAnime'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.Anime'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Animes by Year and Season
       tags:
       - anime
   /anime/streaming-platforms:

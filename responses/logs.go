@@ -2,6 +2,10 @@ package responses
 
 import "time"
 
+type LogDates struct {
+	Dates []time.Time `bson:"dates" json:"dates"`
+}
+
 type LogsByRange struct {
 	Date  string `bson:"date" json:"date"`
 	Count int    `bson:"count" json:"count"`

@@ -124,6 +124,8 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 	uid := jwt.ExtractClaims(c)["id"].(string)
 
 	userModel := models.NewUserModel(u.Database)
+	logsModel := models.NewLogsModel(u.Database)
+
 	userInfo, err := userModel.GetUserInfo("", uid, false)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -184,6 +186,10 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 		return
 	}
 	userInfo.FriendRequestCount = friendRequestCount
+
+	maxStreak, currentStreak := logsModel.GetLogStreak(uid)
+	userInfo.MaxStreak = maxStreak
+	userInfo.Streak = currentStreak
 
 	userInfo.IsFriendRequestSent = false
 	userInfo.IsFriendRequestReceived = false
@@ -281,6 +287,7 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 	reviewsModel := models.NewReviewModel(u.Database)
 	customListModel := models.NewCustomListModel(u.Database)
 	friendModel := models.NewFriendModel(u.Database)
+	logsModel := models.NewLogsModel(u.Database)
 
 	var (
 		userInfo responses.UserInfo
@@ -374,6 +381,11 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 
 		return
 	}
+
+	maxStreak, currentStreak := logsModel.GetLogStreak(userInfo.ID.Hex())
+	userInfo.MaxStreak = maxStreak
+	userInfo.Streak = currentStreak
+
 	userInfo.FriendRequestCount = 0
 	userInfo.AnimeCount = userStats.AnimeCount
 	userInfo.GameCount = userStats.GameCount

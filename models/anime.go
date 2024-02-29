@@ -316,49 +316,6 @@ func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.Pagination) 
 	return upcomingAnimes, paginatedData.Pagination, nil
 }
 
-func (animeModel *AnimeModel) GetAnimesByYearAndSeason(data requests.SortByYearSeasonAnime) ([]responses.Anime, p.PaginationData, error) {
-	year := time.Now().Year()
-
-	var (
-		sortType  string
-		sortOrder int8
-	)
-
-	switch data.Sort {
-	case "popularity":
-		if year == int(data.Year) && getSeasonIndex(getSeasonFromMonth()) < getSeasonIndex(data.Season) {
-			sortType = "popularity"
-		} else {
-			sortType = "mal_score"
-		}
-		sortOrder = -1
-	case "new":
-		sortType = "aired.from"
-		sortOrder = -1
-	case "old":
-		sortType = "aired.from"
-		sortOrder = 1
-	}
-
-	match := bson.M{
-		"year":   data.Year,
-		"season": data.Season,
-	}
-
-	var animes []responses.Anime
-	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animeUpcomingPaginationLimit).
-		Page(data.Page).Sort(sortType, sortOrder).Filter(match).Decode(&animes).Find()
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"request": data,
-		}).Error("failed to aggregate animes by season and year: ", err)
-
-		return nil, p.PaginationData{}, fmt.Errorf("Failed to get animes by season and year.")
-	}
-
-	return animes, paginatedData.Pagination, nil
-}
-
 func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek() ([]responses.DayOfWeekAnime, error) {
 	match := bson.M{"$match": bson.M{
 		"$or": bson.A{
@@ -483,7 +440,11 @@ func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterA
 		sortType = "mal_score"
 		sortOrder = -1
 	case "popularity":
-		sortType = "popularity"
+		if data.Year != nil && data.Season != nil {
+			sortType = "mal_score"
+		} else {
+			sortType = "popularity"
+		}
 		sortOrder = -1
 	case "new":
 		sortType = "aired.from"
@@ -534,6 +495,14 @@ func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterA
 			matchFields["themes.name"] = bson.M{
 				"$in": bson.A{data.Themes},
 			}
+		}
+
+		if data.Year != nil {
+			matchFields["year"] = data.Year
+		}
+
+		if data.Season != nil {
+			matchFields["season"] = data.Season
 		}
 	}
 
