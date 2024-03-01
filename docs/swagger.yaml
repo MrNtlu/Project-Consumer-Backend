@@ -810,9 +810,7 @@ definitions:
         type: integer
     required:
     - page
-    - season
     - sort
-    - year
     type: object
   requests.SortFilterConsumeLater:
     properties:

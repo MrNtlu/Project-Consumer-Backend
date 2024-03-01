@@ -5910,9 +5910,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "page",
-                "season",
-                "sort",
-                "year"
+                "sort"
             ],
             "properties": {
                 "demographics": {
