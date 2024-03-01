@@ -442,7 +442,7 @@ func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterA
 
 	matchFields := bson.M{}
 	if data.Status != nil || data.Genres != nil || data.Demographics != nil ||
-		data.Studios != nil || data.Themes != nil {
+		data.Studios != nil || data.Themes != nil || data.Year != nil || data.Season != nil {
 
 		if data.Status != nil {
 
