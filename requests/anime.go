@@ -2,8 +2,8 @@ package requests
 
 type SortFilterAnime struct {
 	Status       *string `form:"status" binding:"omitempty,oneof=airing upcoming finished"`
-	Year         *int16  `form:"year" binding:"number"`
-	Season       *string `form:"season" binding:"oneof=winter summer fall spring"`
+	Year         *int16  `form:"year" binding:"omitempty,number"`
+	Season       *string `form:"season" binding:"omitempty,oneof=winter summer fall spring"`
 	Genres       *string `form:"genres"`
 	Demographics *string `form:"demographics"`
 	Themes       *string `form:"themes"`
