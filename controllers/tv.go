@@ -54,30 +54,6 @@ func (tv *TVController) GetUpcomingTVSeries(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": upcomingTVSeries})
 }
 
-// Get Currently Airing TV Series
-// @Summary Get Currently Airing TV Series by day of week and country code
-// @Description Returns list of tv series by day of week
-// @Tags tv
-// @Accept application/json
-// @Produce application/json
-// @Success 200 {array} responses.DayOfWeekTVSeries
-// @Failure 500 {string} string
-// @Router /tv/airing [get]
-func (tv *TVController) GetCurrentlyAiringTVSeriesByDayOfWeek(c *gin.Context) {
-	tvModel := models.NewTVModel(tv.Database)
-
-	tvSeriesList, err := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": tvSeriesList})
-}
-
 // Get TV Series
 // @Summary Get TV Series by Sort and Filter
 // @Description Returns tv series by sort and filter with pagination

@@ -262,7 +262,7 @@ func (tvModel *TVModel) GetUpcomingTVSeries(data requests.Pagination) ([]respons
 	return upcomingTVSeries, paginatedData.Pagination, nil
 }
 
-func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek() ([]responses.DayOfWeekTVSeries, error) {
+func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek int) ([]responses.TVSeries, error) {
 	match := bson.M{"$match": bson.M{
 		"streaming.country_code": "US",
 		"status":                 "Returning Series",
@@ -293,27 +293,15 @@ func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek() ([]responses.Day
 		},
 	}}
 
+	matchDayOfWeek := bson.M{"$match": bson.M{
+		"dayOfWeek": dayOfWeek,
+	}}
+
 	sortByPopularity := bson.M{"$sort": bson.M{
 		"tmdb_popularity": 1,
 	}}
 
-	group := bson.M{"$group": bson.M{
-		"_id": "$dayOfWeek",
-		"data": bson.M{
-			"$push": "$$ROOT",
-		},
-	}}
-
-	setDataSlice := bson.M{"$set": bson.M{
-		"data": bson.M{
-			"$slice": bson.A{"$data", 25},
-		},
-		"day_of_week": "$_id",
-	}}
-
-	sort := bson.M{"$sort": bson.M{
-		"_id": 1,
-	}}
+	limit := bson.M{"$limit": 35}
 
 	// sortArray := bson.M{"$set": bson.M{
 	// 	"data": bson.M{
@@ -327,7 +315,7 @@ func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek() ([]responses.Day
 	// }}
 
 	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, set, airDateNotNull, addFields, sortByPopularity, group, setDataSlice, sort,
+		match, set, airDateNotNull, addFields, matchDayOfWeek, sortByPopularity, limit,
 	})
 	if err != nil {
 		logrus.Error("failed to aggregate currently airing tv series: ", err)
@@ -335,7 +323,7 @@ func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek() ([]responses.Day
 		return nil, fmt.Errorf("Failed to get currently airing tv series.")
 	}
 
-	var tvSeriesList []responses.DayOfWeekTVSeries
+	var tvSeriesList []responses.TVSeries
 	if err := cursor.All(context.TODO(), &tvSeriesList); err != nil {
 		logrus.Error("failed to decode tv series by user id: ", err)
 

@@ -1653,15 +1653,6 @@ definitions:
       day_of_week:
         type: integer
     type: object
-  responses.DayOfWeekTVSeries:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/responses.TVSeries'
-        type: array
-      day_of_week:
-        type: integer
-    type: object
   responses.FriendRequest:
     properties:
       _id:
@@ -5408,27 +5399,6 @@ paths:
           schema:
             type: string
       summary: Get TV Series by Actors
-      tags:
-      - tv
-  /tv/airing:
-    get:
-      consumes:
-      - application/json
-      description: Returns list of tv series by day of week
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.DayOfWeekTVSeries'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Currently Airing TV Series by day of week and country code
       tags:
       - tv
   /tv/details:

@@ -3859,38 +3859,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/tv/airing": {
-            "get": {
-                "description": "Returns list of tv series by day of week",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tv"
-                ],
-                "summary": "Get Currently Airing TV Series by day of week and country code",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.DayOfWeekTVSeries"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/tv/details": {
             "get": {
                 "description": "Returns tv series details with optional authentication",
@@ -7244,20 +7212,6 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/responses.Anime"
-                    }
-                },
-                "day_of_week": {
-                    "type": "integer"
-                }
-            }
-        },
-        "responses.DayOfWeekTVSeries": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.TVSeries"
                     }
                 },
                 "day_of_week": {
