@@ -66,38 +66,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/anime/airing": {
-            "get": {
-                "description": "Returns upcoming animes by day of week",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "anime"
-                ],
-                "summary": "Get Upcoming Animes by Day of Week",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.DayOfWeekAnime"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/anime/details": {
             "get": {
                 "description": "Returns anime details with optional authentication",
@@ -7202,20 +7170,6 @@ const docTemplate = `{
                 },
                 "title_original": {
                     "type": "string"
-                }
-            }
-        },
-        "responses.DayOfWeekAnime": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.Anime"
-                    }
-                },
-                "day_of_week": {
-                    "type": "integer"
                 }
             }
         },

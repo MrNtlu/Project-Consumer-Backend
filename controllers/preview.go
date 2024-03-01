@@ -4,7 +4,6 @@ import (
 	"app/db"
 	"app/models"
 	"app/requests"
-	"app/responses"
 	"net/http"
 	"time"
 
@@ -126,7 +125,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 	}
 
 	dayOfWeek := int16(time.Now().UTC().Weekday()) + 1
-	dayOfWeekTVSeries, err := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek(int(dayOfWeek))
+	dayOfWeekTVSeries, err := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -164,20 +163,13 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 		return
 	}
 
-	dayOfWeekAnime, err := animeModel.GetCurrentlyAiringAnimesByDayOfWeek()
+	dayOfWeekAnime, err := animeModel.GetCurrentlyAiringAnimesByDayOfWeek(dayOfWeek)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
 
 		return
-	}
-
-	var dayOfWeekAnimeList responses.DayOfWeekAnime
-	for _, item := range dayOfWeekAnime {
-		if item.DayOfWeek == dayOfWeek {
-			dayOfWeekAnimeList = item
-		}
 	}
 
 	// Game
@@ -241,7 +233,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"movie": gin.H{"upcoming": upcomingMovies, "popular": popularMovies, "top": topMovies, "extra": moviesInTheater, "actors": popularActors},
 		"tv":    gin.H{"upcoming": upcomingTVSeries, "popular": popularTVSeries, "top": topTVSeries, "extra": dayOfWeekTVSeries, "actors": popularActorsTVSeries},
-		"anime": gin.H{"upcoming": upcomingAnimes, "top": topRatedAnimes, "popular": popularAnimes, "extra": dayOfWeekAnimeList.Data},
+		"anime": gin.H{"upcoming": upcomingAnimes, "top": topRatedAnimes, "popular": popularAnimes, "extra": dayOfWeekAnime},
 		"game":  gin.H{"upcoming": upcomingGames, "top": topRatedGames, "popular": popularGames, "extra": nil},
 		"manga": gin.H{"upcoming": publishingManga, "top": topRatedManga, "popular": popularManga, "extra": nil},
 	})
@@ -366,7 +358,7 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 	}
 
 	dayOfWeek := int16(time.Now().UTC().Weekday()) + 1
-	dayOfWeekTVSeries, err := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek(int(dayOfWeek))
+	dayOfWeekTVSeries, err := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -406,20 +398,13 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 		return
 	}
 
-	dayOfWeekAnime, err := animeModel.GetCurrentlyAiringAnimesByDayOfWeek()
+	dayOfWeekAnime, err := animeModel.GetCurrentlyAiringAnimesByDayOfWeek(dayOfWeek)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
 
 		return
-	}
-
-	var dayOfWeekAnimeList responses.DayOfWeekAnime
-	for _, item := range dayOfWeekAnime {
-		if item.DayOfWeek == dayOfWeek {
-			dayOfWeekAnimeList = item
-		}
 	}
 
 	animePopularSP, _ := animeModel.GetPopularStreamingPlatforms()
@@ -495,7 +480,7 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 		},
 		"anime": gin.H{
 			"upcoming": upcomingAnimes, "top": topRatedAnimes, "popular": popularAnimes,
-			"extra": dayOfWeekAnimeList.Data, "anime_streaming_platforms": animePopularSP, "studios": animePopularStudios,
+			"extra": dayOfWeekAnime, "anime_streaming_platforms": animePopularSP, "studios": animePopularStudios,
 		},
 		"game":  gin.H{"upcoming": upcomingGames, "top": topRatedGames, "popular": popularGames, "extra": nil},
 		"manga": gin.H{"upcoming": publishingManga, "top": topRatedManga, "popular": popularManga, "extra": nil},

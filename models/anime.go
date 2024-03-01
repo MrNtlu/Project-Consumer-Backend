@@ -316,7 +316,7 @@ func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.Pagination) 
 	return upcomingAnimes, paginatedData.Pagination, nil
 }
 
-func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek() ([]responses.DayOfWeekAnime, error) {
+func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek(dayOfWeek int16) ([]responses.PreviewAnime, error) {
 	match := bson.M{"$match": bson.M{
 		"$or": bson.A{
 			bson.M{"status": "Currently Airing"},
@@ -337,32 +337,18 @@ func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek() ([]responses
 		},
 	}}
 
+	matchDayOfWeek := bson.M{"$match": bson.M{
+		"dayOfWeek": dayOfWeek,
+	}}
+
 	sortByScore := bson.M{"$sort": bson.M{
 		"mal_score": -1,
 	}}
 
-	group := bson.M{"$group": bson.M{
-		"_id": "$dayOfWeek",
-		"day_of_week": bson.M{
-			"$first": "$dayOfWeek",
-		},
-		"data": bson.M{
-			"$push": "$$ROOT",
-		},
-	}}
-
-	setDataSlice := bson.M{"$set": bson.M{
-		"data": bson.M{
-			"$slice": bson.A{"$data", 25},
-		},
-	}}
-
-	sortByWeekDay := bson.M{"$sort": bson.M{
-		"_id": 1,
-	}}
+	limit := bson.M{"$limit": 25}
 
 	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, addFields, sortByScore, group, setDataSlice, sortByWeekDay,
+		match, addFields, matchDayOfWeek, sortByScore, limit,
 	})
 	if err != nil {
 		logrus.Error("failed to aggregate currently airing animes: ", err)
@@ -370,7 +356,7 @@ func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek() ([]responses
 		return nil, err
 	}
 
-	var animeList []responses.DayOfWeekAnime
+	var animeList []responses.PreviewAnime
 	if err = cursor.All(context.TODO(), &animeList); err != nil {
 		logrus.Error("failed to decode currently airing animes: ", err)
 

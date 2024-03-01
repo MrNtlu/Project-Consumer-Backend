@@ -1644,15 +1644,6 @@ definitions:
       title_original:
         type: string
     type: object
-  responses.DayOfWeekAnime:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/responses.Anime'
-        type: array
-      day_of_week:
-        type: integer
-    type: object
   responses.FriendRequest:
     properties:
       _id:
@@ -2953,27 +2944,6 @@ paths:
           schema:
             type: string
       summary: Get Animes by Sort and Filter
-      tags:
-      - anime
-  /anime/airing:
-    get:
-      consumes:
-      - application/json
-      description: Returns upcoming animes by day of week
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/responses.DayOfWeekAnime'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Upcoming Animes by Day of Week
       tags:
       - anime
   /anime/details:

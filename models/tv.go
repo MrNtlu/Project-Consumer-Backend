@@ -262,7 +262,7 @@ func (tvModel *TVModel) GetUpcomingTVSeries(data requests.Pagination) ([]respons
 	return upcomingTVSeries, paginatedData.Pagination, nil
 }
 
-func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek int) ([]responses.TVSeries, error) {
+func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek int16) ([]responses.PreviewTVSeries, error) {
 	match := bson.M{"$match": bson.M{
 		"streaming.country_code": "US",
 		"status":                 "Returning Series",
@@ -301,7 +301,7 @@ func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek int) ([]
 		"tmdb_popularity": 1,
 	}}
 
-	limit := bson.M{"$limit": 35}
+	limit := bson.M{"$limit": 25}
 
 	// sortArray := bson.M{"$set": bson.M{
 	// 	"data": bson.M{
@@ -323,7 +323,7 @@ func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek int) ([]
 		return nil, fmt.Errorf("Failed to get currently airing tv series.")
 	}
 
-	var tvSeriesList []responses.TVSeries
+	var tvSeriesList []responses.PreviewTVSeries
 	if err := cursor.All(context.TODO(), &tvSeriesList); err != nil {
 		logrus.Error("failed to decode tv series by user id: ", err)
 

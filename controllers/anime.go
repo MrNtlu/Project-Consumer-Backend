@@ -54,30 +54,6 @@ func (a *AnimeController) GetUpcomingAnimesBySort(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": upcomingAnimes})
 }
 
-// Get Upcoming Animes
-// @Summary Get Upcoming Animes by Day of Week
-// @Description Returns upcoming animes by day of week
-// @Tags anime
-// @Accept application/json
-// @Produce application/json
-// @Success 200 {array} responses.DayOfWeekAnime
-// @Failure 500 {string} string
-// @Router /anime/airing [get]
-func (a *AnimeController) GetCurrentlyAiringAnimesByDayOfWeek(c *gin.Context) {
-	animeModel := models.NewAnimeModel(a.Database)
-
-	currentlyAiringAnimeResponse, err := animeModel.GetCurrentlyAiringAnimesByDayOfWeek()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": currentlyAiringAnimeResponse})
-}
-
 // Get Animes
 // @Summary Get Animes by Sort and Filter
 // @Description Returns animes by sort and filter
