@@ -29,5 +29,6 @@ func customListRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, m
 	{
 		customListOptional.GET("", customListController.GetCustomListsByUserID)
 		customListOptional.GET("/details", customListController.GetCustomListDetails)
+		customListOptional.GET("/social", customListController.GetCustomLists)
 	}
 }

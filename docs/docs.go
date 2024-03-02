@@ -814,12 +814,12 @@ const docTemplate = `{
                 "summary": "Get Custom List by User ID",
                 "parameters": [
                     {
-                        "description": "Sort Custom List",
-                        "name": "sortcustomlist",
+                        "description": "Sort Custom List UID",
+                        "name": "sortcustomlistuid",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/requests.SortCustomList"
+                            "$ref": "#/definitions/requests.SortCustomListUID"
                         }
                     },
                     {
@@ -1397,6 +1397,67 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/requests.SortLikeBookmarkCustomList"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.CustomList"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/custom-list/social": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get Custom List with or without authentication",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "custom_list"
+                ],
+                "summary": "Get Custom List",
+                "parameters": [
+                    {
+                        "description": "Sort Custom List",
+                        "name": "sortcustomlist",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortCustomList"
                         }
                     },
                     {
@@ -4153,7 +4214,7 @@ const docTemplate = `{
                     "200": {
                         "description": "User",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/responses.User"
                         }
                     }
                 }
@@ -5886,6 +5947,29 @@ const docTemplate = `{
             }
         },
         "requests.SortCustomList": {
+            "type": "object",
+            "required": [
+                "page",
+                "sort"
+            ],
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "latest",
+                        "oldest",
+                        "alphabetical",
+                        "unalphabetical"
+                    ]
+                }
+            }
+        },
+        "requests.SortCustomListUID": {
             "type": "object",
             "required": [
                 "sort"
@@ -8121,6 +8205,17 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.Notification": {
+            "type": "object",
+            "properties": {
+                "friend_request": {
+                    "type": "boolean"
+                },
+                "review_likes": {
+                    "type": "boolean"
+                }
+            }
+        },
         "responses.PreviewAnime": {
             "type": "object",
             "properties": {
@@ -8919,6 +9014,52 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.User": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "app_notification": {
+                    "$ref": "#/definitions/responses.Notification"
+                },
+                "can_change_username": {
+                    "type": "boolean"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "fcm_token": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "is_lifetime_premium": {
+                    "type": "boolean"
+                },
+                "is_oauth": {
+                    "type": "boolean"
+                },
+                "is_premium": {
+                    "type": "boolean"
+                },
+                "membership_type": {
+                    "description": "0 Basic, 1 Premium 2 Premium Supporter",
+                    "type": "integer"
+                },
+                "oauth_type": {
+                    "description": "0 google, 1 apple",
+                    "type": "integer"
+                },
+                "streak": {
+                    "type": "integer"
+                },
+                "username": {
                     "type": "string"
                 }
             }

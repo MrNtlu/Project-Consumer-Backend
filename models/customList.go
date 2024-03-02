@@ -271,7 +271,7 @@ func (customListModel *CustomListModel) DeleteAllCustomListsByUserID(uid string)
 	return nil
 }
 
-func (customListModel *CustomListModel) GetCustomListsByUserID(uid *string, data requests.SortCustomList, hidePrivate, isSocial bool) ([]responses.CustomList, error) {
+func (customListModel *CustomListModel) GetCustomListsByUserID(uid *string, data requests.SortCustomListUID, hidePrivate, isSocial bool) ([]responses.CustomList, error) {
 	var (
 		sortType            string
 		sortOrder           int8
@@ -374,6 +374,398 @@ func (customListModel *CustomListModel) GetCustomListsByUserID(uid *string, data
 			match = bson.M{"$match": bson.M{
 				"is_private": false,
 			}}
+		}
+	}
+
+	switch data.Sort {
+	case "popularity":
+		sortType = "popularity"
+		sortOrder = -1
+	case "latest":
+		sortType = "created_at"
+		sortOrder = -1
+	case "oldest":
+		sortType = "created_at"
+		sortOrder = 1
+	case "alphabetical":
+		sortType = "name"
+		sortOrder = 1
+	case "unalphabetical":
+		sortType = "name"
+		sortOrder = -1
+	}
+
+	set := bson.M{"$set": bson.M{
+		"obj_user_id": bson.M{
+			"$toObjectId": "$user_id",
+		},
+		"obj_content_id": bson.M{
+			"$toObjectId": "$content_id",
+		},
+		"popularity": bson.M{
+			"$sum": bson.A{
+				bson.M{"$size": "$likes"},
+				bson.M{"$multiply": bson.A{bson.M{"$size": "$bookmarks"}, 3}},
+			},
+		},
+		"bookmark_count": bson.M{
+			"$size": "$bookmarks",
+		},
+		"is_liked":      likeAggregation,
+		"is_bookmarked": bookmarkAggregation,
+		"content": bson.M{
+			"$map": bson.M{
+				"input": "$content",
+				"as":    "content",
+				"in": bson.M{
+					"order": "$$content.order",
+					"content_obj_id": bson.M{
+						"$toObjectId": "$$content.content_id",
+					},
+					"content_id":              "$$content.content_id",
+					"content_type":            "$$content.content_type",
+					"content_external_id":     "$$content.content_external_id",
+					"content_external_int_id": "$$content.content_external_int_id",
+				},
+			},
+		},
+	}}
+
+	unwindContent := bson.M{"$unwind": bson.M{
+		"path":                       "$content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": true,
+	}}
+
+	facet := bson.M{"$facet": bson.M{
+		"movies": bson.A{
+			bson.M{
+				"$match": bson.M{"content.content_type": "movie"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "movies",
+					"let": bson.M{
+						"content_id":          "$content.content_id",
+						"external_id":         "$content.content_external_id",
+						"content_type":        "$content.content_type",
+						"order":               "$content.order",
+						"content_external_id": "$content.content_external_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$tmdb_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"content_external_id": "$$content_external_id",
+								"content_type":        "$$content_type",
+								"content_id":          "$$content_id",
+								"order":               "$$order",
+								"title_en":            1,
+								"title_original":      1,
+								"image_url":           1,
+								"description":         1,
+								"score":               "$tmdb_vote",
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"tv": bson.A{
+			bson.M{
+				"$match": bson.M{"content.content_type": "tv"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "tv-series",
+					"let": bson.M{
+						"content_id":          "$content.content_id",
+						"content_type":        "$content.content_type",
+						"external_id":         "$content.content_external_id",
+						"order":               "$content.order",
+						"content_external_id": "$content.content_external_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$tmdb_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"content_id":          "$$content_id",
+								"content_external_id": "$$content_external_id",
+								"content_type":        "$$content_type",
+								"order":               "$$order",
+								"title_en":            1,
+								"title_original":      1,
+								"image_url":           1,
+								"description":         1,
+								"score":               "$tmdb_vote",
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"anime": bson.A{
+			bson.M{
+				"$match": bson.M{"content.content_type": "anime"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "animes",
+					"let": bson.M{
+						"content_id":              "$content.content_id",
+						"content_type":            "$content.content_type",
+						"external_id":             "$content.content_external_int_id",
+						"order":                   "$content.order",
+						"content_external_int_id": "$content.content_external_int_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$mal_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"content_id":              "$$content_id",
+								"order":                   "$$order",
+								"content_external_int_id": "$$content_external_int_id",
+								"content_type":            "$$content_type",
+								"title_en":                1,
+								"title_original":          1,
+								"image_url":               1,
+								"description":             1,
+								"score":                   "$mal_score",
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"games": bson.A{
+			bson.M{
+				"$match": bson.M{"content.content_type": "game"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "games",
+					"let": bson.M{
+						"content_id":              "$content.content_id",
+						"content_type":            "$content.content_type",
+						"external_id":             "$content.content_external_int_id",
+						"order":                   "$content.order",
+						"content_external_int_id": "$content.content_external_int_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$or": bson.A{
+										bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+										bson.M{"$eq": bson.A{"$rawg_id", "$$external_id"}},
+									},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"content_id":              "$$content_id",
+								"order":                   "$$order",
+								"content_external_int_id": "$$content_external_int_id",
+								"content_type":            "$$content_type",
+								"title_en":                "$title",
+								"title_original":          1,
+								"image_url":               1,
+								"description":             1,
+								"score":                   "$rawg_rating",
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"custom_list_contents": bson.M{
+			"$concatArrays": bson.A{"$movies", "$tv", "$anime", "$games"},
+		},
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$custom_list_contents",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	replaceRoot := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$custom_list_contents",
+	}}
+
+	unwindContentAgain := bson.M{"$unwind": bson.M{
+		"path":                       "$content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$_id",
+		"user_id": bson.M{
+			"$first": "$user_id",
+		},
+		"name": bson.M{
+			"$first": "$name",
+		},
+		"description": bson.M{
+			"$first": "$description",
+		},
+		"likes": bson.M{
+			"$first": "$likes",
+		},
+		"is_liked": bson.M{
+			"$first": "$is_liked",
+		},
+		"bookmarks": bson.M{
+			"$first": "$bookmarks",
+		},
+		"is_bookmarked": bson.M{
+			"$first": "$is_bookmarked",
+		},
+		"is_private": bson.M{
+			"$first": "$is_private",
+		},
+		"created_at": bson.M{
+			"$first": "$created_at",
+		},
+		"popularity": bson.M{
+			"$first": "$popularity",
+		},
+		"bookmark_count": bson.M{
+			"$first": "$bookmark_count",
+		},
+		"obj_user_id": bson.M{
+			"$first": "$obj_user_id",
+		},
+		"content": bson.M{
+			"$push": "$content",
+		},
+	}}
+
+	lookup := bson.M{"$lookup": bson.M{
+		"from":         "users",
+		"localField":   "obj_user_id",
+		"foreignField": "_id",
+		"as":           "author",
+	}}
+
+	unwindAuthor := bson.M{"$unwind": bson.M{
+		"path":                       "$author",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		sortType: sortOrder,
+	}}
+
+	cursor, err := customListModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, set, unwindContent, facet, project, unwind, replaceRoot, unwindContentAgain, group, lookup, unwindAuthor, sort,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to find custom list by user id: ", err)
+
+		return nil, fmt.Errorf("Failed to find custom list by user id.")
+	}
+
+	var customLists []responses.CustomList
+	if err := cursor.All(context.TODO(), &customLists); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to decode custom list by user id: ", err)
+
+		return nil, fmt.Errorf("Failed to decode custom list by user id.")
+	}
+
+	return customLists, nil
+}
+
+func (customListModel *CustomListModel) GetCustomLists(uid *string, data requests.SortCustomList) ([]responses.CustomList, error) {
+	var (
+		sortType            string
+		sortOrder           int8
+		likeAggregation     primitive.M
+		bookmarkAggregation primitive.M
+	)
+
+	match := bson.M{"$match": bson.M{
+		"is_private": false,
+	}}
+
+	if uid != nil {
+		likeAggregation = bson.M{
+			"$cond": bson.M{
+				"if": bson.M{
+					"$in": bson.A{
+						uid,
+						"$likes",
+					},
+				},
+				"then": true,
+				"else": false,
+			},
+		}
+		bookmarkAggregation = bson.M{
+			"$cond": bson.M{
+				"if": bson.M{
+					"$in": bson.A{
+						uid,
+						"$bookmarks",
+					},
+				},
+				"then": true,
+				"else": false,
+			},
+		}
+	} else {
+		likeAggregation = bson.M{
+			"$eq": bson.A{
+				-1, 1,
+			},
+		}
+		bookmarkAggregation = bson.M{
+			"$eq": bson.A{
+				-1, 1,
+			},
 		}
 	}
 

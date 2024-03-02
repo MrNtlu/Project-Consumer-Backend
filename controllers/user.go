@@ -92,13 +92,13 @@ func (u *UserController) Register(c *gin.Context) {
 // @Produce application/json
 // @Security ApiKeyAuth
 // @Param Authorization header string true "Authentication header"
-// @Success 200 {object} models.User "User"
+// @Success 200 {object} responses.User "User"
 // @Router /user/basic [get]
 func (u *UserController) GetBasicUserInfo(c *gin.Context) {
 	uid := jwt.ExtractClaims(c)["id"].(string)
 
 	userModel := models.NewUserModel(u.Database)
-	userInfo, err := userModel.FindUserByID(uid)
+	userInfo, err := userModel.GetUserByID(uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -106,6 +106,11 @@ func (u *UserController) GetBasicUserInfo(c *gin.Context) {
 
 		return
 	}
+
+	logsModel := models.NewLogsModel(u.Database)
+
+	_, currentStreak := logsModel.GetLogStreak(uid)
+	userInfo.Streak = currentStreak
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched basic user info.", "data": userInfo})
 }
@@ -327,7 +332,7 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 	}
 	userInfo.Reviews = reviews
 
-	customLists, err := customListModel.GetCustomListsByUserID(&userId, requests.SortCustomList{
+	customLists, err := customListModel.GetCustomListsByUserID(&userId, requests.SortCustomListUID{
 		UserID: userInfo.ID.Hex(),
 		Sort:   "popularity",
 	}, true, false)

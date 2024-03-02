@@ -45,9 +45,14 @@ type BulkDeleteCustomList struct {
 	Content []string `json:"content" binding:"required"`
 }
 
-type SortCustomList struct {
+type SortCustomListUID struct {
 	UserID string `form:"user_id" binding:"omitempty"`
 	Sort   string `form:"sort" binding:"required,oneof=popularity latest oldest alphabetical unalphabetical"`
+}
+
+type SortCustomList struct {
+	Page int64  `form:"page" json:"page" binding:"required,number,min=1"`
+	Sort string `form:"sort" binding:"required,oneof=popularity latest oldest alphabetical unalphabetical"`
 }
 
 type SortLikeBookmarkCustomList struct {

@@ -1,6 +1,8 @@
 package responses
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type IsUserPremium struct {
 	IsPremium         bool `bson:"is_premium" json:"is_premium"`
@@ -18,6 +20,28 @@ type Leaderboard struct {
 
 type UserLevel struct {
 	TotalScore int `bson:"total_score" json:"total_score"`
+}
+
+type User struct {
+	ID                primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	Username          string             `bson:"username" json:"username"`
+	EmailAddress      string             `bson:"email" json:"email"`
+	Image             string             `bson:"image" json:"image"`
+	IsPremium         bool               `bson:"is_premium" json:"is_premium"`
+	IsLifetimePremium bool               `bson:"is_lifetime_premium" json:"is_lifetime_premium"`
+	MembershipType    int                `bson:"membership_type" json:"membership_type"` //0 Basic, 1 Premium 2 Premium Supporter
+	IsOAuthUser       bool               `bson:"is_oauth" json:"is_oauth"`
+	OAuthType         *int               `bson:"oauth_type" json:"oauth_type"` //0 google, 1 apple
+	RefreshToken      *string            `bson:"refresh_token" json:"-"`
+	FCMToken          string             `bson:"fcm_token" json:"fcm_token"`
+	CanChangeUsername bool               `bson:"can_change_username" json:"can_change_username"`
+	AppNotification   Notification       `bson:"app_notification" json:"app_notification"`
+	Streak            int                `bson:"streak" json:"streak"`
+}
+
+type Notification struct {
+	FriendRequest bool `bson:"friend_request" json:"friend_request"`
+	ReviewLikes   bool `bson:"review_likes" json:"review_likes"`
 }
 
 type UserStats struct {

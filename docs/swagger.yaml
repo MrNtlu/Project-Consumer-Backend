@@ -760,6 +760,23 @@ definitions:
     type: object
   requests.SortCustomList:
     properties:
+      page:
+        minimum: 1
+        type: integer
+      sort:
+        enum:
+        - popularity
+        - latest
+        - oldest
+        - alphabetical
+        - unalphabetical
+        type: string
+    required:
+    - page
+    - sort
+    type: object
+  requests.SortCustomListUID:
+    properties:
       sort:
         enum:
         - popularity
@@ -2269,6 +2286,13 @@ definitions:
       tmdb_id:
         type: string
     type: object
+  responses.Notification:
+    properties:
+      friend_request:
+        type: boolean
+      review_likes:
+        type: boolean
+    type: object
   responses.PreviewAnime:
     properties:
       _id:
@@ -2794,6 +2818,37 @@ definitions:
       lan_name_en:
         type: string
       title:
+        type: string
+    type: object
+  responses.User:
+    properties:
+      _id:
+        type: string
+      app_notification:
+        $ref: '#/definitions/responses.Notification'
+      can_change_username:
+        type: boolean
+      email:
+        type: string
+      fcm_token:
+        type: string
+      image:
+        type: string
+      is_lifetime_premium:
+        type: boolean
+      is_oauth:
+        type: boolean
+      is_premium:
+        type: boolean
+      membership_type:
+        description: 0 Basic, 1 Premium 2 Premium Supporter
+        type: integer
+      oauth_type:
+        description: 0 google, 1 apple
+        type: integer
+      streak:
+        type: integer
+      username:
         type: string
     type: object
   responses.UserInfo:
@@ -3457,12 +3512,12 @@ paths:
       - application/json
       description: Get Custom List by User ID with or without authentication
       parameters:
-      - description: Sort Custom List
+      - description: Sort Custom List UID
         in: body
-        name: sortcustomlist
+        name: sortcustomlistuid
         required: true
         schema:
-          $ref: '#/definitions/requests.SortCustomList'
+          $ref: '#/definitions/requests.SortCustomListUID'
       - description: Authentication header
         in: header
         name: Authorization
@@ -3821,6 +3876,45 @@ paths:
       security:
       - BearerAuth: []
       summary: Get Liked Custom List
+      tags:
+      - custom_list
+  /custom-list/social:
+    get:
+      consumes:
+      - application/json
+      description: Get Custom List with or without authentication
+      parameters:
+      - description: Sort Custom List
+        in: body
+        name: sortcustomlist
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortCustomList'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/responses.CustomList'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Custom List
       tags:
       - custom_list
   /game:
@@ -5577,7 +5671,7 @@ paths:
         "200":
           description: User
           schema:
-            $ref: '#/definitions/models.User'
+            $ref: '#/definitions/responses.User'
       security:
       - ApiKeyAuth: []
       summary: User basic info

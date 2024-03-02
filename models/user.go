@@ -351,6 +351,25 @@ func (userModel *UserModel) FindUserByResetTokenAndEmail(token, email string) (U
 	return user, nil
 }
 
+func (userModel *UserModel) GetUserByID(uid string) (responses.User, error) {
+	objectUID, _ := primitive.ObjectIDFromHex(uid)
+
+	result := userModel.Collection.FindOne(context.TODO(), bson.M{
+		"_id": objectUID,
+	})
+
+	var user responses.User
+	if err := result.Decode(&user); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": user.ID,
+		}).Error("failed to find user by uid: ", err)
+
+		return responses.User{}, fmt.Errorf("Failed to find user by id.")
+	}
+
+	return user, nil
+}
+
 func (userModel *UserModel) GetLeaderboard() ([]responses.Leaderboard, error) {
 	addFields := bson.M{"$addFields": bson.M{
 		"user_id": bson.M{

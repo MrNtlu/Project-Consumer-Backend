@@ -330,7 +330,7 @@ func (cl *CustomListController) BookmarkCustomList(c *gin.Context) {
 // @Tags custom_list
 // @Accept application/json
 // @Produce application/json
-// @Param sortcustomlist body requests.SortCustomList true "Sort Custom List"
+// @Param sortcustomlistuid body requests.SortCustomListUID true "Sort Custom List UID"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
 // @Success 200 {array} responses.CustomList
@@ -338,7 +338,7 @@ func (cl *CustomListController) BookmarkCustomList(c *gin.Context) {
 // @Failure 500 {string} string
 // @Router /custom-list [get]
 func (cl *CustomListController) GetCustomListsByUserID(c *gin.Context) {
-	var data requests.SortCustomList
+	var data requests.SortCustomListUID
 	if err := c.ShouldBindQuery(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": validatorErrorHandler(err),
@@ -365,6 +365,59 @@ func (cl *CustomListController) GetCustomListsByUserID(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"data": customLists})
 	} else {
 		customLists, err := customListModel.GetCustomListsByUserID(nil, data, false, false)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": customLists})
+	}
+}
+
+// Get Custom List
+// @Summary Get Custom List
+// @Description Get Custom List with or without authentication
+// @Tags custom_list
+// @Accept application/json
+// @Produce application/json
+// @Param sortcustomlist body requests.SortCustomList true "Sort Custom List"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {array} responses.CustomList
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /custom-list/social [get]
+func (cl *CustomListController) GetCustomLists(c *gin.Context) {
+	var data requests.SortCustomList
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	uid, OK := c.Get("uuid")
+	customListModel := models.NewCustomListModel(cl.Database)
+
+	if OK && uid != nil {
+		userId := uid.(string)
+
+		customLists, err := customListModel.GetCustomLists(&userId, data)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": customLists})
+	} else {
+		customLists, err := customListModel.GetCustomLists(nil, data)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),

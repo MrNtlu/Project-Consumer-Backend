@@ -72,7 +72,7 @@ func (s *SocialController) GetSocials(c *gin.Context) {
 	if OK && uid != nil {
 		userId := uid.(string)
 
-		customLists, err = customListModel.GetCustomListsByUserID(&userId, requests.SortCustomList{
+		customLists, err = customListModel.GetCustomListsByUserID(&userId, requests.SortCustomListUID{
 			Sort: "popularity",
 		}, true, true)
 		if err != nil {
@@ -83,7 +83,7 @@ func (s *SocialController) GetSocials(c *gin.Context) {
 			return
 		}
 	} else {
-		customLists, err = customListModel.GetCustomListsByUserID(nil, requests.SortCustomList{
+		customLists, err = customListModel.GetCustomListsByUserID(nil, requests.SortCustomListUID{
 			Sort: "popularity",
 		}, true, true)
 		if err != nil {
