@@ -492,10 +492,10 @@ func (reviewModel *ReviewModel) GetReviewsIndependentFromContent(uid *string, da
 	case "popularity":
 		sortType = "popularity"
 		sortOrder = -1
-	case "new":
+	case "latest":
 		sortType = "created_at"
 		sortOrder = -1
-	case "old":
+	case "oldest":
 		sortType = "created_at"
 		sortOrder = 1
 	}
