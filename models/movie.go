@@ -41,11 +41,25 @@ func (movieModel *MovieModel) GetUpcomingPreviewMovies() ([]responses.PreviewMov
 	match := bson.M{
 		"$or": bson.A{
 			bson.M{
-				"status": bson.M{
-					"$ne": "Released",
+				"$and": bson.A{
+					bson.M{
+						"status": bson.M{
+							"$ne": "Released",
+						},
+					},
+					bson.M{"release_date": bson.M{"$gte": utils.GetCurrentDate()}},
 				},
 			},
-			bson.M{"release_date": bson.M{"$gte": utils.GetCurrentDate()}},
+			bson.M{
+				"$and": bson.A{
+					bson.M{
+						"status": bson.M{
+							"$ne": "Released",
+						},
+					},
+					bson.M{"release_date": ""},
+				},
+			},
 		},
 	}
 
@@ -267,11 +281,25 @@ func (movieModel *MovieModel) GetUpcomingMoviesBySort(data requests.Pagination) 
 	match := bson.M{"$match": bson.M{
 		"$or": bson.A{
 			bson.M{
-				"status": bson.M{
-					"$ne": "Released",
+				"$and": bson.A{
+					bson.M{
+						"status": bson.M{
+							"$ne": "Released",
+						},
+					},
+					bson.M{"release_date": bson.M{"$gte": utils.GetCurrentDate()}},
 				},
 			},
-			bson.M{"release_date": bson.M{"$gte": utils.GetCurrentDate()}},
+			bson.M{
+				"$and": bson.A{
+					bson.M{
+						"status": bson.M{
+							"$ne": "Released",
+						},
+					},
+					bson.M{"release_date": ""},
+				},
+			},
 		},
 	}}
 
