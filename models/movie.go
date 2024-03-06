@@ -573,6 +573,12 @@ func (movieModel *MovieModel) GetMovieDetailsWithWatchListAndWatchLater(data req
 }
 
 func (movieModel *MovieModel) GetPopularActors(data requests.Pagination) ([]responses.ActorDetails, error) {
+	allowDiskPreventSet := bson.M{"$set": bson.M{
+		"actors": bson.M{
+			"$slice": bson.A{"$actors", 15},
+		},
+	}}
+
 	unwind := bson.M{"$unwind": bson.M{
 		"path":                       "$actors",
 		"includeArrayIndex":          "index",
@@ -608,7 +614,7 @@ func (movieModel *MovieModel) GetPopularActors(data requests.Pagination) ([]resp
 	limit := bson.M{"$limit": movieActorsLimit}
 
 	cursor, err := movieModel.Collection.Aggregate(context.TODO(), bson.A{
-		unwind, group, set, sort, limit,
+		allowDiskPreventSet, unwind, group, set, sort, limit,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{

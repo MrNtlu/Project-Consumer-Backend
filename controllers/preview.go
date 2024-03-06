@@ -4,6 +4,7 @@ import (
 	"app/db"
 	"app/models"
 	"app/requests"
+	"app/responses"
 	"net/http"
 	"time"
 
@@ -43,191 +44,111 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 
 	upcomingMovies, err := movieModel.GetUpcomingPreviewMovies()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		upcomingMovies = []responses.PreviewMovie{}
 	}
 
 	popularMovies, err := movieModel.GetPopularPreviewMovies()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		popularMovies = []responses.PreviewMovie{}
 	}
 
 	topMovies, err := movieModel.GetTopPreviewMovies()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		topMovies = []responses.PreviewMovie{}
 	}
 
 	popularActors, err := movieModel.GetPopularActors(requests.Pagination{Page: 1})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		popularActors = []responses.ActorDetails{}
 	}
 
 	moviesInTheater, err := movieModel.GetInTheaterPreviewMovies()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		moviesInTheater = []responses.PreviewMovie{}
 	}
 
 	// TV Series
 
 	upcomingTVSeries, err := tvModel.GetUpcomingPreviewTVSeries()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		upcomingTVSeries = []responses.PreviewTVSeries{}
 	}
 
 	popularTVSeries, err := tvModel.GetPopularPreviewTVSeries()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		popularTVSeries = []responses.PreviewTVSeries{}
 	}
 
 	topTVSeries, err := tvModel.GetTopPreviewTVSeries()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		topTVSeries = []responses.PreviewTVSeries{}
 	}
 
 	popularActorsTVSeries, err := tvModel.GetPopularActors(requests.Pagination{Page: 1})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		popularActorsTVSeries = []responses.ActorDetails{}
 	}
 
 	dayOfWeek := int16(time.Now().UTC().Weekday()) + 1
 	dayOfWeekTVSeries, err := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		dayOfWeekTVSeries = []responses.PreviewTVSeries{}
 	}
 
 	// Anime
 
 	upcomingAnimes, err := animeModel.GetPreviewUpcomingAnimes()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		upcomingAnimes = []responses.PreviewAnime{}
 	}
 
 	topRatedAnimes, err := animeModel.GetPreviewTopAnimes()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		topRatedAnimes = []responses.PreviewAnime{}
 	}
 
 	popularAnimes, err := animeModel.GetPreviewPopularAnimes()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		popularAnimes = []responses.PreviewAnime{}
 	}
 
 	dayOfWeekAnime, err := animeModel.GetCurrentlyAiringAnimesByDayOfWeek(dayOfWeek)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		dayOfWeekAnime = []responses.PreviewAnime{}
 	}
 
 	// Game
 
 	upcomingGames, err := gameModel.GetPreviewUpcomingGames()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		upcomingGames = []responses.PreviewGame{}
 	}
 
 	topRatedGames, err := gameModel.GetPreviewTopGames()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		topRatedGames = []responses.PreviewGame{}
 	}
 
 	popularGames, err := gameModel.GetPreviewPopularGames()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		popularGames = []responses.PreviewGame{}
 	}
 
 	// Manga
 
 	publishingManga, err := mangaModel.GetPreviewCurrentlyPublishingManga()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		publishingManga = []responses.PreviewManga{}
 	}
 
 	topRatedManga, err := mangaModel.GetPreviewTopManga()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		topRatedManga = []responses.PreviewManga{}
 	}
 
 	popularManga, err := mangaModel.GetPreviewPopularManga()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		popularManga = []responses.PreviewManga{}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -270,51 +191,31 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 	tvModel := models.NewTVModel(pr.Database)
 	animeModel := models.NewAnimeModel(pr.Database)
 	gameModel := models.NewGameModel(pr.Database)
-	mangaModel := models.NewMangaModel(pr.Database)
+	// mangaModel := models.NewMangaModel(pr.Database)
 
 	upcomingMovies, err := movieModel.GetUpcomingPreviewMovies()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		upcomingMovies = []responses.PreviewMovie{}
 	}
 
 	popularMovies, err := movieModel.GetPopularPreviewMovies()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		popularMovies = []responses.PreviewMovie{}
 	}
 
 	topMovies, err := movieModel.GetTopPreviewMovies()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		topMovies = []responses.PreviewMovie{}
 	}
 
 	popularActors, err := movieModel.GetPopularActors(requests.Pagination{Page: 1})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		popularActors = []responses.ActorDetails{}
 	}
 
 	moviesInTheater, err := movieModel.GetInTheaterPreviewMovies()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		moviesInTheater = []responses.PreviewMovie{}
 	}
 
 	moviePopularSP, _ := movieModel.GetPopularStreamingPlatforms(data.Region)
@@ -323,151 +224,86 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 
 	upcomingTVSeries, err := tvModel.GetUpcomingPreviewTVSeries()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		upcomingTVSeries = []responses.PreviewTVSeries{}
 	}
 
 	popularTVSeries, err := tvModel.GetPopularPreviewTVSeries()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		popularTVSeries = []responses.PreviewTVSeries{}
 	}
 
 	topTVSeries, err := tvModel.GetTopPreviewTVSeries()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		topTVSeries = []responses.PreviewTVSeries{}
 	}
 
 	popularActorsTVSeries, err := tvModel.GetPopularActors(requests.Pagination{Page: 1})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		popularActorsTVSeries = []responses.ActorDetails{}
 	}
 
 	dayOfWeek := int16(time.Now().UTC().Weekday()) + 1
-	dayOfWeekTVSeries, err := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
+	dayOfWeekTVSeries, _ := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek)
 	tvSeriesPopularSP, _ := tvModel.GetPopularStreamingPlatforms(data.Region)
 
 	// Anime
 
 	upcomingAnimes, err := animeModel.GetPreviewUpcomingAnimes()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		upcomingAnimes = []responses.PreviewAnime{}
 	}
 
 	topRatedAnimes, err := animeModel.GetPreviewTopAnimes()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		topRatedAnimes = []responses.PreviewAnime{}
 	}
 
 	popularAnimes, err := animeModel.GetPreviewPopularAnimes()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		popularAnimes = []responses.PreviewAnime{}
 	}
 
 	dayOfWeekAnime, err := animeModel.GetCurrentlyAiringAnimesByDayOfWeek(dayOfWeek)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		dayOfWeekAnime = []responses.PreviewAnime{}
 	}
 
 	animePopularSP, _ := animeModel.GetPopularStreamingPlatforms()
-
 	animePopularStudios, _ := animeModel.GetPopularStudios()
 
 	// Game
 
 	upcomingGames, err := gameModel.GetPreviewUpcomingGames()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		upcomingGames = []responses.PreviewGame{}
 	}
 
 	topRatedGames, err := gameModel.GetPreviewTopGames()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		topRatedGames = []responses.PreviewGame{}
 	}
 
 	popularGames, err := gameModel.GetPreviewPopularGames()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+		popularGames = []responses.PreviewGame{}
 	}
 
 	// Manga
 
-	publishingManga, err := mangaModel.GetPreviewCurrentlyPublishingManga()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	// publishingManga, err := mangaModel.GetPreviewCurrentlyPublishingManga()
+	// if err != nil {
+	// 	publishingManga = []responses.PreviewManga{}
+	// }
 
-		return
-	}
+	// topRatedManga, err := mangaModel.GetPreviewTopManga()
+	// if err != nil {
+	// 	topRatedManga = []responses.PreviewManga{}
+	// }
 
-	topRatedManga, err := mangaModel.GetPreviewTopManga()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	popularManga, err := mangaModel.GetPreviewPopularManga()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
+	// popularManga, err := mangaModel.GetPreviewPopularManga()
+	// if err != nil {
+	// 	popularManga = []responses.PreviewManga{}
+	// }
 
 	c.JSON(http.StatusOK, gin.H{
 		"movie": gin.H{
@@ -482,7 +318,7 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 			"upcoming": upcomingAnimes, "top": topRatedAnimes, "popular": popularAnimes,
 			"extra": dayOfWeekAnime, "anime_streaming_platforms": animePopularSP, "studios": animePopularStudios,
 		},
-		"game":  gin.H{"upcoming": upcomingGames, "top": topRatedGames, "popular": popularGames, "extra": nil},
-		"manga": gin.H{"upcoming": publishingManga, "top": topRatedManga, "popular": popularManga, "extra": nil},
+		"game": gin.H{"upcoming": upcomingGames, "top": topRatedGames, "popular": popularGames, "extra": nil},
+		// "manga": gin.H{"upcoming": publishingManga, "top": topRatedManga, "popular": popularManga, "extra": nil},
 	})
 }

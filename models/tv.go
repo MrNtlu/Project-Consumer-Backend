@@ -593,6 +593,12 @@ func (tvModel *TVModel) GetTVSeriesDetailsWithWatchListAndWatchLater(data reques
 }
 
 func (tvModel *TVModel) GetPopularActors(data requests.Pagination) ([]responses.ActorDetails, error) {
+	allowDiskPreventSet := bson.M{"$set": bson.M{
+		"actors": bson.M{
+			"$slice": bson.A{"$actors", 15},
+		},
+	}}
+
 	unwind := bson.M{"$unwind": bson.M{
 		"path":                       "$actors",
 		"includeArrayIndex":          "index",
@@ -628,7 +634,7 @@ func (tvModel *TVModel) GetPopularActors(data requests.Pagination) ([]responses.
 	limit := bson.M{"$limit": tvSeriesActorsLimit}
 
 	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
-		unwind, group, set, sort, limit,
+		allowDiskPreventSet, unwind, group, set, sort, limit,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
