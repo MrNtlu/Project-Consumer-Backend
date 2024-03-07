@@ -5,6 +5,7 @@ type SortFilterTVSeries struct {
 	Genres              *string `form:"genres"`
 	NumSeason           *int    `form:"season" binding:"omitempty,number,min=1"`
 	ProductionCompanies *string `form:"production_companies"`
+	ProductionCountry   *string `form:"production_country"`
 	FirstAirDateFrom    *int    `form:"from" binding:"omitempty,number,min=1900,max=2050"`
 	FirstAirDateTo      *int    `form:"to" binding:"omitempty,number,min=1900,max=2050"`
 	Sort                string  `form:"sort" binding:"required,oneof=top popularity new old"`

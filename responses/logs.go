@@ -22,3 +22,23 @@ type Log struct {
 	ContentID        string    `bson:"content_id" json:"content_id"`
 	CreatedAt        time.Time `bson:"created_at" json:"created_at"`
 }
+
+type FinishedLogStats struct {
+	ContentType     string `bson:"content_type" json:"content_type"`
+	Length          int64  `bson:"length" json:"length"`
+	TotalEpisodes   int64  `bson:"total_episodes" json:"total_episodes"`
+	TotalSeasons    int64  `bson:"total_seasons" json:"total_seasons"`
+	MetacriticScore int64  `bson:"metacritic_score" json:"metacritic_score"`
+	Count           int64  `bson:"count" json:"count"`
+}
+
+type MostLikedGenres struct {
+	Type     string `bson:"type" json:"type"`
+	Genre    string `bson:"genre" json:"genre"`
+	MaxCount int64  `bson:"max_count" json:"max_count"`
+}
+
+type ExtraStatistics struct {
+	FinishedLogStats []FinishedLogStats `bson:"stats" json:"stats"`
+	MostLikedGenres  []MostLikedGenres  `bson:"genres" json:"genres"`
+}

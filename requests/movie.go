@@ -4,6 +4,7 @@ type SortFilterMovie struct {
 	Status              *string `form:"status" binding:"omitempty,oneof=production released planned"`
 	Genres              *string `form:"genres"`
 	ProductionCompanies *string `form:"production_companies"`
+	ProductionCountry   *string `form:"production_country"`
 	ReleaseDateFrom     *int    `form:"from" binding:"omitempty,number,min=1900,max=2050"`
 	ReleaseDateTo       *int    `form:"to" binding:"omitempty,number,min=1900,max=2050"`
 	Sort                string  `form:"sort" binding:"required,oneof=top popularity new old"`

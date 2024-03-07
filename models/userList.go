@@ -1376,6 +1376,7 @@ func (userListModel *UserListModel) GetUserListStats(uid string) (responses.User
 					},
 					"movie_tmdb_id":  "$$movie_list.movie_tmdb_id",
 					"times_finished": "$$movie_list.times_finished",
+					"score":          "$$movie_list.score",
 				},
 			},
 		},
@@ -1401,6 +1402,7 @@ func (userListModel *UserListModel) GetUserListStats(uid string) (responses.User
 					"tv_tmdb_id":       "$$tv_list.movie_tmdb_id",
 					"times_finished":   "$$tv_list.times_finished",
 					"watched_episodes": "$$tv_list.watched_episodes",
+					"score":            "$$tv_list.score",
 				},
 			},
 		},
@@ -1414,6 +1416,7 @@ func (userListModel *UserListModel) GetUserListStats(uid string) (responses.User
 					},
 					"game_rawg_id": "$$game_list.game_rawg_id",
 					"hours_played": "$$game_list.hours_played",
+					"score":        "$$game_list.score",
 				},
 			},
 		},
@@ -1439,6 +1442,7 @@ func (userListModel *UserListModel) GetUserListStats(uid string) (responses.User
 					"anime_mal_id":     "$$anime_list.anime_mal_id",
 					"times_finished":   "$$anime_list.times_finished",
 					"watched_episodes": "$$anime_list.watched_episodes",
+					"score":            "$$anime_list.score",
 				},
 			},
 		},
@@ -1453,6 +1457,7 @@ func (userListModel *UserListModel) GetUserListStats(uid string) (responses.User
 						"obj_id":         "$movie_list.movie_obj_id",
 						"tmdb_id":        "$movie_list.movie_tmdb_id",
 						"times_finished": "$movie_list.times_finished",
+						"score":          "$movie_list.score",
 					},
 					"pipeline": bson.A{
 						bson.M{
@@ -1472,6 +1477,17 @@ func (userListModel *UserListModel) GetUserListStats(uid string) (responses.User
 						bson.M{
 							"$project": bson.M{
 								"length": 1,
+								"score": bson.M{
+									"$arrayElemAt": bson.A{
+										"$$score",
+										bson.M{
+											"$indexOfArray": bson.A{
+												"$$obj_id",
+												"$_id",
+											},
+										},
+									},
+								},
 								"times_finished": bson.M{
 									"$arrayElemAt": bson.A{
 										"$$times_finished",
@@ -1559,6 +1575,18 @@ func (userListModel *UserListModel) GetUserListStats(uid string) (responses.User
 		},
 		"game_total_hours_played": bson.M{
 			"$sum": "$game_list.hours_played",
+		},
+		"movie_total_score": bson.M{
+			"$sum": "$movie_list.score",
+		},
+		"anime_total_score": bson.M{
+			"$sum": "$anime_list.score",
+		},
+		"tv_total_score": bson.M{
+			"$sum": "$tv_list.score",
+		},
+		"game_total_score": bson.M{
+			"$sum": "$game_list.score",
 		},
 	}}
 

@@ -86,6 +86,445 @@ func (logsModel *LogsModel) CreateLog(uid string, data requests.CreateLog) {
 	}
 }
 
+func (logsModel *LogsModel) MostLikedGenresByLogs(uid string) ([]responses.MostLikedGenres, error) {
+	match := bson.M{"$match": bson.M{
+		"user_id":            uid,
+		"log_type":           "userlist",
+		"log_action_details": "finished",
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"content_id": bson.M{
+			"$toObjectId": "$content_id",
+		},
+		"content_type": 1,
+	}}
+
+	facet := bson.M{"$facet": bson.M{
+		"movies": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "movie"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "movies",
+					"let": bson.M{
+						"content_id": "$content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"genres": 1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"tv": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "tv"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "tv-series",
+					"let": bson.M{
+						"content_id": "$content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"genres": 1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"anime": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "anime"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "animes",
+					"let": bson.M{
+						"content_id":  "$content_id",
+						"external_id": "$content_external_int_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"genres": 1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"games": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "game"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "games",
+					"let": bson.M{
+						"content_id": "$content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"genres": 1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+	}}
+
+	projectLogs := bson.M{"$project": bson.M{
+		"logs": bson.M{
+			"$concatArrays": bson.A{
+				"$movies",
+				"$tv",
+				"$anime",
+				"$games",
+			},
+		},
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$logs",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	replaceRoot := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$logs",
+	}}
+
+	unwindContent := bson.M{"$unwind": bson.M{
+		"path":                       "$content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	unwindGenres := bson.M{"$unwind": bson.M{
+		"path":                       "$content.genres",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": bson.M{
+			"genres": "$content.genres",
+			"type":   "$content_type",
+		},
+		"genre": bson.M{
+			"$first": "$content.genres",
+		},
+		"type": bson.M{
+			"$first": "$content_type",
+		},
+		"count": bson.M{
+			"$sum": 1,
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"type":  1,
+		"count": -1,
+	}}
+
+	groupType := bson.M{"$group": bson.M{
+		"_id": "$type",
+		"genre": bson.M{
+			"$first": "$genre",
+		},
+		"type": bson.M{
+			"$first": "$type",
+		},
+		"max_count": bson.M{
+			"$max": "$count",
+		},
+	}}
+
+	cursor, err := logsModel.LogsCollection.Aggregate(context.TODO(), bson.A{
+		match, project, facet, projectLogs, unwind, unwindGenres, replaceRoot, unwindContent, group, sort, groupType,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to find most liked genres by logs: ", err)
+
+		return nil, fmt.Errorf("Failed to find most liked genres by logs.")
+	}
+
+	var mostLikedGenres []responses.MostLikedGenres
+	if err := cursor.All(context.TODO(), &mostLikedGenres); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to decode most liked genres by logs: ", err)
+
+		return nil, fmt.Errorf("Failed to decode most liked genres by logs.")
+	}
+
+	return mostLikedGenres, nil
+}
+
+func (logsModel *LogsModel) FinishedLogStats(uid string, data requests.LogStatInterval) ([]responses.FinishedLogStats, error) {
+	var intervalDate time.Time
+
+	switch data.Interval {
+	case "weekly":
+		intervalDate = time.Now().UTC().AddDate(0, 0, 7)
+	case "monthly":
+		intervalDate = time.Now().UTC().AddDate(0, 1, 0)
+	case "3months":
+		intervalDate = time.Now().UTC().AddDate(0, 3, 0)
+	}
+
+	match := bson.M{"$match": bson.M{
+		"user_id":            uid,
+		"log_type":           "userlist",
+		"log_action_details": "finished",
+		"created_at": bson.M{
+			"$gte": intervalDate,
+		},
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"content_id": bson.M{
+			"$toObjectId": "$content_id",
+		},
+		"content_type": 1,
+	}}
+
+	facet := bson.M{"$facet": bson.M{
+		"movies": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "movie"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "movies",
+					"let": bson.M{
+						"content_id": "$content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"length": 1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"tv": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "tv"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "tv-series",
+					"let": bson.M{
+						"content_id": "$content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"total_episodes": 1,
+								"total_seasons":  1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"anime": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "anime"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "animes",
+					"let": bson.M{
+						"content_id":  "$content_id",
+						"external_id": "$content_external_int_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"total_episodes": "$episodes",
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"games": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "game"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "games",
+					"let": bson.M{
+						"content_id": "$content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"metacritic_score": 1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+	}}
+
+	projectLogs := bson.M{"$project": bson.M{
+		"logs": bson.M{
+			"$concatArrays": bson.A{
+				"$movies",
+				"$tv",
+				"$anime",
+				"$games",
+			},
+		},
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$logs",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	replaceRoot := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$logs",
+	}}
+
+	unwindContent := bson.M{"$unwind": bson.M{
+		"path":                       "$content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$content_type",
+		"content_type": bson.M{
+			"$first": "$content_type",
+		},
+		"length": bson.M{
+			"$sum": "$content.length",
+		},
+		"total_episodes": bson.M{
+			"$sum": "$content.total_episodes",
+		},
+		"total_seasons": bson.M{
+			"$sum": "$content.total_seasons",
+		},
+		"count": bson.M{
+			"$sum": 1,
+		},
+		"metacritic_score": bson.M{
+			"$sum": "$content.metacritic_score",
+		},
+	}}
+
+	cursor, err := logsModel.LogsCollection.Aggregate(context.TODO(), bson.A{
+		match, project, facet, projectLogs, unwind, replaceRoot, unwindContent, group,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to find user stats by logs: ", err)
+
+		return nil, fmt.Errorf("Failed to find user stats by logs.")
+	}
+
+	var finishedLogStats []responses.FinishedLogStats
+	if err := cursor.All(context.TODO(), &finishedLogStats); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to decode user stats by logs: ", err)
+
+		return nil, fmt.Errorf("Failed to decode user stats by logs.")
+	}
+
+	return finishedLogStats, nil
+}
+
 func (logsModel *LogsModel) GetLogStreak(uid string) (int, int) {
 	match := bson.M{"$match": bson.M{
 		"user_id": uid,

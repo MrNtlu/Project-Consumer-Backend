@@ -4747,6 +4747,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/stats": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns extra statistics",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Extra statistics",
+                "parameters": [
+                    {
+                        "description": "Log Stat Interval",
+                        "name": "logstatinterval",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.LogStatInterval"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Extra Statistics",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ExtraStatistics"
+                        }
+                    }
+                }
+            }
+        },
         "/user/token": {
             "patch": {
                 "security": [
@@ -5853,6 +5899,22 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.LogStatInterval": {
+            "type": "object",
+            "required": [
+                "interval"
+            ],
+            "properties": {
+                "interval": {
+                    "type": "string",
+                    "enum": [
+                        "weekly",
+                        "monthly",
+                        "3months"
+                    ]
+                }
+            }
+        },
         "requests.MarkConsumeLater": {
             "type": "object",
             "required": [
@@ -6157,6 +6219,9 @@ const docTemplate = `{
                 "productionCompanies": {
                     "type": "string"
                 },
+                "productionCountry": {
+                    "type": "string"
+                },
                 "releaseDateFrom": {
                     "type": "integer",
                     "maximum": 2050,
@@ -6215,6 +6280,9 @@ const docTemplate = `{
                     "minimum": 1
                 },
                 "productionCompanies": {
+                    "type": "string"
+                },
+                "productionCountry": {
                     "type": "string"
                 },
                 "sort": {
@@ -7255,6 +7323,46 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.ExtraStatistics": {
+            "type": "object",
+            "properties": {
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.MostLikedGenres"
+                    }
+                },
+                "stats": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.FinishedLogStats"
+                    }
+                }
+            }
+        },
+        "responses.FinishedLogStats": {
+            "type": "object",
+            "properties": {
+                "content_type": {
+                    "type": "string"
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "length": {
+                    "type": "integer"
+                },
+                "metacritic_score": {
+                    "type": "integer"
+                },
+                "total_episodes": {
+                    "type": "integer"
+                },
+                "total_seasons": {
+                    "type": "integer"
+                }
+            }
+        },
         "responses.FriendRequest": {
             "type": "object",
             "properties": {
@@ -7926,6 +8034,20 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.MostLikedGenres": {
+            "type": "object",
+            "properties": {
+                "genre": {
+                    "type": "string"
+                },
+                "max_count": {
+                    "type": "integer"
+                },
+                "type": {
                     "type": "string"
                 }
             }
@@ -9073,6 +9195,9 @@ const docTemplate = `{
                 "anime_count": {
                     "type": "integer"
                 },
+                "anime_total_score": {
+                    "type": "integer"
+                },
                 "anime_watched_episodes": {
                     "type": "integer"
                 },
@@ -9101,6 +9226,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "game_total_hours_played": {
+                    "type": "integer"
+                },
+                "game_total_score": {
                     "type": "integer"
                 },
                 "image": {
@@ -9136,6 +9264,9 @@ const docTemplate = `{
                 "movie_count": {
                     "type": "integer"
                 },
+                "movie_total_score": {
+                    "type": "integer"
+                },
                 "movie_watched_time": {
                     "type": "integer"
                 },
@@ -9149,6 +9280,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "tv_count": {
+                    "type": "integer"
+                },
+                "tv_total_score": {
                     "type": "integer"
                 },
                 "tv_watched_episodes": {

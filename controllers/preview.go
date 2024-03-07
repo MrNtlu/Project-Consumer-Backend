@@ -219,6 +219,7 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 	}
 
 	moviePopularSP, _ := movieModel.GetPopularStreamingPlatforms(data.Region)
+	moviePopularPC, _ := movieModel.GetPopularProductionCompanies()
 
 	// TV Series
 
@@ -244,7 +245,9 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 
 	dayOfWeek := int16(time.Now().UTC().Weekday()) + 1
 	dayOfWeekTVSeries, _ := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek)
+
 	tvSeriesPopularSP, _ := tvModel.GetPopularStreamingPlatforms(data.Region)
+	tvPopularPC, _ := movieModel.GetPopularProductionCompanies()
 
 	// Anime
 
@@ -309,10 +312,12 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 		"movie": gin.H{
 			"upcoming": upcomingMovies, "popular": popularMovies, "top": topMovies,
 			"extra": moviesInTheater, "actors": popularActors, "streaming_platforms": moviePopularSP,
+			"production_companies": moviePopularPC,
 		},
 		"tv": gin.H{
 			"upcoming": upcomingTVSeries, "popular": popularTVSeries, "top": topTVSeries,
 			"extra": dayOfWeekTVSeries, "actors": popularActorsTVSeries, "streaming_platforms": tvSeriesPopularSP,
+			"production_companies": tvPopularPC,
 		},
 		"anime": gin.H{
 			"upcoming": upcomingAnimes, "top": topRatedAnimes, "popular": popularAnimes,

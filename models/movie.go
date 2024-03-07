@@ -361,7 +361,7 @@ func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterM
 
 	matchFields := bson.M{}
 	if data.Status != nil || data.Genres != nil || data.ProductionCompanies != nil ||
-		data.ReleaseDateFrom != nil || data.ReleaseDateTo != nil {
+		data.ReleaseDateFrom != nil || data.ReleaseDateTo != nil || data.ProductionCountry != nil {
 
 		if data.Status != nil {
 			switch *data.Status {
@@ -390,6 +390,12 @@ func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterM
 		if data.ProductionCompanies != nil {
 			matchFields["production_companies.name"] = bson.M{
 				"$in": bson.A{data.ProductionCompanies},
+			}
+		}
+
+		if data.ProductionCountry != nil {
+			matchFields["production_companies.origin_country"] = bson.M{
+				"$in": bson.A{data.ProductionCountry},
 			}
 		}
 
@@ -774,6 +780,67 @@ func (movieModel *MovieModel) GetMoviesByStreamingPlatform(data requests.FilterB
 	}
 
 	return movies, paginatedData.Pagination, nil
+}
+
+func (movieModel *MovieModel) GetPopularProductionCompanies() ([]responses.StreamingPlatform, error) {
+	match := bson.M{"$match": bson.M{
+		"production_companies.logo": bson.M{
+			"$ne": "",
+		},
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"_id":                  1,
+		"production_companies": 1,
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$production_companies",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	set := bson.M{"$project": bson.M{
+		"logo": "$production_companies.logo",
+		"name": "$production_companies.name",
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$name",
+		"name": bson.M{
+			"$first": "$name",
+		},
+		"logo": bson.M{
+			"$first": "$logo",
+		},
+		"count": bson.M{
+			"$sum": 1,
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"count": -1,
+	}}
+
+	limit := bson.M{"$limit": popularPlatformsLimit}
+
+	cursor, err := movieModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, project, unwind, set, group, sort, limit,
+	})
+	if err != nil {
+		logrus.Error("failed to aggregate production companies: ", err)
+
+		return nil, fmt.Errorf("Failed to get top production companies.")
+	}
+
+	var popularProductionCompanies []responses.StreamingPlatform
+	if err := cursor.All(context.TODO(), &popularProductionCompanies); err != nil {
+		logrus.Error("failed to decode production companies: ", err)
+
+		return nil, fmt.Errorf("Failed to decode top production companies.")
+	}
+
+	return popularProductionCompanies, nil
 }
 
 func (movieModel *MovieModel) SearchMovieByTitle(data requests.Search) ([]responses.Movie, p.PaginationData, error) {

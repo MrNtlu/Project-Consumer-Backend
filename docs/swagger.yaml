@@ -695,6 +695,17 @@ definitions:
     - id
     - is_episode
     type: object
+  requests.LogStatInterval:
+    properties:
+      interval:
+        enum:
+        - weekly
+        - monthly
+        - 3months
+        type: string
+    required:
+    - interval
+    type: object
   requests.MarkConsumeLater:
     properties:
       id:
@@ -907,6 +918,8 @@ definitions:
         type: integer
       productionCompanies:
         type: string
+      productionCountry:
+        type: string
       releaseDateFrom:
         maximum: 2050
         minimum: 1900
@@ -951,6 +964,8 @@ definitions:
         minimum: 1
         type: integer
       productionCompanies:
+        type: string
+      productionCountry:
         type: string
       sort:
         enum:
@@ -1659,6 +1674,32 @@ definitions:
       title_original:
         type: string
     type: object
+  responses.ExtraStatistics:
+    properties:
+      genres:
+        items:
+          $ref: '#/definitions/responses.MostLikedGenres'
+        type: array
+      stats:
+        items:
+          $ref: '#/definitions/responses.FinishedLogStats'
+        type: array
+    type: object
+  responses.FinishedLogStats:
+    properties:
+      content_type:
+        type: string
+      count:
+        type: integer
+      length:
+        type: integer
+      metacritic_score:
+        type: integer
+      total_episodes:
+        type: integer
+      total_seasons:
+        type: integer
+    type: object
   responses.FriendRequest:
     properties:
       _id:
@@ -2102,6 +2143,15 @@ definitions:
       times_finished:
         type: integer
       user_id:
+        type: string
+    type: object
+  responses.MostLikedGenres:
+    properties:
+      genre:
+        type: string
+      max_count:
+        type: integer
+      type:
         type: string
     type: object
   responses.Movie:
@@ -2857,6 +2907,8 @@ definitions:
         type: string
       anime_count:
         type: integer
+      anime_total_score:
+        type: integer
       anime_watched_episodes:
         type: integer
       consume_later:
@@ -2876,6 +2928,8 @@ definitions:
       game_count:
         type: integer
       game_total_hours_played:
+        type: integer
+      game_total_score:
         type: integer
       image:
         type: string
@@ -2899,6 +2953,8 @@ definitions:
         type: integer
       movie_count:
         type: integer
+      movie_total_score:
+        type: integer
       movie_watched_time:
         type: integer
       reviews:
@@ -2908,6 +2964,8 @@ definitions:
       streak:
         type: integer
       tv_count:
+        type: integer
+      tv_total_score:
         type: integer
       tv_watched_episodes:
         type: integer
@@ -6010,6 +6068,35 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get friend requests
+      tags:
+      - user
+  /user/stats:
+    get:
+      consumes:
+      - application/json
+      description: Returns extra statistics
+      parameters:
+      - description: Log Stat Interval
+        in: body
+        name: logstatinterval
+        required: true
+        schema:
+          $ref: '#/definitions/requests.LogStatInterval'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Extra Statistics
+          schema:
+            $ref: '#/definitions/responses.ExtraStatistics'
+      security:
+      - ApiKeyAuth: []
+      summary: Extra statistics
       tags:
       - user
   /user/token:

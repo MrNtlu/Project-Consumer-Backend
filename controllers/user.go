@@ -32,7 +32,7 @@ var (
 	errNoUser            = "Sorry, couldn't find user."
 	errOAuthUser         = "Sorry, you can't do this action."
 	errMailAlreadySent   = "Password reset mail already sent, you have to wait 5 minutes before sending another. Please check spam mails."
-	// errPremiumFeature    = "This feature requires premium membership."
+	errPremiumFeature    = "This feature requires premium membership."
 )
 
 // Register
@@ -82,6 +82,68 @@ func (u *UserController) Register(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Registered successfully."})
+}
+
+// Extra Statistics
+// @Summary Extra statistics
+// @Description Returns extra statistics
+// @Tags user
+// @Accept application/json
+// @Produce application/json
+// @Param logstatinterval body requests.LogStatInterval true "Log Stat Interval"
+// @Security ApiKeyAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {object} responses.ExtraStatistics "Extra Statistics"
+// @Router /user/stats [get]
+func (u *UserController) GetExtraStatistics(c *gin.Context) {
+	var data requests.LogStatInterval
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	userModel := models.NewUserModel(u.Database)
+	logsModel := models.NewLogsModel(u.Database)
+
+	isPremium, _ := userModel.IsUserPremium(uid)
+
+	if !isPremium && data.Interval != "weekly" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": errPremiumFeature,
+		})
+
+		return
+	}
+
+	mostLikedGenres, err := logsModel.MostLikedGenresByLogs(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	finishedLogStats, err := logsModel.FinishedLogStats(uid, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	statistics := responses.ExtraStatistics{
+		FinishedLogStats: finishedLogStats,
+		MostLikedGenres:  mostLikedGenres,
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": statistics})
 }
 
 // User Info
@@ -207,6 +269,10 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 	userInfo.AnimeWatchedEpisodes = userStats.AnimeWatchedEpisodes
 	userInfo.TVWatchedEpisodes = userStats.TVWatchedEpisodes
 	userInfo.GameTotalHoursPlayed = userStats.GameTotalHoursPlayed
+	userInfo.MovieTotalScore = userStats.MovieTotalScore / int64(userStats.MovieCount)
+	userInfo.TVTotalScore = userStats.TVTotalScore / int64(userStats.TVCount)
+	userInfo.AnimeTotalScore = userStats.AnimeTotalScore / int64(userStats.AnimeCount)
+	userInfo.GameTotalScore = userStats.GameTotalScore / int64(userStats.GameCount)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched user info.", "data": userInfo})
 }
@@ -400,6 +466,10 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 	userInfo.AnimeWatchedEpisodes = userStats.AnimeWatchedEpisodes
 	userInfo.TVWatchedEpisodes = userStats.TVWatchedEpisodes
 	userInfo.GameTotalHoursPlayed = userStats.GameTotalHoursPlayed
+	userInfo.MovieTotalScore = userStats.MovieTotalScore / int64(userStats.MovieCount)
+	userInfo.TVTotalScore = userStats.TVTotalScore / int64(userStats.TVCount)
+	userInfo.AnimeTotalScore = userStats.AnimeTotalScore / int64(userStats.AnimeCount)
+	userInfo.GameTotalScore = userStats.GameTotalScore / int64(userStats.GameCount)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched user info.", "data": userInfo})
 }

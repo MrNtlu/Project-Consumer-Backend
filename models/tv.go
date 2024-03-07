@@ -379,7 +379,7 @@ func (tvModel *TVModel) GetTVSeriesBySortAndFilter(data requests.SortFilterTVSer
 
 	matchFields := bson.M{}
 	if data.Status != nil || data.Genres != nil || data.ProductionCompanies != nil ||
-		data.FirstAirDateFrom != nil || data.NumSeason != nil {
+		data.FirstAirDateFrom != nil || data.NumSeason != nil || data.ProductionCountry != nil {
 
 		if data.Status != nil {
 			var status string
@@ -404,6 +404,12 @@ func (tvModel *TVModel) GetTVSeriesBySortAndFilter(data requests.SortFilterTVSer
 		if data.ProductionCompanies != nil {
 			matchFields["production_companies.name"] = bson.M{
 				"$in": bson.A{data.ProductionCompanies},
+			}
+		}
+
+		if data.ProductionCountry != nil {
+			matchFields["production_companies.origin_country"] = bson.M{
+				"$in": bson.A{data.ProductionCountry},
 			}
 		}
 
@@ -794,6 +800,67 @@ func (tvModel *TVModel) GetTVSeriesByStreamingPlatform(data requests.FilterByStr
 	}
 
 	return tvList, paginatedData.Pagination, nil
+}
+
+func (tvModel *TVModel) GetPopularProductionCompanies() ([]responses.StreamingPlatform, error) {
+	match := bson.M{"$match": bson.M{
+		"production_companies.logo": bson.M{
+			"$ne": "",
+		},
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"_id":                  1,
+		"production_companies": 1,
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$production_companies",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	set := bson.M{"$project": bson.M{
+		"logo": "$production_companies.logo",
+		"name": "$production_companies.name",
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": "$name",
+		"name": bson.M{
+			"$first": "$name",
+		},
+		"logo": bson.M{
+			"$first": "$logo",
+		},
+		"count": bson.M{
+			"$sum": 1,
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"count": -1,
+	}}
+
+	limit := bson.M{"$limit": popularPlatformsLimit}
+
+	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, project, unwind, set, group, sort, limit,
+	})
+	if err != nil {
+		logrus.Error("failed to aggregate production companies: ", err)
+
+		return nil, fmt.Errorf("Failed to get top production companies.")
+	}
+
+	var popularProductionCompanies []responses.StreamingPlatform
+	if err := cursor.All(context.TODO(), &popularProductionCompanies); err != nil {
+		logrus.Error("failed to decode production companies: ", err)
+
+		return nil, fmt.Errorf("Failed to decode top production companies.")
+	}
+
+	return popularProductionCompanies, nil
 }
 
 func (tvModel *TVModel) SearchTVSeriesByTitle(data requests.Search) ([]responses.TVSeries, p.PaginationData, error) {

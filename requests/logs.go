@@ -14,3 +14,7 @@ type LogsByDateRange struct {
 	From string `form:"from" binding:"required" time_format:"2006-01-02"`
 	To   string `form:"to" binding:"required" time_format:"2006-01-02"`
 }
+
+type LogStatInterval struct {
+	Interval string `form:"interval" binding:"required,oneof=weekly monthly 3months"`
+}

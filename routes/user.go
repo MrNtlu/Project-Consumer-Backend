@@ -31,6 +31,7 @@ func userRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongoDB
 		{
 			user.GET("/basic", userController.GetBasicUserInfo)
 			user.GET("/info", userController.GetUserInfo)
+			user.GET("/stats", userController.GetExtraStatistics)
 			user.GET("/profile", userController.GetUserInfoFromUsername)
 			user.GET("/requests", userController.GetFriendRequests)
 			user.GET("/friends", userController.GetFriends)
