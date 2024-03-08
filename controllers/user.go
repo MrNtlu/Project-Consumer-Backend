@@ -269,10 +269,30 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 	userInfo.AnimeWatchedEpisodes = userStats.AnimeWatchedEpisodes
 	userInfo.TVWatchedEpisodes = userStats.TVWatchedEpisodes
 	userInfo.GameTotalHoursPlayed = userStats.GameTotalHoursPlayed
-	userInfo.MovieTotalScore = userStats.MovieTotalScore / int64(userStats.MovieCount)
-	userInfo.TVTotalScore = userStats.TVTotalScore / int64(userStats.TVCount)
-	userInfo.AnimeTotalScore = userStats.AnimeTotalScore / int64(userStats.AnimeCount)
-	userInfo.GameTotalScore = userStats.GameTotalScore / int64(userStats.GameCount)
+
+	if userStats.MovieCount != 0 && userStats.MovieTotalScore != 0 {
+		userInfo.MovieTotalScore = userStats.MovieTotalScore / int64(userStats.MovieCount)
+	} else {
+		userInfo.MovieTotalScore = 0
+	}
+
+	if userStats.TVCount != 0 && userStats.TVTotalScore != 0 {
+		userInfo.TVTotalScore = userStats.TVTotalScore / int64(userStats.TVCount)
+	} else {
+		userInfo.TVTotalScore = 0
+	}
+
+	if userStats.AnimeCount != 0 && userStats.AnimeTotalScore != 0 {
+		userInfo.AnimeTotalScore = userStats.AnimeTotalScore / int64(userStats.AnimeCount)
+	} else {
+		userInfo.AnimeTotalScore = 0
+	}
+
+	if userStats.GameCount != 0 && userStats.GameTotalScore != 0 {
+		userInfo.GameTotalScore = userStats.GameTotalScore / int64(userStats.GameCount)
+	} else {
+		userInfo.GameTotalScore = 0
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched user info.", "data": userInfo})
 }
@@ -466,10 +486,30 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 	userInfo.AnimeWatchedEpisodes = userStats.AnimeWatchedEpisodes
 	userInfo.TVWatchedEpisodes = userStats.TVWatchedEpisodes
 	userInfo.GameTotalHoursPlayed = userStats.GameTotalHoursPlayed
-	userInfo.MovieTotalScore = userStats.MovieTotalScore / int64(userStats.MovieCount)
-	userInfo.TVTotalScore = userStats.TVTotalScore / int64(userStats.TVCount)
-	userInfo.AnimeTotalScore = userStats.AnimeTotalScore / int64(userStats.AnimeCount)
-	userInfo.GameTotalScore = userStats.GameTotalScore / int64(userStats.GameCount)
+
+	if userStats.MovieCount != 0 && userStats.MovieTotalScore != 0 {
+		userInfo.MovieTotalScore = userStats.MovieTotalScore / int64(userStats.MovieCount)
+	} else {
+		userInfo.MovieTotalScore = 0
+	}
+
+	if userStats.TVCount != 0 && userStats.TVTotalScore != 0 {
+		userInfo.TVTotalScore = userStats.TVTotalScore / int64(userStats.TVCount)
+	} else {
+		userInfo.TVTotalScore = 0
+	}
+
+	if userStats.AnimeCount != 0 && userStats.AnimeTotalScore != 0 {
+		userInfo.AnimeTotalScore = userStats.AnimeTotalScore / int64(userStats.AnimeCount)
+	} else {
+		userInfo.AnimeTotalScore = 0
+	}
+
+	if userStats.GameCount != 0 && userStats.GameTotalScore != 0 {
+		userInfo.GameTotalScore = userStats.GameTotalScore / int64(userStats.GameCount)
+	} else {
+		userInfo.GameTotalScore = 0
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched user info.", "data": userInfo})
 }
