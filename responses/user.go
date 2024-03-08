@@ -82,10 +82,10 @@ type UserInfo struct {
 	AnimeWatchedEpisodes    int64               `bson:"anime_watched_episodes" json:"anime_watched_episodes"`
 	TVWatchedEpisodes       int64               `bson:"tv_watched_episodes" json:"tv_watched_episodes"`
 	GameTotalHoursPlayed    int64               `bson:"game_total_hours_played" json:"game_total_hours_played"`
-	MovieTotalScore         int64               `bson:"movie_total_score" json:"movie_total_score"`
-	TVTotalScore            int64               `bson:"tv_total_score" json:"tv_total_score"`
-	AnimeTotalScore         int64               `bson:"anime_total_score" json:"anime_total_score"`
-	GameTotalScore          int64               `bson:"game_total_score" json:"game_total_score"`
+	MovieTotalScore         float64             `bson:"movie_total_score" json:"movie_total_score"`
+	TVTotalScore            float64             `bson:"tv_total_score" json:"tv_total_score"`
+	AnimeTotalScore         float64             `bson:"anime_total_score" json:"anime_total_score"`
+	GameTotalScore          float64             `bson:"game_total_score" json:"game_total_score"`
 	LegendContent           []UserInfoContent   `bson:"legend_content" json:"legend_content"`
 	ConsumeLater            []ConsumeLater      `bson:"consume_later" json:"consume_later"`
 	Reviews                 []ReviewWithContent `bson:"reviews" json:"reviews"`

@@ -7,6 +7,7 @@ import (
 	"app/requests"
 	"app/responses"
 	"app/utils"
+	"math"
 	"net/http"
 	"time"
 
@@ -271,25 +272,25 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 	userInfo.GameTotalHoursPlayed = userStats.GameTotalHoursPlayed
 
 	if userStats.MovieCount != 0 && userStats.MovieTotalScore != 0 {
-		userInfo.MovieTotalScore = userStats.MovieTotalScore / int64(userStats.MovieCount)
+		userInfo.MovieTotalScore = math.Round(float64(userStats.MovieTotalScore)/float64(userStats.MovieCount)*100) / 100
 	} else {
 		userInfo.MovieTotalScore = 0
 	}
 
 	if userStats.TVCount != 0 && userStats.TVTotalScore != 0 {
-		userInfo.TVTotalScore = userStats.TVTotalScore / int64(userStats.TVCount)
+		userInfo.TVTotalScore = math.Round((float64(userStats.TVTotalScore)/float64(userStats.TVCount))*100) / 100
 	} else {
 		userInfo.TVTotalScore = 0
 	}
 
 	if userStats.AnimeCount != 0 && userStats.AnimeTotalScore != 0 {
-		userInfo.AnimeTotalScore = userStats.AnimeTotalScore / int64(userStats.AnimeCount)
+		userInfo.AnimeTotalScore = math.Round((float64(userStats.AnimeTotalScore)/float64(userStats.AnimeCount))*100) / 100
 	} else {
 		userInfo.AnimeTotalScore = 0
 	}
 
 	if userStats.GameCount != 0 && userStats.GameTotalScore != 0 {
-		userInfo.GameTotalScore = userStats.GameTotalScore / int64(userStats.GameCount)
+		userInfo.GameTotalScore = math.Round((float64(userStats.GameTotalScore)/float64(userStats.GameCount))*100) / 100
 	} else {
 		userInfo.GameTotalScore = 0
 	}
@@ -488,25 +489,25 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 	userInfo.GameTotalHoursPlayed = userStats.GameTotalHoursPlayed
 
 	if userStats.MovieCount != 0 && userStats.MovieTotalScore != 0 {
-		userInfo.MovieTotalScore = userStats.MovieTotalScore / int64(userStats.MovieCount)
+		userInfo.MovieTotalScore = math.Round(float64(userStats.MovieTotalScore)/float64(userStats.MovieCount)*100) / 100
 	} else {
 		userInfo.MovieTotalScore = 0
 	}
 
 	if userStats.TVCount != 0 && userStats.TVTotalScore != 0 {
-		userInfo.TVTotalScore = userStats.TVTotalScore / int64(userStats.TVCount)
+		userInfo.TVTotalScore = math.Round((float64(userStats.TVTotalScore)/float64(userStats.TVCount))*100) / 100
 	} else {
 		userInfo.TVTotalScore = 0
 	}
 
 	if userStats.AnimeCount != 0 && userStats.AnimeTotalScore != 0 {
-		userInfo.AnimeTotalScore = userStats.AnimeTotalScore / int64(userStats.AnimeCount)
+		userInfo.AnimeTotalScore = math.Round((float64(userStats.AnimeTotalScore)/float64(userStats.AnimeCount))*100) / 100
 	} else {
 		userInfo.AnimeTotalScore = 0
 	}
 
 	if userStats.GameCount != 0 && userStats.GameTotalScore != 0 {
-		userInfo.GameTotalScore = userStats.GameTotalScore / int64(userStats.GameCount)
+		userInfo.GameTotalScore = math.Round((float64(userStats.GameTotalScore)/float64(userStats.GameCount))*100) / 100
 	} else {
 		userInfo.GameTotalScore = 0
 	}

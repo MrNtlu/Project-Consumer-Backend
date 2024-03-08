@@ -9196,7 +9196,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "anime_total_score": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "anime_watched_episodes": {
                     "type": "integer"
@@ -9229,7 +9229,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "game_total_score": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "image": {
                     "type": "string"
@@ -9265,7 +9265,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "movie_total_score": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "movie_watched_time": {
                     "type": "integer"
@@ -9283,7 +9283,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "tv_total_score": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "tv_watched_episodes": {
                     "type": "integer"
