@@ -1696,7 +1696,9 @@ const docTemplate = `{
                     {
                         "enum": [
                             "score",
-                            "timeswatched"
+                            "timeswatched",
+                            "alphabetical",
+                            "unalphabetical"
                         ],
                         "type": "string",
                         "name": "sort",

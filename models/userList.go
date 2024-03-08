@@ -2454,6 +2454,222 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 
 				return secondScore < firstScore
 			})
+		} else if data.Sort == "alphabetical" {
+			srt.Slice(userList[0].AnimeList, func(i, j int) bool {
+				var (
+					firstTitle  string
+					secondTitle string
+				)
+
+				if userList[0].AnimeList[i].TitleEn != "" {
+					firstTitle = userList[0].AnimeList[i].TitleEn
+				} else {
+					firstTitle = userList[0].AnimeList[i].TitleOriginal
+				}
+
+				if userList[0].AnimeList[j].TitleEn != "" {
+					secondTitle = userList[0].AnimeList[j].TitleEn
+				} else {
+					secondTitle = userList[0].AnimeList[j].TitleOriginal
+				}
+
+				if firstTitle < secondTitle {
+					return true
+				} else if firstTitle > secondTitle {
+					return false
+				}
+
+				return userList[0].AnimeList[j].TimesFinished < userList[0].AnimeList[i].TimesFinished
+			})
+
+			srt.Slice(userList[0].MovieList, func(i, j int) bool {
+				var (
+					firstTitle  string
+					secondTitle string
+				)
+
+				if userList[0].MovieList[i].TitleEn != "" {
+					firstTitle = userList[0].MovieList[i].TitleEn
+				} else {
+					firstTitle = userList[0].MovieList[i].TitleOriginal
+				}
+
+				if userList[0].MovieList[j].TitleEn != "" {
+					secondTitle = userList[0].MovieList[j].TitleEn
+				} else {
+					secondTitle = userList[0].MovieList[j].TitleOriginal
+				}
+
+				if firstTitle < secondTitle {
+					return true
+				} else if firstTitle > secondTitle {
+					return false
+				}
+
+				return userList[0].MovieList[j].TimesFinished < userList[0].MovieList[i].TimesFinished
+			})
+
+			srt.Slice(userList[0].TVList, func(i, j int) bool {
+				var (
+					firstTitle  string
+					secondTitle string
+				)
+
+				if userList[0].TVList[i].TitleEn != "" {
+					firstTitle = userList[0].TVList[i].TitleEn
+				} else {
+					firstTitle = userList[0].TVList[i].TitleOriginal
+				}
+
+				if userList[0].TVList[j].TitleEn != "" {
+					secondTitle = userList[0].TVList[j].TitleEn
+				} else {
+					secondTitle = userList[0].TVList[j].TitleOriginal
+				}
+
+				if firstTitle < secondTitle {
+					return true
+				} else if firstTitle > secondTitle {
+					return false
+				}
+
+				return userList[0].TVList[j].TimesFinished < userList[0].TVList[i].TimesFinished
+			})
+
+			srt.Slice(userList[0].GameList, func(i, j int) bool {
+				var (
+					firstTitle  string
+					secondTitle string
+				)
+
+				if userList[0].GameList[i].Title != "" {
+					firstTitle = userList[0].GameList[i].Title
+				} else {
+					firstTitle = userList[0].GameList[i].TitleOriginal
+				}
+
+				if userList[0].GameList[j].Title != "" {
+					secondTitle = userList[0].GameList[j].Title
+				} else {
+					secondTitle = userList[0].GameList[j].TitleOriginal
+				}
+
+				if firstTitle < secondTitle {
+					return true
+				} else if firstTitle > secondTitle {
+					return false
+				}
+
+				return userList[0].GameList[j].TimesFinished < userList[0].GameList[i].TimesFinished
+			})
+		} else if data.Sort == "unalphabetical" {
+			srt.Slice(userList[0].AnimeList, func(i, j int) bool {
+				var (
+					firstTitle  string
+					secondTitle string
+				)
+
+				if userList[0].AnimeList[i].TitleEn != "" {
+					firstTitle = userList[0].AnimeList[i].TitleEn
+				} else {
+					firstTitle = userList[0].AnimeList[i].TitleOriginal
+				}
+
+				if userList[0].AnimeList[j].TitleEn != "" {
+					secondTitle = userList[0].AnimeList[j].TitleEn
+				} else {
+					secondTitle = userList[0].AnimeList[j].TitleOriginal
+				}
+
+				if firstTitle < secondTitle {
+					return false
+				} else if firstTitle > secondTitle {
+					return true
+				}
+
+				return userList[0].AnimeList[j].TimesFinished < userList[0].AnimeList[i].TimesFinished
+			})
+
+			srt.Slice(userList[0].MovieList, func(i, j int) bool {
+				var (
+					firstTitle  string
+					secondTitle string
+				)
+
+				if userList[0].MovieList[i].TitleEn != "" {
+					firstTitle = userList[0].MovieList[i].TitleEn
+				} else {
+					firstTitle = userList[0].MovieList[i].TitleOriginal
+				}
+
+				if userList[0].MovieList[j].TitleEn != "" {
+					secondTitle = userList[0].MovieList[j].TitleEn
+				} else {
+					secondTitle = userList[0].MovieList[j].TitleOriginal
+				}
+
+				if firstTitle < secondTitle {
+					return false
+				} else if firstTitle > secondTitle {
+					return true
+				}
+
+				return userList[0].MovieList[j].TimesFinished < userList[0].MovieList[i].TimesFinished
+			})
+
+			srt.Slice(userList[0].TVList, func(i, j int) bool {
+				var (
+					firstTitle  string
+					secondTitle string
+				)
+
+				if userList[0].TVList[i].TitleEn != "" {
+					firstTitle = userList[0].TVList[i].TitleEn
+				} else {
+					firstTitle = userList[0].TVList[i].TitleOriginal
+				}
+
+				if userList[0].TVList[j].TitleEn != "" {
+					secondTitle = userList[0].TVList[j].TitleEn
+				} else {
+					secondTitle = userList[0].TVList[j].TitleOriginal
+				}
+
+				if firstTitle < secondTitle {
+					return false
+				} else if firstTitle > secondTitle {
+					return true
+				}
+
+				return userList[0].TVList[j].TimesFinished < userList[0].TVList[i].TimesFinished
+			})
+
+			srt.Slice(userList[0].GameList, func(i, j int) bool {
+				var (
+					firstTitle  string
+					secondTitle string
+				)
+
+				if userList[0].GameList[i].Title != "" {
+					firstTitle = userList[0].GameList[i].Title
+				} else {
+					firstTitle = userList[0].GameList[i].TitleOriginal
+				}
+
+				if userList[0].GameList[j].Title != "" {
+					secondTitle = userList[0].GameList[j].Title
+				} else {
+					secondTitle = userList[0].GameList[j].TitleOriginal
+				}
+
+				if firstTitle < secondTitle {
+					return false
+				} else if firstTitle > secondTitle {
+					return true
+				}
+
+				return userList[0].GameList[j].TimesFinished < userList[0].GameList[i].TimesFinished
+			})
 		} else {
 			srt.Slice(userList[0].AnimeList, func(i, j int) bool {
 				if userList[0].AnimeList[i].StatusSort < userList[0].AnimeList[j].StatusSort {
