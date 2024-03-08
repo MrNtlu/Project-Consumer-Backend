@@ -247,7 +247,7 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 	dayOfWeekTVSeries, _ := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek)
 
 	tvSeriesPopularSP, _ := tvModel.GetPopularStreamingPlatforms(data.Region)
-	tvPopularPC, _ := movieModel.GetPopularProductionCompanies()
+	tvPopularPC, _ := tvModel.GetPopularProductionCompanies()
 
 	// Anime
 
