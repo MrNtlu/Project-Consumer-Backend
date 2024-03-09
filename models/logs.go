@@ -178,7 +178,7 @@ func (logsModel *LogsModel) MostLikedGenresByLogs(uid string) ([]responses.MostL
 						},
 						bson.M{
 							"$project": bson.M{
-								"genres": 1,
+								"genres": "$genres.name",
 							},
 						},
 					},
@@ -272,11 +272,11 @@ func (logsModel *LogsModel) MostLikedGenresByLogs(uid string) ([]responses.MostL
 
 	groupType := bson.M{"$group": bson.M{
 		"_id": "$type",
-		"genre": bson.M{
-			"$first": "$genre",
-		},
 		"type": bson.M{
 			"$first": "$type",
+		},
+		"genre": bson.M{
+			"$first": "$genre",
 		},
 		"max_count": bson.M{
 			"$max": "$count",
@@ -284,7 +284,7 @@ func (logsModel *LogsModel) MostLikedGenresByLogs(uid string) ([]responses.MostL
 	}}
 
 	cursor, err := logsModel.LogsCollection.Aggregate(context.TODO(), bson.A{
-		match, project, facet, projectLogs, unwind, unwindGenres, replaceRoot, unwindContent, group, sort, groupType,
+		match, project, facet, projectLogs, unwind, replaceRoot, unwindContent, unwindGenres, group, sort, groupType,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -311,11 +311,11 @@ func (logsModel *LogsModel) FinishedLogStats(uid string, data requests.LogStatIn
 
 	switch data.Interval {
 	case "weekly":
-		intervalDate = time.Now().UTC().AddDate(0, 0, 7)
+		intervalDate = time.Now().UTC().AddDate(0, 0, -7)
 	case "monthly":
-		intervalDate = time.Now().UTC().AddDate(0, 1, 0)
+		intervalDate = time.Now().UTC().AddDate(0, -1, 0)
 	case "3months":
-		intervalDate = time.Now().UTC().AddDate(0, 3, 0)
+		intervalDate = time.Now().UTC().AddDate(0, -3, 0)
 	}
 
 	match := bson.M{"$match": bson.M{
@@ -523,6 +523,77 @@ func (logsModel *LogsModel) FinishedLogStats(uid string, data requests.LogStatIn
 	}
 
 	return finishedLogStats, nil
+}
+
+func (logsModel *LogsModel) LogStatisticsChart(uid string, data requests.LogStatInterval) ([]responses.ChartLogs, error) {
+	var intervalDate time.Time
+
+	switch data.Interval {
+	case "weekly":
+		intervalDate = time.Now().UTC().AddDate(0, 0, -7)
+	case "monthly":
+		intervalDate = time.Now().UTC().AddDate(0, -1, 0)
+	case "3months":
+		intervalDate = time.Now().UTC().AddDate(0, -3, 0)
+	}
+
+	match := bson.M{"$match": bson.M{
+		"user_id": uid,
+		"created_at": bson.M{
+			"$gte": intervalDate,
+		},
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": bson.M{
+			"$dateToString": bson.M{
+				"format": "%Y-%m-%d",
+				"date":   "$created_at",
+			},
+		},
+		"count": bson.M{
+			"$sum": 1,
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"_id": -1,
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"created_at": bson.M{
+			"$toDate": "$_id",
+		},
+		"day_of_week": bson.M{
+			"$dayOfWeek": bson.M{
+				"$toDate": "$_id",
+			},
+		},
+	}}
+
+	cursor, err := logsModel.LogsCollection.Aggregate(context.TODO(), bson.A{
+		match, group, sort, set,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to find user chart logs: ", err)
+
+		return nil, fmt.Errorf("Failed to find user chart logs.")
+	}
+
+	var chartLogs []responses.ChartLogs
+	if err := cursor.All(context.TODO(), &chartLogs); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to decode user chart logs: ", err)
+
+		return nil, fmt.Errorf("Failed to decode user chart logs.")
+	}
+
+	return chartLogs, nil
 }
 
 func (logsModel *LogsModel) GetLogStreak(uid string) (int, int) {

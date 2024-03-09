@@ -7185,6 +7185,20 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.ChartLogs": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "day_of_week": {
+                    "type": "integer"
+                }
+            }
+        },
         "responses.ConsumeLater": {
             "type": "object",
             "properties": {
@@ -7332,6 +7346,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/responses.MostLikedGenres"
+                    }
+                },
+                "logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.ChartLogs"
                     }
                 },
                 "stats": {

@@ -139,9 +139,19 @@ func (u *UserController) GetExtraStatistics(c *gin.Context) {
 		return
 	}
 
+	chartLogs, err := logsModel.LogStatisticsChart(uid, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
 	statistics := responses.ExtraStatistics{
 		FinishedLogStats: finishedLogStats,
 		MostLikedGenres:  mostLikedGenres,
+		ChartLogs:        chartLogs,
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": statistics})

@@ -1582,6 +1582,15 @@ definitions:
       username:
         type: string
     type: object
+  responses.ChartLogs:
+    properties:
+      count:
+        type: integer
+      created_at:
+        type: string
+      day_of_week:
+        type: integer
+    type: object
   responses.ConsumeLater:
     properties:
       _id:
@@ -1679,6 +1688,10 @@ definitions:
       genres:
         items:
           $ref: '#/definitions/responses.MostLikedGenres'
+        type: array
+      logs:
+        items:
+          $ref: '#/definitions/responses.ChartLogs'
         type: array
       stats:
         items:

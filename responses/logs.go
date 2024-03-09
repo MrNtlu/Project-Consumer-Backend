@@ -38,7 +38,14 @@ type MostLikedGenres struct {
 	MaxCount int64  `bson:"max_count" json:"max_count"`
 }
 
+type ChartLogs struct {
+	CreatedAt time.Time `bson:"created_at" json:"created_at"`
+	Count     int64     `bson:"count" json:"count"`
+	DayOfWeek int64     `bson:"day_of_week" json:"day_of_week"`
+}
+
 type ExtraStatistics struct {
 	FinishedLogStats []FinishedLogStats `bson:"stats" json:"stats"`
 	MostLikedGenres  []MostLikedGenres  `bson:"genres" json:"genres"`
+	ChartLogs        []ChartLogs        `bson:"logs" json:"logs"`
 }
