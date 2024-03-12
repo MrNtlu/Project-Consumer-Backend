@@ -130,6 +130,15 @@ func (u *UserController) GetExtraStatistics(c *gin.Context) {
 		return
 	}
 
+	mostLikedCountry, err := logsModel.MostLikedCountryByLogs(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
 	finishedLogStats, err := logsModel.FinishedLogStats(uid, data)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -151,6 +160,7 @@ func (u *UserController) GetExtraStatistics(c *gin.Context) {
 	statistics := responses.ExtraStatistics{
 		FinishedLogStats: finishedLogStats,
 		MostLikedGenres:  mostLikedGenres,
+		MostLikedCountry: mostLikedCountry,
 		ChartLogs:        chartLogs,
 	}
 

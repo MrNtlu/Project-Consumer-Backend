@@ -1685,6 +1685,10 @@ definitions:
     type: object
   responses.ExtraStatistics:
     properties:
+      country:
+        items:
+          $ref: '#/definitions/responses.MostLikedCountry'
+        type: array
       genres:
         items:
           $ref: '#/definitions/responses.MostLikedGenres'
@@ -2158,12 +2162,17 @@ definitions:
       user_id:
         type: string
     type: object
+  responses.MostLikedCountry:
+    properties:
+      country:
+        type: string
+      type:
+        type: string
+    type: object
   responses.MostLikedGenres:
     properties:
       genre:
         type: string
-      max_count:
-        type: integer
       type:
         type: string
     type: object

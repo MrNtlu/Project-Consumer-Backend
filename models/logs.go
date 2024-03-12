@@ -278,9 +278,6 @@ func (logsModel *LogsModel) MostLikedGenresByLogs(uid string) ([]responses.MostL
 		"genre": bson.M{
 			"$first": "$genre",
 		},
-		"max_count": bson.M{
-			"$max": "$count",
-		},
 	}}
 
 	cursor, err := logsModel.LogsCollection.Aggregate(context.TODO(), bson.A{
@@ -304,6 +301,197 @@ func (logsModel *LogsModel) MostLikedGenresByLogs(uid string) ([]responses.MostL
 	}
 
 	return mostLikedGenres, nil
+}
+
+func (logsModel *LogsModel) MostLikedCountryByLogs(uid string) ([]responses.MostLikedCountry, error) {
+	match := bson.M{"$match": bson.M{
+		"user_id":            uid,
+		"log_type":           "userlist",
+		"log_action_details": "finished",
+		"content_type": bson.M{
+			"$ne": "game",
+		},
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"content_id": bson.M{
+			"$toObjectId": "$content_id",
+		},
+		"content_type": 1,
+	}}
+
+	facet := bson.M{"$facet": bson.M{
+		"movies": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "movie"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "movies",
+					"let": bson.M{
+						"content_id": "$content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"country": "$production_companies.origin_country",
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"tv": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "tv"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "tv-series",
+					"let": bson.M{
+						"content_id": "$content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"country": "$production_companies.origin_country",
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"anime": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "anime"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "animes",
+					"let": bson.M{
+						"content_id":  "$content_id",
+						"external_id": "$content_external_int_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"country": "$demographics.name",
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+	}}
+
+	projectLogs := bson.M{"$project": bson.M{
+		"logs": bson.M{
+			"$concatArrays": bson.A{
+				"$movies",
+				"$tv",
+				"$anime",
+			},
+		},
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$logs",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	replaceRoot := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$logs",
+	}}
+
+	unwindContent := bson.M{"$unwind": bson.M{
+		"path":                       "$content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	unwindGenres := bson.M{"$unwind": bson.M{
+		"path":                       "$content.country",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": bson.M{
+			"country": "$content.country",
+			"type":    "$content_type",
+		},
+		"country": bson.M{
+			"$first": "$content.country",
+		},
+		"type": bson.M{
+			"$first": "$content_type",
+		},
+		"count": bson.M{
+			"$sum": 1,
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"type":  1,
+		"count": -1,
+	}}
+
+	groupType := bson.M{"$group": bson.M{
+		"_id": "$type",
+		"type": bson.M{
+			"$first": "$type",
+		},
+		"country": bson.M{
+			"$first": "$country",
+		},
+	}}
+
+	cursor, err := logsModel.LogsCollection.Aggregate(context.TODO(), bson.A{
+		match, project, facet, projectLogs, unwind, replaceRoot, unwindContent, unwindGenres, group, sort, groupType,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to find most liked genres by logs: ", err)
+
+		return nil, fmt.Errorf("Failed to find most liked genres by logs.")
+	}
+
+	var mostLikedCountry []responses.MostLikedCountry
+	if err := cursor.All(context.TODO(), &mostLikedCountry); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to decode most liked genres by logs: ", err)
+
+		return nil, fmt.Errorf("Failed to decode most liked genres by logs.")
+	}
+
+	return mostLikedCountry, nil
 }
 
 func (logsModel *LogsModel) FinishedLogStats(uid string, data requests.LogStatInterval) ([]responses.FinishedLogStats, error) {

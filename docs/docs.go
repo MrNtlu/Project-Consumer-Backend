@@ -7342,6 +7342,12 @@ const docTemplate = `{
         "responses.ExtraStatistics": {
             "type": "object",
             "properties": {
+                "country": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.MostLikedCountry"
+                    }
+                },
                 "genres": {
                     "type": "array",
                     "items": {
@@ -8060,14 +8066,22 @@ const docTemplate = `{
                 }
             }
         },
+        "responses.MostLikedCountry": {
+            "type": "object",
+            "properties": {
+                "country": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
         "responses.MostLikedGenres": {
             "type": "object",
             "properties": {
                 "genre": {
                     "type": "string"
-                },
-                "max_count": {
-                    "type": "integer"
                 },
                 "type": {
                     "type": "string"

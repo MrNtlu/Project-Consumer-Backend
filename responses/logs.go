@@ -32,10 +32,14 @@ type FinishedLogStats struct {
 	Count           int64  `bson:"count" json:"count"`
 }
 
+type MostLikedCountry struct {
+	Type    string `bson:"type" json:"type"`
+	Country string `bson:"country" json:"country"`
+}
+
 type MostLikedGenres struct {
-	Type     string `bson:"type" json:"type"`
-	Genre    string `bson:"genre" json:"genre"`
-	MaxCount int64  `bson:"max_count" json:"max_count"`
+	Type  string `bson:"type" json:"type"`
+	Genre string `bson:"genre" json:"genre"`
 }
 
 type ChartLogs struct {
@@ -47,5 +51,6 @@ type ChartLogs struct {
 type ExtraStatistics struct {
 	FinishedLogStats []FinishedLogStats `bson:"stats" json:"stats"`
 	MostLikedGenres  []MostLikedGenres  `bson:"genres" json:"genres"`
+	MostLikedCountry []MostLikedCountry `bson:"country" json:"country"`
 	ChartLogs        []ChartLogs        `bson:"logs" json:"logs"`
 }
