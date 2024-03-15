@@ -92,7 +92,7 @@ func (animeModel *AnimeModel) GetPreviewPopularAnimes() ([]responses.PreviewAnim
 			bson.M{"is_airing": true},
 		},
 		"aired.from": bson.M{
-			"$gte": utils.GetCustomDate(0, -3, 0),
+			"$gte": utils.GetCustomDate(0, -4, 0),
 		},
 	}}
 
@@ -287,16 +287,37 @@ func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.Pagination) 
 		},
 	}}
 
-	addPopularityFields := bson.M{"$addFields": bson.M{
+	project := bson.M{"$project": bson.M{
 		"popularity": bson.M{
 			"$multiply": bson.A{
 				"$mal_score", "$mal_scored_by",
 			},
 		},
+		"has_year":        1,
+		"season_priority": 1,
+		"mal_id":          1,
+		"age_rating":      1,
+		"aired":           1,
+		"description":     1,
+		"episodes":        1,
+		"image_url":       1,
+		"is_airing":       1,
+		"mal_score":       1,
+		"mal_scored_by":   1,
+		"season":          1,
+		"source":          1,
+		"status":          1,
+		"title_en":        1,
+		"title_jp":        1,
+		"title_original":  1,
+		"type":            1,
+		"year":            1,
+		"mal_favorites":   1,
+		"mal_members":     1,
 	}}
 
 	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animeUpcomingPaginationLimit).
-		Page(data.Page).Sort("has_year", -1).Sort("popularity", -1).Sort("_id", 1).Aggregate(match, addFields, addPopularityFields)
+		Page(data.Page).Sort("has_year", -1).Sort("popularity", -1).Sort("_id", 1).Aggregate(match, addFields, project)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
@@ -373,20 +394,39 @@ func (animeModel *AnimeModel) GetPopularAnimes(data requests.Pagination) ([]resp
 			bson.M{"is_airing": true},
 		},
 		"aired.from": bson.M{
-			"$gte": utils.GetCustomDate(0, -3, 0),
+			"$gte": utils.GetCustomDate(0, -4, 0),
 		},
 	}}
 
-	addFields := bson.M{"$addFields": bson.M{
+	project := bson.M{"$project": bson.M{
 		"popularity": bson.M{
 			"$multiply": bson.A{
 				"$mal_score", "$mal_scored_by",
 			},
 		},
+		"mal_id":         1,
+		"age_rating":     1,
+		"aired":          1,
+		"description":    1,
+		"episodes":       1,
+		"image_url":      1,
+		"is_airing":      1,
+		"mal_score":      1,
+		"mal_scored_by":  1,
+		"season":         1,
+		"source":         1,
+		"status":         1,
+		"title_en":       1,
+		"title_jp":       1,
+		"title_original": 1,
+		"type":           1,
+		"year":           1,
+		"mal_favorites":  1,
+		"mal_members":    1,
 	}}
 
 	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animePaginationLimit).
-		Page(data.Page).Sort("popularity", -1).Aggregate(match, addFields)
+		Page(data.Page).Sort("popularity", -1).Aggregate(match, project)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
@@ -408,12 +448,31 @@ func (animeModel *AnimeModel) GetPopularAnimes(data requests.Pagination) ([]resp
 }
 
 func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterAnime) ([]responses.Anime, p.PaginationData, error) {
-	addFields := bson.M{"$addFields": bson.M{
+	project := bson.M{"$project": bson.M{
 		"popularity": bson.M{
 			"$multiply": bson.A{
 				"$mal_score", "$mal_scored_by",
 			},
 		},
+		"mal_id":         1,
+		"age_rating":     1,
+		"aired":          1,
+		"description":    1,
+		"episodes":       1,
+		"image_url":      1,
+		"is_airing":      1,
+		"mal_score":      1,
+		"mal_scored_by":  1,
+		"season":         1,
+		"source":         1,
+		"status":         1,
+		"title_en":       1,
+		"title_jp":       1,
+		"title_original": 1,
+		"type":           1,
+		"year":           1,
+		"mal_favorites":  1,
+		"mal_members":    1,
 	}}
 
 	var (
@@ -495,7 +554,7 @@ func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterA
 	match := bson.M{"$match": matchFields}
 
 	paginatedData, err := p.New(animeModel.Collection).Context(context.TODO()).Limit(animePaginationLimit).
-		Page(data.Page).Sort(sortType, sortOrder).Aggregate(match, addFields)
+		Page(data.Page).Sort(sortType, sortOrder).Aggregate(match, project)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,

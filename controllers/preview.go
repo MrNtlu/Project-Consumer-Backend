@@ -5,6 +5,7 @@ import (
 	"app/models"
 	"app/requests"
 	"app/responses"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -225,6 +226,7 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 
 	upcomingTVSeries, err := tvModel.GetUpcomingPreviewTVSeries()
 	if err != nil {
+		fmt.Println(err)
 		upcomingTVSeries = []responses.PreviewTVSeries{}
 	}
 

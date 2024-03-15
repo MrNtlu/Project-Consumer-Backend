@@ -19,7 +19,6 @@ func SetupRoutes(router *gin.Engine, jwtToken *jwt.GinJWTMiddleware, mongoDB *db
 	animeRouter(apiRouter, mongoDB)
 	mangaRouter(apiRouter, mongoDB)
 	gameRouter(apiRouter, mongoDB)
-	comicRouter(apiRouter, mongoDB)
 	oauth2Router(apiRouter, jwtToken, mongoDB)
 	userListRouter(apiRouter, jwtToken, mongoDB)
 	userInteractionRouter(apiRouter, jwtToken, mongoDB)

@@ -303,14 +303,26 @@ func (movieModel *MovieModel) GetUpcomingMoviesBySort(data requests.Pagination) 
 		},
 	}}
 
-	addFields := bson.M{"$addFields": bson.M{
+	project := bson.M{"$project": bson.M{
 		"has_release_date": bson.M{
 			"$ne": bson.A{"$release_date", ""},
 		},
+		"tmdb_id":         1,
+		"image_url":       1,
+		"imdb_id":         1,
+		"length":          1,
+		"release_date":    1,
+		"status":          1,
+		"title_en":        1,
+		"title_original":  1,
+		"description":     1,
+		"tmdb_vote":       1,
+		"tmdb_vote_count": 1,
+		"tmdb_popularity": 1,
 	}}
 
 	paginatedData, err := p.New(movieModel.Collection).Context(context.TODO()).Limit(movieUpcomingPaginationLimit).
-		Page(data.Page).Sort("has_release_date", -1).Sort("tmdb_popularity", -1).Sort("_id", 1).Aggregate(match, addFields)
+		Page(data.Page).Sort("has_release_date", -1).Sort("tmdb_popularity", -1).Sort("_id", 1).Aggregate(match, project)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
@@ -331,12 +343,24 @@ func (movieModel *MovieModel) GetUpcomingMoviesBySort(data requests.Pagination) 
 }
 
 func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterMovie) ([]responses.Movie, p.PaginationData, error) {
-	addFields := bson.M{"$addFields": bson.M{
+	project := bson.M{"$project": bson.M{
 		"top_rated": bson.M{
 			"$multiply": bson.A{
 				"$tmdb_vote", "$tmdb_vote_count",
 			},
 		},
+		"tmdb_id":         1,
+		"image_url":       1,
+		"imdb_id":         1,
+		"length":          1,
+		"release_date":    1,
+		"status":          1,
+		"title_en":        1,
+		"title_original":  1,
+		"description":     1,
+		"tmdb_vote":       1,
+		"tmdb_vote_count": 1,
+		"tmdb_popularity": 1,
 	}}
 
 	var (
@@ -416,7 +440,7 @@ func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterM
 	match := bson.M{"$match": matchFields}
 
 	paginatedData, err := p.New(movieModel.Collection).Context(context.TODO()).Limit(moviePaginationLimit).
-		Page(data.Page).Sort(sortType, sortOrder).Aggregate(match, addFields)
+		Page(data.Page).Sort(sortType, sortOrder).Aggregate(match, project)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,

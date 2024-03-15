@@ -4,6 +4,7 @@ import (
 	"app/db"
 	"app/requests"
 	"app/responses"
+	"app/utils"
 	"context"
 	"fmt"
 	"strconv"
@@ -36,8 +37,57 @@ const (
 )
 
 func (tvModel *TVModel) GetUpcomingPreviewTVSeries() ([]responses.PreviewTVSeries, error) {
+	currentDate := utils.GetCustomDate(0, 0, -1)
+
 	match := bson.M{
-		"status": "In Production",
+		"$and": bson.A{
+			bson.M{
+				"$or": bson.A{
+					bson.M{"status": "In Production"},
+					bson.M{
+						"streaming.streaming_platforms.name": "Netflix",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Netflix basic with Ads",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Amazon Prime Video",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Disney Plus",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Rakuten Viki",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Apple TV Plus",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "HBO Max",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Sky Go",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Paramount Plus",
+					},
+				},
+			},
+			bson.M{
+				"$or": bson.A{
+					bson.M{
+						"first_air_date": bson.M{
+							"$gte": currentDate,
+						},
+					},
+					bson.M{
+						"seasons.air_date": bson.M{
+							"$gte": currentDate,
+						},
+					},
+				},
+			},
+		},
 	}
 
 	opts := options.Find().SetSort(bson.M{"tmdb_popularity": -1}).SetLimit(tvSeriesUpcomingPaginationLimit)
@@ -224,11 +274,60 @@ func (tvModel *TVModel) GetTVSeriesFromOpenAI(uid string, tvSeries []string) ([]
 }
 
 func (tvModel *TVModel) GetUpcomingTVSeries(data requests.Pagination) ([]responses.TVSeries, p.PaginationData, error) {
+	currentDate := utils.GetCustomDate(0, 0, -1)
+
 	match := bson.M{"$match": bson.M{
-		"status": "In Production",
+		"$and": bson.A{
+			bson.M{
+				"$or": bson.A{
+					bson.M{"status": "In Production"},
+					bson.M{
+						"streaming.streaming_platforms.name": "Netflix",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Netflix basic with Ads",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Amazon Prime Video",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Disney Plus",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Rakuten Viki",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Apple TV Plus",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "HBO Max",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Sky Go",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Paramount Plus",
+					},
+				},
+			},
+			bson.M{
+				"$or": bson.A{
+					bson.M{
+						"first_air_date": bson.M{
+							"$gte": currentDate,
+						},
+					},
+					bson.M{
+						"seasons.air_date": bson.M{
+							"$gte": currentDate,
+						},
+					},
+				},
+			},
+		},
 	}}
 
-	addFields := bson.M{"$addFields": bson.M{
+	project := bson.M{"$project": bson.M{
 		"has_air_date": bson.M{
 			"$or": bson.A{
 				bson.M{
@@ -239,10 +338,22 @@ func (tvModel *TVModel) GetUpcomingTVSeries(data requests.Pagination) ([]respons
 				},
 			},
 		},
+		"tmdb_id":         1,
+		"image_url":       1,
+		"title_en":        1,
+		"title_original":  1,
+		"description":     1,
+		"first_air_date":  1,
+		"status":          1,
+		"tmdb_popularity": 1,
+		"tmdb_vote":       1,
+		"tmdb_vote_count": 1,
+		"total_episodes":  1,
+		"total_seasons":   1,
 	}}
 
 	paginatedData, err := p.New(tvModel.Collection).Context(context.TODO()).Limit(tvSeriesUpcomingPaginationLimit).
-		Page(data.Page).Sort("has_air_date", -1).Sort("tmdb_popularity", -1).Sort("_id", 1).Aggregate(match, addFields)
+		Page(data.Page).Sort("has_air_date", -1).Sort("tmdb_popularity", -1).Sort("_id", 1).Aggregate(match, project)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
@@ -263,11 +374,59 @@ func (tvModel *TVModel) GetUpcomingTVSeries(data requests.Pagination) ([]respons
 }
 
 func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek int16) ([]responses.PreviewTVSeries, error) {
+	currentDate := utils.GetCustomDate(0, -3, 0)
+
 	match := bson.M{"$match": bson.M{
-		"streaming.country_code": "US",
-		"status":                 "Returning Series",
-		"streaming.streaming_platforms": bson.M{
-			"$ne": nil,
+		"$and": bson.A{
+			bson.M{"status": "Returning Series"},
+			bson.M{"streaming.streaming_platforms": bson.M{
+				"$ne": nil,
+			}},
+			bson.M{
+				"$or": bson.A{
+					bson.M{
+						"streaming.streaming_platforms.name": "Netflix",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Netflix basic with Ads",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Amazon Prime Video",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Disney Plus",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Rakuten Viki",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Apple TV Plus",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "HBO Max",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Sky Go",
+					},
+					bson.M{
+						"streaming.streaming_platforms.name": "Paramount Plus",
+					},
+				},
+			},
+			bson.M{
+				"$or": bson.A{
+					bson.M{
+						"first_air_date": bson.M{
+							"$gte": currentDate,
+						},
+					},
+					bson.M{
+						"seasons.air_date": bson.M{
+							"$gte": currentDate,
+						},
+					},
+				},
+			},
 		},
 	}}
 
@@ -291,6 +450,20 @@ func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek int16) (
 				},
 			},
 		},
+		"tmdb_popularity": bson.M{
+			"$cond": bson.M{
+				"if": bson.M{
+					"$or": bson.A{
+						bson.M{"$in": bson.A{"Reality", "$genres"}},
+						bson.M{"$in": bson.A{"Talk", "$genres"}},
+					},
+				},
+				"then": bson.M{
+					"$multiply": bson.A{"$tmdb_popularity", 0.5},
+				},
+				"else": "$tmdb_popularity",
+			},
+		},
 	}}
 
 	matchDayOfWeek := bson.M{"$match": bson.M{
@@ -298,7 +471,7 @@ func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek int16) (
 	}}
 
 	sortByPopularity := bson.M{"$sort": bson.M{
-		"tmdb_popularity": 1,
+		"tmdb_popularity": -1,
 	}}
 
 	limit := bson.M{"$limit": 25}
@@ -342,7 +515,7 @@ func (tvModel *TVModel) GetTVSeriesBySortAndFilter(data requests.SortFilterTVSer
 		},
 	}}
 
-	set := bson.M{"$set": bson.M{
+	set := bson.M{"$project": bson.M{
 		"tmdb_popularity": bson.M{
 			"$multiply": bson.A{
 				bson.M{
@@ -355,6 +528,18 @@ func (tvModel *TVModel) GetTVSeriesBySortAndFilter(data requests.SortFilterTVSer
 				"$tmdb_popularity",
 			},
 		},
+		"tmdb_id":          1,
+		"image_url":        1,
+		"has_release_date": 1,
+		"title_en":         1,
+		"title_original":   1,
+		"description":      1,
+		"first_air_date":   1,
+		"status":           1,
+		"tmdb_vote":        1,
+		"tmdb_vote_count":  1,
+		"total_episodes":   1,
+		"total_seasons":    1,
 	}}
 
 	var (

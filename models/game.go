@@ -255,16 +255,28 @@ func (gameModel *GameModel) GetUpcomingGamesBySort(data requests.Pagination) ([]
 		},
 	}}
 
-	addPopularityFields := bson.M{"$addFields": bson.M{
+	project := bson.M{"$project": bson.M{
 		"popularity": bson.M{
 			"$multiply": bson.A{
 				"$rawg_rating", "$rawg_rating_count",
 			},
 		},
+		"has_release_date":  1,
+		"rawg_id":           1,
+		"age_rating":        1,
+		"description":       1,
+		"image_url":         1,
+		"metacritic_score":  1,
+		"rawg_rating":       1,
+		"rawg_rating_count": 1,
+		"release_date":      1,
+		"tba":               1,
+		"title":             1,
+		"title_original":    1,
 	}}
 
 	paginatedData, err := p.New(gameModel.Collection).Context(context.TODO()).Limit(gameUpcomingPaginationLimit).
-		Page(data.Page).Sort("has_release_date", -1).Sort("popularity", -1).Sort("_id", 1).Aggregate(match, addFields, addPopularityFields)
+		Page(data.Page).Sort("has_release_date", -1).Sort("popularity", -1).Sort("_id", 1).Aggregate(match, addFields, project)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
@@ -285,12 +297,23 @@ func (gameModel *GameModel) GetUpcomingGamesBySort(data requests.Pagination) ([]
 }
 
 func (gameModel *GameModel) GetGamesByFilterAndSort(data requests.SortFilterGame) ([]responses.Game, p.PaginationData, error) {
-	addFields := bson.M{"$addFields": bson.M{
+	project := bson.M{"$project": bson.M{
 		"popularity": bson.M{
 			"$multiply": bson.A{
 				"$rawg_rating", "$rawg_rating_count",
 			},
 		},
+		"rawg_id":           1,
+		"age_rating":        1,
+		"description":       1,
+		"image_url":         1,
+		"metacritic_score":  1,
+		"rawg_rating":       1,
+		"rawg_rating_count": 1,
+		"release_date":      1,
+		"tba":               1,
+		"title":             1,
+		"title_original":    1,
 	}}
 
 	var (
@@ -335,7 +358,7 @@ func (gameModel *GameModel) GetGamesByFilterAndSort(data requests.SortFilterGame
 	match := bson.M{"$match": matchFields}
 
 	paginatedData, err := p.New(gameModel.Collection).Context(context.TODO()).Limit(gamePaginationLimit).
-		Page(data.Page).Sort(sortType, sortOrder).Aggregate(match, addFields)
+		Page(data.Page).Sort(sortType, sortOrder).Aggregate(match, project)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": data,
