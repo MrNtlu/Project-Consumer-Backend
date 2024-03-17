@@ -164,6 +164,29 @@ func (u *UserController) GetExtraStatistics(c *gin.Context) {
 		ChartLogs:        chartLogs,
 	}
 
+	if isPremium {
+		mostWatchedActors, err := logsModel.MostWatchedActors(uid)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		mostLikedStudios, err := logsModel.MostLikedStudios(uid)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		statistics.MostWatchedActors = mostWatchedActors
+		statistics.MostLikedStudios = mostLikedStudios
+	}
+
 	c.JSON(http.StatusOK, gin.H{"data": statistics})
 }
 

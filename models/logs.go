@@ -93,6 +93,16 @@ func (logsModel *LogsModel) MostLikedGenresByLogs(uid string) ([]responses.MostL
 		"log_action_details": "finished",
 	}}
 
+	duplicateClearGroup := bson.M{"$group": bson.M{
+		"_id": "$content_id",
+		"content_type": bson.M{
+			"$first": "$content_type",
+		},
+		"content_id": bson.M{
+			"$first": "$content_id",
+		},
+	}}
+
 	project := bson.M{"$project": bson.M{
 		"content_id": bson.M{
 			"$toObjectId": "$content_id",
@@ -281,7 +291,7 @@ func (logsModel *LogsModel) MostLikedGenresByLogs(uid string) ([]responses.MostL
 	}}
 
 	cursor, err := logsModel.LogsCollection.Aggregate(context.TODO(), bson.A{
-		match, project, facet, projectLogs, unwind, replaceRoot, unwindContent, unwindGenres, group, sort, groupType,
+		match, duplicateClearGroup, project, facet, projectLogs, unwind, replaceRoot, unwindContent, unwindGenres, group, sort, groupType,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -310,6 +320,16 @@ func (logsModel *LogsModel) MostLikedCountryByLogs(uid string) ([]responses.Most
 		"log_action_details": "finished",
 		"content_type": bson.M{
 			"$ne": "game",
+		},
+	}}
+
+	duplicateClearGroup := bson.M{"$group": bson.M{
+		"_id": "$content_id",
+		"content_type": bson.M{
+			"$first": "$content_type",
+		},
+		"content_id": bson.M{
+			"$first": "$content_id",
 		},
 	}}
 
@@ -472,7 +492,7 @@ func (logsModel *LogsModel) MostLikedCountryByLogs(uid string) ([]responses.Most
 	}}
 
 	cursor, err := logsModel.LogsCollection.Aggregate(context.TODO(), bson.A{
-		match, project, facet, projectLogs, unwind, replaceRoot, unwindContent, unwindGenres, group, sort, groupType,
+		match, duplicateClearGroup, project, facet, projectLogs, unwind, replaceRoot, unwindContent, unwindGenres, group, sort, groupType,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -494,6 +514,398 @@ func (logsModel *LogsModel) MostLikedCountryByLogs(uid string) ([]responses.Most
 	return mostLikedCountry, nil
 }
 
+func (logsModel *LogsModel) MostWatchedActors(uid string) ([]responses.MostWatchedActors, error) {
+	match := bson.M{"$match": bson.M{
+		"user_id":            uid,
+		"log_type":           "userlist",
+		"log_action_details": "finished",
+		"content_type": bson.M{
+			"$nin": bson.A{"game", "anime"},
+		},
+	}}
+
+	duplicateClearGroup := bson.M{"$group": bson.M{
+		"_id": "$content_id",
+		"content_type": bson.M{
+			"$first": "$content_type",
+		},
+		"content_id": bson.M{
+			"$first": "$content_id",
+		},
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"content_id": bson.M{
+			"$toObjectId": "$content_id",
+		},
+		"content_type": 1,
+	}}
+
+	facet := bson.M{"$facet": bson.M{
+		"movies": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "movie"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "movies",
+					"let": bson.M{
+						"content_id": "$content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"actors": bson.M{
+									"$slice": bson.A{"$actors", 3},
+								},
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"tv": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "tv"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "tv-series",
+					"let": bson.M{
+						"content_id": "$content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"actors": bson.M{
+									"$slice": bson.A{"$actors", 3},
+								},
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+	}}
+
+	projectLogs := bson.M{"$project": bson.M{
+		"logs": bson.M{
+			"$concatArrays": bson.A{
+				"$movies",
+				"$tv",
+			},
+		},
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$logs",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	replaceRoot := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$logs",
+	}}
+
+	unwindContent := bson.M{"$unwind": bson.M{
+		"path":                       "$content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	unwindGenres := bson.M{"$unwind": bson.M{
+		"path":                       "$content.actors",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": bson.M{
+			"name": "$content.actors.name",
+			"type": "$content_type",
+		},
+		"actor": bson.M{
+			"$first": "$content.actors.name",
+		},
+		"image": bson.M{
+			"$first": "$content.actors.image",
+		},
+		"type": bson.M{
+			"$first": "$content_type",
+		},
+		"count": bson.M{
+			"$sum": 1,
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"type":  1,
+		"count": -1,
+	}}
+
+	groupType := bson.M{"$group": bson.M{
+		"_id": "$type",
+		"actors": bson.M{
+			"$addToSet": bson.M{
+				"name":  "$actor",
+				"image": "$image",
+				"count": "$count",
+			},
+		},
+		"type": bson.M{
+			"$first": "$type",
+		},
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"actors": bson.M{
+			"$slice": bson.A{
+				bson.M{
+					"$sortArray": bson.M{
+						"input":  "$actors",
+						"sortBy": bson.M{"count": -1},
+					},
+				},
+				3,
+			},
+		},
+	}}
+
+	cursor, err := logsModel.LogsCollection.Aggregate(context.TODO(), bson.A{
+		match, duplicateClearGroup, project, facet, projectLogs, unwind,
+		replaceRoot, unwindContent, unwindGenres, group, sort, groupType, set,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to find most watched actors by logs: ", err)
+
+		return nil, fmt.Errorf("Failed to find most watched actors by logs.")
+	}
+
+	var mostWatchedActors []responses.MostWatchedActors
+	if err := cursor.All(context.TODO(), &mostWatchedActors); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to decode most watched actors by logs: ", err)
+
+		return nil, fmt.Errorf("Failed to decode most watched actors by logs.")
+	}
+
+	return mostWatchedActors, nil
+}
+
+func (logsModel *LogsModel) MostLikedStudios(uid string) ([]responses.MostLikedStudios, error) {
+	match := bson.M{"$match": bson.M{
+		"user_id":            uid,
+		"log_type":           "userlist",
+		"log_action_details": "finished",
+		"content_type": bson.M{
+			"$nin": bson.A{"tv", "movie"},
+		},
+	}}
+
+	duplicateClearGroup := bson.M{"$group": bson.M{
+		"_id": "$content_id",
+		"content_type": bson.M{
+			"$first": "$content_type",
+		},
+		"content_id": bson.M{
+			"$first": "$content_id",
+		},
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"content_id": bson.M{
+			"$toObjectId": "$content_id",
+		},
+		"content_type": 1,
+	}}
+
+	facet := bson.M{"$facet": bson.M{
+		"anime": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "anime"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "animes",
+					"let": bson.M{
+						"content_id": "$content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"studios": "$studios.name",
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+		"games": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "game"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "games",
+					"let": bson.M{
+						"content_id": "$content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"studios": "$publishers",
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+		},
+	}}
+
+	projectLogs := bson.M{"$project": bson.M{
+		"logs": bson.M{
+			"$concatArrays": bson.A{
+				"$games",
+				"$anime",
+			},
+		},
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$logs",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	replaceRoot := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$logs",
+	}}
+
+	unwindContent := bson.M{"$unwind": bson.M{
+		"path":                       "$content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	unwindGenres := bson.M{"$unwind": bson.M{
+		"path":                       "$content.studios",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	group := bson.M{"$group": bson.M{
+		"_id": bson.M{
+			"name": "$content.studios",
+			"type": "$content_type",
+		},
+		"name": bson.M{
+			"$first": "$content.studios",
+		},
+		"type": bson.M{
+			"$first": "$content_type",
+		},
+		"count": bson.M{
+			"$sum": 1,
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"type":  1,
+		"count": -1,
+	}}
+
+	groupType := bson.M{"$group": bson.M{
+		"_id": "$type",
+		"studios": bson.M{
+			"$addToSet": bson.M{
+				"name":  "$name",
+				"count": "$count",
+			},
+		},
+		"type": bson.M{
+			"$first": "$type",
+		},
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"studios": bson.M{
+			"$slice": bson.A{
+				bson.M{
+					"$sortArray": bson.M{
+						"input":  "$studios",
+						"sortBy": bson.M{"count": -1},
+					},
+				},
+				3,
+			},
+		},
+	}}
+
+	projectSchema := bson.M{"$project": bson.M{
+		"type":    1,
+		"studios": "$studios.name",
+	}}
+
+	cursor, err := logsModel.LogsCollection.Aggregate(context.TODO(), bson.A{
+		match, duplicateClearGroup, project, facet, projectLogs, unwind,
+		replaceRoot, unwindContent, unwindGenres, group, sort, groupType,
+		set, projectSchema,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to find most liked studios by logs: ", err)
+
+		return nil, fmt.Errorf("Failed to find most liked studios by logs.")
+	}
+
+	var mostLikedStudios []responses.MostLikedStudios
+	if err := cursor.All(context.TODO(), &mostLikedStudios); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to decode most liked studios by logs: ", err)
+
+		return nil, fmt.Errorf("Failed to decode most liked studios by logs.")
+	}
+
+	return mostLikedStudios, nil
+}
+
 func (logsModel *LogsModel) FinishedLogStats(uid string, data requests.LogStatInterval) ([]responses.FinishedLogStats, error) {
 	var intervalDate time.Time
 
@@ -512,6 +924,16 @@ func (logsModel *LogsModel) FinishedLogStats(uid string, data requests.LogStatIn
 		"log_action_details": "finished",
 		"created_at": bson.M{
 			"$gte": intervalDate,
+		},
+	}}
+
+	duplicateClearGroup := bson.M{"$group": bson.M{
+		"_id": "$content_id",
+		"content_type": bson.M{
+			"$first": "$content_type",
+		},
+		"content_id": bson.M{
+			"$first": "$content_id",
 		},
 	}}
 
@@ -689,7 +1111,7 @@ func (logsModel *LogsModel) FinishedLogStats(uid string, data requests.LogStatIn
 	}}
 
 	cursor, err := logsModel.LogsCollection.Aggregate(context.TODO(), bson.A{
-		match, project, facet, projectLogs, unwind, replaceRoot, unwindContent, group,
+		match, duplicateClearGroup, project, facet, projectLogs, unwind, replaceRoot, unwindContent, group,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{

@@ -42,6 +42,21 @@ type MostLikedGenres struct {
 	Genre string `bson:"genre" json:"genre"`
 }
 
+type MostLikedStudios struct {
+	Type    string   `bson:"type" json:"type"`
+	Studios []string `bson:"studios" json:"studios"`
+}
+
+type MostWatchedActors struct {
+	Type   string             `bson:"type" json:"type"`
+	Actors []MostWatchedActor `bson:"actors" json:"actors"`
+}
+
+type MostWatchedActor struct {
+	Name  string `bson:"name" json:"name"`
+	Image string `bson:"image" json:"image"`
+}
+
 type ChartLogs struct {
 	CreatedAt time.Time `bson:"created_at" json:"created_at"`
 	Count     int64     `bson:"count" json:"count"`
@@ -49,8 +64,10 @@ type ChartLogs struct {
 }
 
 type ExtraStatistics struct {
-	FinishedLogStats []FinishedLogStats `bson:"stats" json:"stats"`
-	MostLikedGenres  []MostLikedGenres  `bson:"genres" json:"genres"`
-	MostLikedCountry []MostLikedCountry `bson:"country" json:"country"`
-	ChartLogs        []ChartLogs        `bson:"logs" json:"logs"`
+	FinishedLogStats  []FinishedLogStats  `bson:"stats" json:"stats"`
+	MostWatchedActors []MostWatchedActors `bson:"actors" json:"actors"`
+	MostLikedStudios  []MostLikedStudios  `bson:"studios" json:"studios"`
+	MostLikedGenres   []MostLikedGenres   `bson:"genres" json:"genres"`
+	MostLikedCountry  []MostLikedCountry  `bson:"country" json:"country"`
+	ChartLogs         []ChartLogs         `bson:"logs" json:"logs"`
 }

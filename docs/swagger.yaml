@@ -1685,6 +1685,10 @@ definitions:
     type: object
   responses.ExtraStatistics:
     properties:
+      actors:
+        items:
+          $ref: '#/definitions/responses.MostWatchedActors'
+        type: array
       country:
         items:
           $ref: '#/definitions/responses.MostLikedCountry'
@@ -1700,6 +1704,10 @@ definitions:
       stats:
         items:
           $ref: '#/definitions/responses.FinishedLogStats'
+        type: array
+      studios:
+        items:
+          $ref: '#/definitions/responses.MostLikedStudios'
         type: array
     type: object
   responses.FinishedLogStats:
@@ -2173,6 +2181,31 @@ definitions:
     properties:
       genre:
         type: string
+      type:
+        type: string
+    type: object
+  responses.MostLikedStudios:
+    properties:
+      studios:
+        items:
+          type: string
+        type: array
+      type:
+        type: string
+    type: object
+  responses.MostWatchedActor:
+    properties:
+      image:
+        type: string
+      name:
+        type: string
+    type: object
+  responses.MostWatchedActors:
+    properties:
+      actors:
+        items:
+          $ref: '#/definitions/responses.MostWatchedActor'
+        type: array
       type:
         type: string
     type: object

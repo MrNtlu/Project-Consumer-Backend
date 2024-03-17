@@ -7342,6 +7342,12 @@ const docTemplate = `{
         "responses.ExtraStatistics": {
             "type": "object",
             "properties": {
+                "actors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.MostWatchedActors"
+                    }
+                },
                 "country": {
                     "type": "array",
                     "items": {
@@ -7364,6 +7370,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/responses.FinishedLogStats"
+                    }
+                },
+                "studios": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.MostLikedStudios"
                     }
                 }
             }
@@ -8082,6 +8094,45 @@ const docTemplate = `{
             "properties": {
                 "genre": {
                     "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.MostLikedStudios": {
+            "type": "object",
+            "properties": {
+                "studios": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.MostWatchedActor": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.MostWatchedActors": {
+            "type": "object",
+            "properties": {
+                "actors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.MostWatchedActor"
+                    }
                 },
                 "type": {
                     "type": "string"

@@ -346,6 +346,9 @@ func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek(dayOfWeek int1
 		"aired.from": bson.M{
 			"$ne": nil,
 		},
+		"type": bson.M{
+			"$ne": "Movie",
+		},
 	}}
 
 	addFields := bson.M{"$addFields": bson.M{
