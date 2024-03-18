@@ -6153,6 +6153,9 @@ const docTemplate = `{
                 "platform": {
                     "type": "string"
                 },
+                "publisher": {
+                    "type": "string"
+                },
                 "sort": {
                     "type": "string",
                     "enum": [
