@@ -855,6 +855,8 @@ definitions:
         - old
         - alphabetical
         - unalphabetical
+        - soon
+        - later
         type: string
     required:
     - sort

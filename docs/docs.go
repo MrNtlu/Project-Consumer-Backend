@@ -6129,7 +6129,9 @@ const docTemplate = `{
                         "new",
                         "old",
                         "alphabetical",
-                        "unalphabetical"
+                        "unalphabetical",
+                        "soon",
+                        "later"
                     ]
                 }
             }

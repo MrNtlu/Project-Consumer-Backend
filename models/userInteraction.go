@@ -140,6 +140,12 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 	case "unalphabetical":
 		sortType = "content.title_original"
 		sortOrder = -1
+	case "soon":
+		sortType = "content.release_date"
+		sortOrder = 1
+	case "later":
+		sortType = "content.release_date"
+		sortOrder = -1
 	}
 
 	sort := bson.M{"$sort": bson.M{
@@ -192,7 +198,11 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 								"title_original": 1,
 								"image_url":      1,
 								"description":    1,
+								"genres":         1,
 								"score":          "$tmdb_vote",
+								"release_date": bson.M{
+									"$toDate": "$release_date",
+								},
 							},
 						},
 					},
@@ -228,7 +238,11 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 								"title_original": 1,
 								"image_url":      1,
 								"description":    1,
+								"genres":         1,
 								"score":          "$tmdb_vote",
+								"release_date": bson.M{
+									"$toDate": "$first_air_date",
+								},
 							},
 						},
 					},
@@ -264,7 +278,11 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 								"title_original": 1,
 								"image_url":      1,
 								"description":    1,
+								"genres":         "$genres.name",
 								"score":          "$mal_score",
+								"release_date": bson.M{
+									"$toDate": "$aired.from",
+								},
 							},
 						},
 					},
@@ -300,7 +318,11 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 								"title_original": 1,
 								"image_url":      1,
 								"description":    1,
+								"genres":         1,
 								"score":          "$rawg_rating",
+								"release_date": bson.M{
+									"$toDate": "$release_date",
+								},
 							},
 						},
 					},
