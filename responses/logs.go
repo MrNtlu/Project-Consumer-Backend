@@ -53,6 +53,7 @@ type MostWatchedActors struct {
 }
 
 type MostWatchedActor struct {
+	Id    string `bson:"id" json:"id"`
 	Name  string `bson:"name" json:"name"`
 	Image string `bson:"image" json:"image"`
 }

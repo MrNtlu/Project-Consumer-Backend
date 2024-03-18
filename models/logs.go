@@ -640,6 +640,9 @@ func (logsModel *LogsModel) MostWatchedActors(uid string) ([]responses.MostWatch
 			"name": "$content.actors.name",
 			"type": "$content_type",
 		},
+		"id": bson.M{
+			"$first": "$content.actors.tmdb_id",
+		},
 		"actor": bson.M{
 			"$first": "$content.actors.name",
 		},
@@ -663,6 +666,7 @@ func (logsModel *LogsModel) MostWatchedActors(uid string) ([]responses.MostWatch
 		"_id": "$type",
 		"actors": bson.M{
 			"$addToSet": bson.M{
+				"id":    "$id",
 				"name":  "$actor",
 				"image": "$image",
 				"count": "$count",

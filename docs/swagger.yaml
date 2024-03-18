@@ -2197,6 +2197,8 @@ definitions:
     type: object
   responses.MostWatchedActor:
     properties:
+      id:
+        type: string
       image:
         type: string
       name:

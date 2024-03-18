@@ -8119,6 +8119,9 @@ const docTemplate = `{
         "responses.MostWatchedActor": {
             "type": "object",
             "properties": {
+                "id": {
+                    "type": "string"
+                },
                 "image": {
                     "type": "string"
                 },
