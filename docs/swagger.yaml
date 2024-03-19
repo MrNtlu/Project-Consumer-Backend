@@ -493,6 +493,28 @@ definitions:
     - movie_tmdb_id
     - status
     type: object
+  requests.CreateRecommendation:
+    properties:
+      content_id:
+        type: string
+      content_type:
+        enum:
+        - anime
+        - game
+        - movie
+        - tv
+        type: string
+      reason:
+        maxLength: 1000
+        minLength: 6
+        type: string
+      recommendation_id:
+        type: string
+    required:
+    - content_id
+    - content_type
+    - recommendation_id
+    type: object
   requests.CreateReview:
     properties:
       content_external_id:
@@ -2495,6 +2517,40 @@ definitions:
       title_original:
         type: string
       tmdb_id:
+        type: string
+    type: object
+  responses.RecommendationWithContent:
+    properties:
+      _id:
+        type: string
+      author:
+        $ref: '#/definitions/responses.Author'
+      content:
+        $ref: '#/definitions/responses.ReviewContent'
+      content_id:
+        type: string
+      content_type:
+        description: anime, movie, tv or game
+        type: string
+      created_at:
+        type: string
+      is_author:
+        type: boolean
+      is_liked:
+        type: boolean
+      likes:
+        items:
+          type: string
+        type: array
+      popularity:
+        type: integer
+      reason:
+        type: string
+      recommendation_content:
+        $ref: '#/definitions/responses.ReviewContent'
+      recommendation_id:
+        type: string
+      user_id:
         type: string
     type: object
   responses.Review:
@@ -5088,6 +5144,43 @@ paths:
       summary: Get Previews
       tags:
       - preview
+  /recommendation:
+    post:
+      consumes:
+      - application/json
+      description: Creates Recommendation
+      parameters:
+      - description: Create Recommendation
+        in: body
+        name: createrecommendation
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CreateRecommendation'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/responses.RecommendationWithContent'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create Recommendation
+      tags:
+      - recommendation
   /review:
     delete:
       consumes:

@@ -27,6 +27,16 @@ func NewUserController(mongoDB *db.MongoDB) UserController {
 	}
 }
 
+type UserInfoResult struct {
+	UserInfo responses.UserInfo
+	Error    error
+}
+
+type LogStreak struct {
+	MaxStreak     int
+	CurrentStreak int
+}
+
 var (
 	errAlreadyRegistered = "User already registered."
 	errPasswordNoMatch   = "Passwords do not match."
@@ -121,73 +131,63 @@ func (u *UserController) GetExtraStatistics(c *gin.Context) {
 		return
 	}
 
-	mostLikedGenres, err := logsModel.MostLikedGenresByLogs(uid)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	resultCh := make(chan responses.ExtraStatistics)
 
-		return
-	}
+	go func() {
+		defer close(resultCh)
 
-	mostLikedCountry, err := logsModel.MostLikedCountryByLogs(uid)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		mostLikedGenresCh := make(chan []responses.MostLikedGenres)
+		go func() {
+			mostLikedGenres, _ := logsModel.MostLikedGenresByLogs(uid)
+			mostLikedGenresCh <- mostLikedGenres
+		}()
 
-		return
-	}
+		mostLikedCountryCh := make(chan []responses.MostLikedCountry)
+		go func() {
+			mostLikedCountry, _ := logsModel.MostLikedCountryByLogs(uid)
+			mostLikedCountryCh <- mostLikedCountry
+		}()
 
-	finishedLogStats, err := logsModel.FinishedLogStats(uid, data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		finishedLogStatsCh := make(chan []responses.FinishedLogStats)
+		go func() {
+			finishedLogStats, _ := logsModel.FinishedLogStats(uid, data)
+			finishedLogStatsCh <- finishedLogStats
+		}()
 
-		return
-	}
+		chartLogsCh := make(chan []responses.ChartLogs)
+		go func() {
+			chartLogs, _ := logsModel.LogStatisticsChart(uid, data)
+			chartLogsCh <- chartLogs
+		}()
 
-	chartLogs, err := logsModel.LogStatisticsChart(uid, data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		statistics := responses.ExtraStatistics{}
+		statistics.MostLikedGenres = <-mostLikedGenresCh
+		statistics.MostLikedCountry = <-mostLikedCountryCh
+		statistics.FinishedLogStats = <-finishedLogStatsCh
+		statistics.ChartLogs = <-chartLogsCh
 
-		return
-	}
+		if isPremium {
+			mostWatchedActorsCh := make(chan []responses.MostWatchedActors)
+			go func() {
+				mostWatchedActors, _ := logsModel.MostWatchedActors(uid)
+				mostWatchedActorsCh <- mostWatchedActors
+			}()
 
-	statistics := responses.ExtraStatistics{
-		FinishedLogStats: finishedLogStats,
-		MostLikedGenres:  mostLikedGenres,
-		MostLikedCountry: mostLikedCountry,
-		ChartLogs:        chartLogs,
-	}
+			mostLikedStudiosCh := make(chan []responses.MostLikedStudios)
+			go func() {
+				mostLikedStudios, _ := logsModel.MostLikedStudios(uid)
+				mostLikedStudiosCh <- mostLikedStudios
+			}()
 
-	if isPremium {
-		mostWatchedActors, err := logsModel.MostWatchedActors(uid)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
+			statistics.MostWatchedActors = <-mostWatchedActorsCh
+			statistics.MostLikedStudios = <-mostLikedStudiosCh
 		}
 
-		mostLikedStudios, err := logsModel.MostLikedStudios(uid)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
+		resultCh <- statistics
+	}()
 
-			return
-		}
-
-		statistics.MostWatchedActors = mostWatchedActors
-		statistics.MostLikedStudios = mostLikedStudios
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": statistics})
+	result := <-resultCh
+	c.JSON(http.StatusOK, gin.H{"data": result})
 }
 
 // User Info
@@ -237,108 +237,142 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 	userModel := models.NewUserModel(u.Database)
 	logsModel := models.NewLogsModel(u.Database)
 
-	userInfo, err := userModel.GetUserInfo("", uid, false)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	resultCh := make(chan UserInfoResult)
 
+	go func() {
+		defer close(resultCh)
+
+		userInfo := responses.UserInfo{}
+
+		userInfoCh := make(chan responses.UserInfo)
+		go func() {
+			userInfo, err := userModel.GetUserInfo("", uid, false)
+			if err != nil {
+				resultCh <- UserInfoResult{Error: err}
+				return
+			}
+
+			userInfoCh <- userInfo
+		}()
+
+		userLevelCh := make(chan int)
+		go func() {
+			userLevel, err := userModel.GetUserLevel(uid)
+			if err != nil {
+				resultCh <- UserInfoResult{Error: err}
+				return
+			}
+
+			userLevelCh <- userLevel
+		}()
+
+		consumeLaterCh := make(chan []responses.ConsumeLater)
+		go func() {
+			userInteractionModel := models.NewUserInteractionModel(u.Database)
+			consumeLaterList, err := userInteractionModel.GetConsumeLater(uid, requests.SortFilterConsumeLater{
+				Sort: "new",
+			})
+			if err != nil {
+				resultCh <- UserInfoResult{Error: err}
+				return
+			}
+
+			consumeLaterCh <- consumeLaterList
+		}()
+
+		reviewsCh := make(chan []responses.ReviewWithContent)
+		go func() {
+			reviewsModel := models.NewReviewModel(u.Database)
+			reviews, _, err := reviewsModel.GetReviewsByUserID(&uid, requests.SortReviewByUserID{
+				UserID: uid,
+				Sort:   "popularity",
+				Page:   1,
+			})
+			if err != nil {
+				resultCh <- UserInfoResult{Error: err}
+				return
+			}
+
+			reviewsCh <- reviews
+		}()
+
+		userStatsCh := make(chan responses.UserStats)
+		go func() {
+			userListModel := models.NewUserListModel(u.Database)
+			userStats, err := userListModel.GetUserListStats(uid)
+			if err != nil {
+				resultCh <- UserInfoResult{Error: err}
+				return
+			}
+
+			userStatsCh <- userStats
+		}()
+
+		// friendRequestCountCh := make(chan int64)
+		// go func() {
+		// 	friendModel := models.NewFriendModel(u.Database)
+		// 	friendRequestCount, err := friendModel.FriendRequestCount(uid)
+		// 	if err != nil {
+		// 		errorCh <- &err
+		// 		return
+		// 	}
+
+		// 	friendRequestCountCh <- friendRequestCount
+		// }()
+
+		// Fetch log streak concurrently
+
+		logStreakCh := make(chan LogStreak)
+		go func() {
+			maxStreak, currentStreak := logsModel.GetLogStreak(uid)
+			logStreakCh <- LogStreak{MaxStreak: maxStreak, CurrentStreak: currentStreak}
+		}()
+
+		userInfo = <-userInfoCh
+		userInfo.Level = <-userLevelCh
+		userInfo.ConsumeLater = <-consumeLaterCh
+		userInfo.Reviews = <-reviewsCh
+		userInfo.FriendRequestCount = 0
+
+		logStreak := <-logStreakCh
+		userStats := <-userStatsCh
+
+		userInfo.MaxStreak = logStreak.MaxStreak
+		userInfo.Streak = logStreak.MaxStreak
+		userInfo.IsFriendRequestSent = false
+		userInfo.IsFriendRequestReceived = false
+		userInfo.IsFriendsWith = false
+		userInfo.AnimeCount = userStats.AnimeCount
+		userInfo.GameCount = userStats.GameCount
+		userInfo.MovieCount = userStats.MovieCount
+		userInfo.TVCount = userStats.TVCount
+		userInfo.MovieWatchedTime = userStats.MovieWatchedTime
+		userInfo.AnimeWatchedEpisodes = userStats.AnimeWatchedEpisodes
+		userInfo.TVWatchedEpisodes = userStats.TVWatchedEpisodes
+		userInfo.GameTotalHoursPlayed = userStats.GameTotalHoursPlayed
+
+		userInfo.MovieTotalScore = calculateTotalScore(userStats.MovieCount, userStats.MovieTotalScore)
+		userInfo.TVTotalScore = calculateTotalScore(userStats.TVCount, userStats.TVTotalScore)
+		userInfo.AnimeTotalScore = calculateTotalScore(userStats.AnimeCount, userStats.AnimeTotalScore)
+		userInfo.GameTotalScore = calculateTotalScore(userStats.GameCount, userStats.GameTotalScore)
+
+		resultCh <- UserInfoResult{UserInfo: userInfo}
+	}()
+
+	result := <-resultCh
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
-	userLevel, _ := userModel.GetUserLevel(uid)
-	userInfo.Level = userLevel
+	c.JSON(http.StatusOK, gin.H{"data": result.UserInfo})
+}
 
-	userInteractionModel := models.NewUserInteractionModel(u.Database)
-	consumeLaterList, err := userInteractionModel.GetConsumeLater(uid, requests.SortFilterConsumeLater{
-		Sort: "new",
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
+func calculateTotalScore(count int, totalScore int64) float64 {
+	if count != 0 && totalScore != 0 {
+		return math.Round(float64(totalScore)/float64(count)*100) / 100
 	}
-	userInfo.ConsumeLater = consumeLaterList
-
-	reviewsModel := models.NewReviewModel(u.Database)
-	reviews, _, err := reviewsModel.GetReviewsByUserID(&uid, requests.SortReviewByUserID{
-		UserID: uid,
-		Sort:   "popularity",
-		Page:   1,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-	userInfo.Reviews = reviews
-
-	userListModel := models.NewUserListModel(u.Database)
-	userStats, err := userListModel.GetUserListStats(uid)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	friendModel := models.NewFriendModel(u.Database)
-	friendRequestCount, err := friendModel.FriendRequestCount(uid)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-	userInfo.FriendRequestCount = friendRequestCount
-
-	maxStreak, currentStreak := logsModel.GetLogStreak(uid)
-	userInfo.MaxStreak = maxStreak
-	userInfo.Streak = currentStreak
-
-	userInfo.IsFriendRequestSent = false
-	userInfo.IsFriendRequestReceived = false
-	userInfo.IsFriendsWith = false
-	userInfo.AnimeCount = userStats.AnimeCount
-	userInfo.GameCount = userStats.GameCount
-	userInfo.MovieCount = userStats.MovieCount
-	userInfo.TVCount = userStats.TVCount
-	userInfo.MovieWatchedTime = userStats.MovieWatchedTime
-	userInfo.AnimeWatchedEpisodes = userStats.AnimeWatchedEpisodes
-	userInfo.TVWatchedEpisodes = userStats.TVWatchedEpisodes
-	userInfo.GameTotalHoursPlayed = userStats.GameTotalHoursPlayed
-
-	if userStats.MovieCount != 0 && userStats.MovieTotalScore != 0 {
-		userInfo.MovieTotalScore = math.Round(float64(userStats.MovieTotalScore)/float64(userStats.MovieCount)*100) / 100
-	} else {
-		userInfo.MovieTotalScore = 0
-	}
-
-	if userStats.TVCount != 0 && userStats.TVTotalScore != 0 {
-		userInfo.TVTotalScore = math.Round((float64(userStats.TVTotalScore)/float64(userStats.TVCount))*100) / 100
-	} else {
-		userInfo.TVTotalScore = 0
-	}
-
-	if userStats.AnimeCount != 0 && userStats.AnimeTotalScore != 0 {
-		userInfo.AnimeTotalScore = math.Round((float64(userStats.AnimeTotalScore)/float64(userStats.AnimeCount))*100) / 100
-	} else {
-		userInfo.AnimeTotalScore = 0
-	}
-
-	if userStats.GameCount != 0 && userStats.GameTotalScore != 0 {
-		userInfo.GameTotalScore = math.Round((float64(userStats.GameTotalScore)/float64(userStats.GameCount))*100) / 100
-	} else {
-		userInfo.GameTotalScore = 0
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched user info.", "data": userInfo})
+	return 0
 }
 
 // Get Friends
@@ -417,24 +451,13 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 		return
 	}
 
-	userModel := models.NewUserModel(u.Database)
-	userListModel := models.NewUserListModel(u.Database)
-	reviewsModel := models.NewReviewModel(u.Database)
-	customListModel := models.NewCustomListModel(u.Database)
-	friendModel := models.NewFriendModel(u.Database)
-	logsModel := models.NewLogsModel(u.Database)
-
-	var (
-		userInfo responses.UserInfo
-		err      error
-	)
-
 	userId := jwt.ExtractClaims(c)["id"].(string)
 
-	userInfo, err = userModel.GetUserInfo(data.Username, userId, true)
+	userModel := models.NewUserModel(u.Database)
+	userInfo, err := userModel.GetUserInfo(data.Username, userId, true)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err,
 		})
 
 		return
@@ -442,120 +465,138 @@ func (u *UserController) GetUserInfoFromUsername(c *gin.Context) {
 
 	if userInfo.Username == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": errNoUser,
+			"error": ErrNotFound,
 		})
 
 		return
 	}
 
-	reviews, _, err := reviewsModel.GetReviewsByUserID(&userId, requests.SortReviewByUserID{
-		UserID: userInfo.ID.Hex(),
-		Sort:   "popularity",
-		Page:   1,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	resultCh := make(chan UserInfoResult)
 
+	go func() {
+		defer close(resultCh)
+
+		userInfoCh := make(chan responses.UserInfo)
+		go func() {
+			// friendModel := models.NewFriendModel(u.Database)
+
+			// isFriendsWith, err := userModel.IsFriendsWith(userInfo.ID.Hex(), userId)
+			// if err != nil {
+			// 	c.JSON(http.StatusInternalServerError, gin.H{
+			// 		"error": err.Error(),
+			// 	})
+
+			// 	return
+			// }
+			// userInfo.IsFriendsWith = isFriendsWith
+			userInfo.IsFriendsWith = false
+
+			// isFriendRequestSent, err := friendModel.IsFriendRequestSent(userId, userInfo.ID.Hex())
+			// if err != nil {
+			// 	c.JSON(http.StatusInternalServerError, gin.H{
+			// 		"error": err.Error(),
+			// 	})
+
+			// 	return
+			// }
+			// userInfo.IsFriendRequestSent = isFriendRequestSent
+			userInfo.IsFriendRequestSent = false
+
+			// isFriendRequestReceived, err := friendModel.IsFriendRequestReceived(userInfo.ID.Hex(), userId)
+			// if err != nil {
+			// 	c.JSON(http.StatusInternalServerError, gin.H{
+			// 		"error": err.Error(),
+			// 	})
+
+			// 	return
+			// }
+			// userInfo.IsFriendRequestReceived = isFriendRequestReceived
+			userInfo.IsFriendRequestReceived = false
+
+			logsModel := models.NewLogsModel(u.Database)
+			maxStreak, currentStreak := logsModel.GetLogStreak(userInfo.ID.Hex())
+			userInfo.MaxStreak = maxStreak
+			userInfo.Streak = currentStreak
+
+			userLevel, _ := userModel.GetUserLevel(userInfo.ID.Hex())
+			userInfo.Level = userLevel
+
+			userInfoCh <- userInfo
+		}()
+
+		reviewsCh := make(chan []responses.ReviewWithContent)
+		go func() {
+			reviewsModel := models.NewReviewModel(u.Database)
+			reviews, _, err := reviewsModel.GetReviewsByUserID(&userId, requests.SortReviewByUserID{
+				UserID: userInfo.ID.Hex(),
+				Sort:   "popularity",
+				Page:   1,
+			})
+			if err != nil {
+				resultCh <- UserInfoResult{Error: err}
+				return
+			}
+
+			reviewsCh <- reviews
+		}()
+
+		customListsCh := make(chan []responses.CustomList)
+		go func() {
+			customListModel := models.NewCustomListModel(u.Database)
+			customLists, err := customListModel.GetCustomListsByUserID(&userId, requests.SortCustomListUID{
+				UserID: userInfo.ID.Hex(),
+				Sort:   "popularity",
+			}, true, false)
+			if err != nil {
+				resultCh <- UserInfoResult{Error: err}
+				return
+			}
+
+			customListsCh <- customLists
+		}()
+
+		userStatsCh := make(chan responses.UserStats)
+		go func() {
+			userListModel := models.NewUserListModel(u.Database)
+			userStats, err := userListModel.GetUserListStats(userInfo.ID.Hex())
+			if err != nil {
+				resultCh <- UserInfoResult{Error: err}
+				return
+			}
+
+			userStatsCh <- userStats
+		}()
+
+		userInfo = <-userInfoCh
+		userInfo.Reviews = <-reviewsCh
+		userInfo.CustomLists = <-customListsCh
+
+		userStats := <-userStatsCh
+
+		userInfo.AnimeCount = userStats.AnimeCount
+		userInfo.GameCount = userStats.GameCount
+		userInfo.MovieCount = userStats.MovieCount
+		userInfo.TVCount = userStats.TVCount
+		userInfo.MovieWatchedTime = userStats.MovieWatchedTime
+		userInfo.AnimeWatchedEpisodes = userStats.AnimeWatchedEpisodes
+		userInfo.TVWatchedEpisodes = userStats.TVWatchedEpisodes
+		userInfo.GameTotalHoursPlayed = userStats.GameTotalHoursPlayed
+
+		userInfo.MovieTotalScore = calculateTotalScore(userStats.MovieCount, userStats.MovieTotalScore)
+		userInfo.TVTotalScore = calculateTotalScore(userStats.TVCount, userStats.TVTotalScore)
+		userInfo.AnimeTotalScore = calculateTotalScore(userStats.AnimeCount, userStats.AnimeTotalScore)
+		userInfo.GameTotalScore = calculateTotalScore(userStats.GameCount, userStats.GameTotalScore)
+
+		resultCh <- UserInfoResult{UserInfo: userInfo}
+	}()
+
+	result := <-resultCh
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
-	userInfo.Reviews = reviews
 
-	customLists, err := customListModel.GetCustomListsByUserID(&userId, requests.SortCustomListUID{
-		UserID: userInfo.ID.Hex(),
-		Sort:   "popularity",
-	}, true, false)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-	userInfo.CustomLists = customLists
-
-	isFriendsWith, err := userModel.IsFriendsWith(userInfo.ID.Hex(), userId)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-	userInfo.IsFriendsWith = isFriendsWith
-
-	isFriendRequestSent, err := friendModel.IsFriendRequestSent(userId, userInfo.ID.Hex())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-	userInfo.IsFriendRequestSent = isFriendRequestSent
-
-	isFriendRequestReceived, err := friendModel.IsFriendRequestReceived(userInfo.ID.Hex(), userId)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-	userInfo.IsFriendRequestReceived = isFriendRequestReceived
-
-	userLevel, _ := userModel.GetUserLevel(userInfo.ID.Hex())
-	userInfo.Level = userLevel
-
-	userStats, err := userListModel.GetUserListStats(userInfo.ID.Hex())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	maxStreak, currentStreak := logsModel.GetLogStreak(userInfo.ID.Hex())
-	userInfo.MaxStreak = maxStreak
-	userInfo.Streak = currentStreak
-
-	userInfo.FriendRequestCount = 0
-	userInfo.AnimeCount = userStats.AnimeCount
-	userInfo.GameCount = userStats.GameCount
-	userInfo.MovieCount = userStats.MovieCount
-	userInfo.TVCount = userStats.TVCount
-	userInfo.MovieWatchedTime = userStats.MovieWatchedTime
-	userInfo.AnimeWatchedEpisodes = userStats.AnimeWatchedEpisodes
-	userInfo.TVWatchedEpisodes = userStats.TVWatchedEpisodes
-	userInfo.GameTotalHoursPlayed = userStats.GameTotalHoursPlayed
-
-	if userStats.MovieCount != 0 && userStats.MovieTotalScore != 0 {
-		userInfo.MovieTotalScore = math.Round(float64(userStats.MovieTotalScore)/float64(userStats.MovieCount)*100) / 100
-	} else {
-		userInfo.MovieTotalScore = 0
-	}
-
-	if userStats.TVCount != 0 && userStats.TVTotalScore != 0 {
-		userInfo.TVTotalScore = math.Round((float64(userStats.TVTotalScore)/float64(userStats.TVCount))*100) / 100
-	} else {
-		userInfo.TVTotalScore = 0
-	}
-
-	if userStats.AnimeCount != 0 && userStats.AnimeTotalScore != 0 {
-		userInfo.AnimeTotalScore = math.Round((float64(userStats.AnimeTotalScore)/float64(userStats.AnimeCount))*100) / 100
-	} else {
-		userInfo.AnimeTotalScore = 0
-	}
-
-	if userStats.GameCount != 0 && userStats.GameTotalScore != 0 {
-		userInfo.GameTotalScore = math.Round((float64(userStats.GameTotalScore)/float64(userStats.GameCount))*100) / 100
-	} else {
-		userInfo.GameTotalScore = 0
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched user info.", "data": userInfo})
+	c.JSON(http.StatusOK, gin.H{"data": result.UserInfo})
 }
 
 // Update FCM Token

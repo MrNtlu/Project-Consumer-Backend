@@ -163,7 +163,7 @@ func (r *ReviewController) CreateReview(c *gin.Context) {
 	createdReview.Author.EmailAddress = author.EmailAddress
 	createdReview.Author.Image = author.Image
 	createdReview.Author.Username = author.Username
-	createdReview.Author.IsPremium = author.IsPremium
+	createdReview.Author.IsPremium = author.IsPremium || author.IsLifetimePremium
 
 	logModel := models.NewLogsModel(r.Database)
 

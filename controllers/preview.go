@@ -6,6 +6,7 @@ import (
 	"app/requests"
 	"app/responses"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -183,7 +184,6 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": validatorErrorHandler(err),
 		})
-
 		return
 	}
 
@@ -193,137 +193,267 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 	gameModel := models.NewGameModel(pr.Database)
 	// mangaModel := models.NewMangaModel(pr.Database)
 
-	upcomingMovies, err := movieModel.GetUpcomingPreviewMovies()
-	if err != nil {
-		upcomingMovies = []responses.PreviewMovie{}
-	}
+	// Channels for receiving results
+	movieCh := make(chan MovieResult)
+	tvCh := make(chan TVResult)
+	animeCh := make(chan AnimeResult)
+	gameCh := make(chan GameResult)
+	// mangaCh := make(chan MangaResult)
 
-	popularMovies, err := movieModel.GetPopularPreviewMovies()
-	if err != nil {
-		popularMovies = []responses.PreviewMovie{}
-	}
+	// WaitGroup to wait for all Goroutines to finish
+	var wg sync.WaitGroup
+	wg.Add(4) // Make 5 when Manga added.
 
-	topMovies, err := movieModel.GetTopPreviewMovies()
-	if err != nil {
-		topMovies = []responses.PreviewMovie{}
-	}
+	// Movie
+	go func() {
+		defer wg.Done()
+		movieDataCh := make(chan MovieResult)
 
-	popularActors, err := movieModel.GetPopularActors(requests.Pagination{Page: 1})
-	if err != nil {
-		popularActors = []responses.ActorDetails{}
-	}
+		go func() {
+			upcomingMovies, _ := movieModel.GetUpcomingPreviewMovies()
+			movieDataCh <- MovieResult{UpcomingMovies: upcomingMovies}
+		}()
 
-	moviesInTheater, err := movieModel.GetInTheaterPreviewMovies()
-	if err != nil {
-		moviesInTheater = []responses.PreviewMovie{}
-	}
+		go func() {
+			popularMovies, _ := movieModel.GetPopularPreviewMovies()
+			movieDataCh <- MovieResult{PopularMovies: popularMovies}
+		}()
 
-	moviePopularSP, _ := movieModel.GetPopularStreamingPlatforms(data.Region)
-	moviePopularPC, _ := movieModel.GetPopularProductionCompanies()
+		go func() {
+			topMovies, _ := movieModel.GetTopPreviewMovies()
+			movieDataCh <- MovieResult{TopMovies: topMovies}
+		}()
+
+		go func() {
+			popularActors, _ := movieModel.GetPopularActors(requests.Pagination{Page: 1})
+			movieDataCh <- MovieResult{PopularActors: popularActors}
+		}()
+
+		go func() {
+			moviesInTheater, _ := movieModel.GetInTheaterPreviewMovies()
+			movieDataCh <- MovieResult{MoviesInTheater: moviesInTheater}
+		}()
+
+		go func() {
+			moviePopularSP, _ := movieModel.GetPopularStreamingPlatforms(data.Region)
+			moviePopularPC, _ := movieModel.GetPopularProductionCompanies()
+			movieDataCh <- MovieResult{MoviePopularSP: moviePopularSP, MoviePopularPC: moviePopularPC}
+		}()
+
+		var result MovieResult
+		for i := 0; i < 6; i++ {
+			data := <-movieDataCh
+			result.UpcomingMovies = append(result.UpcomingMovies, data.UpcomingMovies...)
+			result.PopularMovies = append(result.PopularMovies, data.PopularMovies...)
+			result.TopMovies = append(result.TopMovies, data.TopMovies...)
+			result.PopularActors = append(result.PopularActors, data.PopularActors...)
+			result.MoviesInTheater = append(result.MoviesInTheater, data.MoviesInTheater...)
+			result.MoviePopularSP = append(result.MoviePopularSP, data.MoviePopularSP...)
+			result.MoviePopularPC = append(result.MoviePopularPC, data.MoviePopularPC...)
+		}
+
+		movieCh <- result
+	}()
 
 	// TV Series
+	go func() {
+		defer wg.Done()
+		tvDataCh := make(chan TVResult)
 
-	upcomingTVSeries, err := tvModel.GetUpcomingPreviewTVSeries()
-	if err != nil {
-		upcomingTVSeries = []responses.PreviewTVSeries{}
-	}
+		go func() {
+			upcomingTVSeries, _ := tvModel.GetUpcomingPreviewTVSeries()
+			tvDataCh <- TVResult{UpcomingTVSeries: upcomingTVSeries}
+		}()
 
-	popularTVSeries, err := tvModel.GetPopularPreviewTVSeries()
-	if err != nil {
-		popularTVSeries = []responses.PreviewTVSeries{}
-	}
+		go func() {
+			popularTVSeries, _ := tvModel.GetPopularPreviewTVSeries()
+			tvDataCh <- TVResult{PopularTVSeries: popularTVSeries}
+		}()
 
-	topTVSeries, err := tvModel.GetTopPreviewTVSeries()
-	if err != nil {
-		topTVSeries = []responses.PreviewTVSeries{}
-	}
+		go func() {
+			topTVSeries, _ := tvModel.GetTopPreviewTVSeries()
+			tvDataCh <- TVResult{TopTVSeries: topTVSeries}
+		}()
 
-	popularActorsTVSeries, err := tvModel.GetPopularActors(requests.Pagination{Page: 1})
-	if err != nil {
-		popularActorsTVSeries = []responses.ActorDetails{}
-	}
+		go func() {
+			popularActorsTVSeries, _ := tvModel.GetPopularActors(requests.Pagination{Page: 1})
+			tvDataCh <- TVResult{PopularActors: popularActorsTVSeries}
+		}()
 
-	dayOfWeek := int16(time.Now().UTC().Weekday()) + 1
-	dayOfWeekTVSeries, _ := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek)
+		go func() {
+			dayOfWeekTVSeries, _ := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek(int16(time.Now().UTC().Weekday()) + 1)
+			tvDataCh <- TVResult{airingTVSeries: dayOfWeekTVSeries}
+		}()
 
-	tvSeriesPopularSP, _ := tvModel.GetPopularStreamingPlatforms(data.Region)
-	tvPopularPC, _ := tvModel.GetPopularProductionCompanies()
+		go func() {
+			tvSeriesPopularSP, _ := tvModel.GetPopularStreamingPlatforms(data.Region)
+			tvPopularPC, _ := tvModel.GetPopularProductionCompanies()
+			tvDataCh <- TVResult{TVSeriesPopularSP: tvSeriesPopularSP, TVPopularPC: tvPopularPC}
+		}()
+
+		var result TVResult
+		for i := 0; i < 6; i++ {
+			data := <-tvDataCh
+			result.UpcomingTVSeries = append(result.UpcomingTVSeries, data.UpcomingTVSeries...)
+			result.PopularTVSeries = append(result.PopularTVSeries, data.PopularTVSeries...)
+			result.TopTVSeries = append(result.TopTVSeries, data.TopTVSeries...)
+			result.PopularActors = append(result.PopularActors, data.PopularActors...)
+			result.airingTVSeries = append(result.airingTVSeries, data.airingTVSeries...)
+			result.TVSeriesPopularSP = append(result.TVSeriesPopularSP, data.TVSeriesPopularSP...)
+			result.TVPopularPC = append(result.TVPopularPC, data.TVPopularPC...)
+		}
+
+		tvCh <- result
+	}()
 
 	// Anime
+	go func() {
+		defer wg.Done()
+		animeDataCh := make(chan AnimeResult)
 
-	upcomingAnimes, err := animeModel.GetPreviewUpcomingAnimes()
-	if err != nil {
-		upcomingAnimes = []responses.PreviewAnime{}
-	}
+		go func() {
+			upcomingAnimes, _ := animeModel.GetPreviewUpcomingAnimes()
+			animeDataCh <- AnimeResult{UpcomingAnimes: upcomingAnimes}
+		}()
 
-	topRatedAnimes, err := animeModel.GetPreviewTopAnimes()
-	if err != nil {
-		topRatedAnimes = []responses.PreviewAnime{}
-	}
+		go func() {
+			topRatedAnimes, _ := animeModel.GetPreviewTopAnimes()
+			animeDataCh <- AnimeResult{TopRatedAnimes: topRatedAnimes}
+		}()
 
-	popularAnimes, err := animeModel.GetPreviewPopularAnimes()
-	if err != nil {
-		popularAnimes = []responses.PreviewAnime{}
-	}
+		go func() {
+			popularAnimes, _ := animeModel.GetPreviewPopularAnimes()
+			animeDataCh <- AnimeResult{PopularAnimes: popularAnimes}
+		}()
 
-	dayOfWeekAnime, err := animeModel.GetCurrentlyAiringAnimesByDayOfWeek(dayOfWeek)
-	if err != nil {
-		dayOfWeekAnime = []responses.PreviewAnime{}
-	}
+		go func() {
+			dayOfWeekAnime, _ := animeModel.GetCurrentlyAiringAnimesByDayOfWeek(int16(time.Now().UTC().Weekday()) + 1)
+			animeDataCh <- AnimeResult{AiringAnime: dayOfWeekAnime}
+		}()
 
-	animePopularSP, _ := animeModel.GetPopularStreamingPlatforms()
-	animePopularStudios, _ := animeModel.GetPopularStudios()
+		go func() {
+			animePopularSP, _ := animeModel.GetPopularStreamingPlatforms()
+			animePopularStudios, _ := animeModel.GetPopularStudios()
+			animeDataCh <- AnimeResult{AnimePopularSP: animePopularSP, AnimePopularStudios: animePopularStudios}
+		}()
+
+		var result AnimeResult
+		for i := 0; i < 5; i++ {
+			data := <-animeDataCh
+			result.UpcomingAnimes = append(result.UpcomingAnimes, data.UpcomingAnimes...)
+			result.TopRatedAnimes = append(result.TopRatedAnimes, data.TopRatedAnimes...)
+			result.PopularAnimes = append(result.PopularAnimes, data.PopularAnimes...)
+			result.AiringAnime = append(result.AiringAnime, data.AiringAnime...)
+			result.AnimePopularSP = append(result.AnimePopularSP, data.AnimePopularSP...)
+			result.AnimePopularStudios = append(result.AnimePopularStudios, data.AnimePopularStudios...)
+		}
+
+		animeCh <- result
+	}()
 
 	// Game
+	go func() {
+		defer wg.Done()
+		gameDataCh := make(chan GameResult)
 
-	upcomingGames, err := gameModel.GetPreviewUpcomingGames()
-	if err != nil {
-		upcomingGames = []responses.PreviewGame{}
-	}
+		go func() {
+			upcomingGames, _ := gameModel.GetPreviewUpcomingGames()
+			gameDataCh <- GameResult{UpcomingGames: upcomingGames}
+		}()
 
-	topRatedGames, err := gameModel.GetPreviewTopGames()
-	if err != nil {
-		topRatedGames = []responses.PreviewGame{}
-	}
+		go func() {
+			topRatedGames, _ := gameModel.GetPreviewTopGames()
+			gameDataCh <- GameResult{TopRatedGames: topRatedGames}
+		}()
 
-	popularGames, err := gameModel.GetPreviewPopularGames()
-	if err != nil {
-		popularGames = []responses.PreviewGame{}
-	}
+		go func() {
+			popularGames, _ := gameModel.GetPreviewPopularGames()
+			gameDataCh <- GameResult{PopularGames: popularGames}
+		}()
 
-	// Manga
+		var result GameResult
+		for i := 0; i < 3; i++ {
+			data := <-gameDataCh
+			result.UpcomingGames = append(result.UpcomingGames, data.UpcomingGames...)
+			result.TopRatedGames = append(result.TopRatedGames, data.TopRatedGames...)
+			result.PopularGames = append(result.PopularGames, data.PopularGames...)
+		}
 
-	// publishingManga, err := mangaModel.GetPreviewCurrentlyPublishingManga()
-	// if err != nil {
-	// 	publishingManga = []responses.PreviewManga{}
-	// }
+		gameCh <- result
+	}()
 
-	// topRatedManga, err := mangaModel.GetPreviewTopManga()
-	// if err != nil {
-	// 	topRatedManga = []responses.PreviewManga{}
-	// }
-
-	// popularManga, err := mangaModel.GetPreviewPopularManga()
-	// if err != nil {
-	// 	popularManga = []responses.PreviewManga{}
-	// }
+	movieData := <-movieCh
+	tvData := <-tvCh
+	animeData := <-animeCh
+	gameData := <-gameCh
 
 	c.JSON(http.StatusOK, gin.H{
 		"movie": gin.H{
-			"upcoming": upcomingMovies, "popular": popularMovies, "top": topMovies,
-			"extra": moviesInTheater, "actors": popularActors, "streaming_platforms": moviePopularSP,
-			"production_companies": moviePopularPC,
+			"upcoming":             movieData.UpcomingMovies,
+			"popular":              movieData.PopularMovies,
+			"top":                  movieData.TopMovies,
+			"extra":                movieData.MoviesInTheater,
+			"actors":               movieData.PopularActors,
+			"streaming_platforms":  movieData.MoviePopularSP,
+			"production_companies": movieData.MoviePopularPC,
 		},
 		"tv": gin.H{
-			"upcoming": upcomingTVSeries, "popular": popularTVSeries, "top": topTVSeries,
-			"extra": dayOfWeekTVSeries, "actors": popularActorsTVSeries, "streaming_platforms": tvSeriesPopularSP,
-			"production_companies": tvPopularPC,
+			"upcoming":             tvData.UpcomingTVSeries,
+			"popular":              tvData.PopularTVSeries,
+			"top":                  tvData.TopTVSeries,
+			"extra":                tvData.airingTVSeries,
+			"actors":               tvData.PopularActors,
+			"streaming_platforms":  tvData.TVSeriesPopularSP,
+			"production_companies": tvData.TVPopularPC,
 		},
 		"anime": gin.H{
-			"upcoming": upcomingAnimes, "top": topRatedAnimes, "popular": popularAnimes,
-			"extra": dayOfWeekAnime, "anime_streaming_platforms": animePopularSP, "studios": animePopularStudios,
+			"upcoming":                  animeData.UpcomingAnimes,
+			"top":                       animeData.TopRatedAnimes,
+			"popular":                   animeData.PopularAnimes,
+			"extra":                     animeData.AiringAnime,
+			"anime_streaming_platforms": animeData.AnimePopularSP,
+			"studios":                   animeData.AnimePopularStudios,
 		},
-		"game": gin.H{"upcoming": upcomingGames, "top": topRatedGames, "popular": popularGames, "extra": nil},
-		// "manga": gin.H{"upcoming": publishingManga, "top": topRatedManga, "popular": popularManga, "extra": nil},
+		"game": gin.H{
+			"upcoming": gameData.UpcomingGames,
+			"top":      gameData.TopRatedGames,
+			"popular":  gameData.PopularGames,
+			"extra":    nil,
+		},
 	})
+}
+
+type MovieResult struct {
+	UpcomingMovies  []responses.PreviewMovie
+	PopularMovies   []responses.PreviewMovie
+	TopMovies       []responses.PreviewMovie
+	PopularActors   []responses.ActorDetails
+	MoviesInTheater []responses.PreviewMovie
+	MoviePopularSP  []responses.StreamingPlatform
+	MoviePopularPC  []responses.StreamingPlatform
+}
+
+type TVResult struct {
+	UpcomingTVSeries  []responses.PreviewTVSeries
+	PopularTVSeries   []responses.PreviewTVSeries
+	TopTVSeries       []responses.PreviewTVSeries
+	PopularActors     []responses.ActorDetails
+	airingTVSeries    []responses.PreviewTVSeries
+	TVSeriesPopularSP []responses.StreamingPlatform
+	TVPopularPC       []responses.StreamingPlatform
+}
+
+type AnimeResult struct {
+	UpcomingAnimes      []responses.PreviewAnime
+	TopRatedAnimes      []responses.PreviewAnime
+	PopularAnimes       []responses.PreviewAnime
+	AiringAnime         []responses.PreviewAnime
+	AnimePopularSP      []responses.AnimeNameURL
+	AnimePopularStudios []responses.AnimeNameURL
+}
+
+type GameResult struct {
+	UpcomingGames []responses.PreviewGame
+	TopRatedGames []responses.PreviewGame
+	PopularGames  []responses.PreviewGame
 }

@@ -20,6 +20,13 @@ func NewSocialController(mongoDB *db.MongoDB) SocialController {
 	}
 }
 
+type SocialResult struct {
+	PopularReviews []responses.ReviewDetails
+	CustomLists    []responses.CustomList
+	Leaderboard    []responses.Leaderboard
+	Error          error
+}
+
 // Get Socials
 // @Summary Get Socials
 // @Description Returns reviews, custom lists and leaderboard for social page.
@@ -34,79 +41,100 @@ func (s *SocialController) GetSocials(c *gin.Context) {
 	userModel := models.NewUserModel(s.Database)
 	customListModel := models.NewCustomListModel(s.Database)
 
-	var (
-		popularReviews []responses.ReviewDetails
-		customLists    []responses.CustomList
-		err            error
-	)
+	uid, ok := c.Get("uuid")
 
-	sortRequest := requests.SortReview{
-		Sort: "popularity",
-		Page: 1,
-	}
+	resultCh := make(chan SocialResult)
 
-	uid, OK := c.Get("uuid")
+	go func() {
+		defer close(resultCh)
 
-	if OK && uid != nil {
-		userId := uid.(string)
+		socialResult := SocialResult{}
 
-		popularReviews, _, err = reviewModel.GetReviewsIndependentFromContent(&userId, sortRequest)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
+		reviewCh := make(chan []responses.ReviewDetails)
+		go func() {
+			var (
+				err            error
+				popularReviews []responses.ReviewDetails
+			)
+			sortRequest := requests.SortReview{
+				Sort: "popularity",
+				Page: 1,
+			}
 
-			return
-		}
-	} else {
-		popularReviews, _, err = reviewModel.GetReviewsIndependentFromContent(nil, sortRequest)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
+			if ok && uid != nil {
+				userId := uid.(string)
+				popularReviews, _, err = reviewModel.GetReviewsIndependentFromContent(&userId, sortRequest)
+				if err != nil {
+					resultCh <- SocialResult{Error: err}
+					return
+				}
+			} else {
+				popularReviews, _, err = reviewModel.GetReviewsIndependentFromContent(nil, sortRequest)
+				if err != nil {
+					resultCh <- SocialResult{Error: err}
+					return
+				}
+			}
 
-			return
-		}
-	}
+			reviewCh <- popularReviews
+		}()
 
-	if OK && uid != nil {
-		userId := uid.(string)
+		customListCh := make(chan []responses.CustomList)
+		go func() {
+			var (
+				err         error
+				customLists []responses.CustomList
+			)
+			sortCustomListUID := requests.SortCustomListUID{
+				Sort: "popularity",
+			}
 
-		customLists, err = customListModel.GetCustomListsByUserID(&userId, requests.SortCustomListUID{
-			Sort: "popularity",
-		}, true, true)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
+			if ok && uid != nil {
+				userId := uid.(string)
+				customLists, err = customListModel.GetCustomListsByUserID(&userId, sortCustomListUID, true, true)
+				if err != nil {
+					resultCh <- SocialResult{Error: err}
+					return
+				}
+			} else {
+				customLists, err = customListModel.GetCustomListsByUserID(nil, sortCustomListUID, true, true)
+				if err != nil {
+					resultCh <- SocialResult{Error: err}
+					return
+				}
+			}
+			customListCh <- customLists
+		}()
 
-			return
-		}
-	} else {
-		customLists, err = customListModel.GetCustomListsByUserID(nil, requests.SortCustomListUID{
-			Sort: "popularity",
-		}, true, true)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
+		leaderboardCh := make(chan []responses.Leaderboard)
+		go func() {
+			var err error
 
-			return
-		}
-	}
+			leaderboard, err := userModel.GetLeaderboard()
+			if err != nil {
+				resultCh <- SocialResult{Error: err}
+				return
+			}
 
-	leaderboard, err := userModel.GetLeaderboard()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+			leaderboardCh <- leaderboard
+		}()
 
+		socialResult.PopularReviews = <-reviewCh
+		socialResult.CustomLists = <-customListCh
+		socialResult.Leaderboard = <-leaderboardCh
+
+		resultCh <- socialResult
+	}()
+
+	result := <-resultCh
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": responses.SocialPreview{
-		Reviews:     popularReviews,
-		Leaderboard: leaderboard,
-		CustomLists: customLists,
+		Reviews:     result.PopularReviews,
+		Leaderboard: result.Leaderboard,
+		CustomLists: result.CustomLists,
 	}})
 }
