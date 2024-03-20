@@ -122,7 +122,6 @@ func (userInteractionModel *UserInteractionModel) GetBaseConsumeLater(uid, id st
 
 func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, data requests.SortFilterConsumeLater) ([]responses.ConsumeLater, error) {
 	var (
-		match     bson.M
 		sortType  string
 		sortOrder int8
 	)
@@ -152,16 +151,14 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 		sortType: sortOrder,
 	}}
 
+	matchFields := bson.M{}
+
+	matchFields["user_id"] = uid
 	if data.ContentType != nil {
-		match = bson.M{"$match": bson.M{
-			"user_id":      uid,
-			"content_type": data.ContentType,
-		}}
-	} else {
-		match = bson.M{"$match": bson.M{
-			"user_id": uid,
-		}}
+		matchFields["content_type"] = data.ContentType
 	}
+
+	match := bson.M{"$match": matchFields}
 
 	set := bson.M{"$set": bson.M{
 		"content_id": bson.M{

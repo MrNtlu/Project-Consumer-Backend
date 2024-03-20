@@ -12,6 +12,7 @@ type CreateConsumeLater struct {
 
 type SortFilterConsumeLater struct {
 	ContentType *string `form:"type" binding:"omitempty,oneof=anime game movie tv"`
+	Genre       *string `form:"genre"`
 	Sort        string  `form:"sort" binding:"required,oneof=new old alphabetical unalphabetical soon later"`
 }
 
