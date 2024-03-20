@@ -351,8 +351,17 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 		"preserveNullAndEmptyArrays": false,
 	}}
 
+	matchGenreFields := bson.M{}
+	if data.Genre != nil {
+		matchGenreFields["content.genres"] = bson.M{
+			"$in": bson.A{data.Genre},
+		}
+	}
+
+	matchGenre := bson.M{"$match": matchGenreFields}
+
 	cursor, err := userInteractionModel.ConsumeLaterCollection.Aggregate(context.TODO(), bson.A{
-		match, set, facet, project, unwind, replaceRoot, unwindContent, sort,
+		match, set, facet, project, unwind, replaceRoot, unwindContent, sort, matchGenre,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{

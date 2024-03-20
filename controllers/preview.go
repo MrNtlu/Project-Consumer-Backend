@@ -22,6 +22,41 @@ func NewPreviewController(mongoDB *db.MongoDB) PreviewController {
 	}
 }
 
+type MovieResult struct {
+	UpcomingMovies  []responses.PreviewMovie
+	PopularMovies   []responses.PreviewMovie
+	TopMovies       []responses.PreviewMovie
+	PopularActors   []responses.ActorDetails
+	MoviesInTheater []responses.PreviewMovie
+	MoviePopularSP  []responses.StreamingPlatform
+	MoviePopularPC  []responses.StreamingPlatform
+}
+
+type TVResult struct {
+	UpcomingTVSeries  []responses.PreviewTVSeries
+	PopularTVSeries   []responses.PreviewTVSeries
+	TopTVSeries       []responses.PreviewTVSeries
+	PopularActors     []responses.ActorDetails
+	AiringTVSeries    []responses.PreviewTVSeries
+	TVSeriesPopularSP []responses.StreamingPlatform
+	TVPopularPC       []responses.StreamingPlatform
+}
+
+type AnimeResult struct {
+	UpcomingAnimes      []responses.PreviewAnime
+	TopRatedAnimes      []responses.PreviewAnime
+	PopularAnimes       []responses.PreviewAnime
+	AiringAnime         []responses.PreviewAnime
+	AnimePopularSP      []responses.AnimeNameURL
+	AnimePopularStudios []responses.AnimeNameURL
+}
+
+type GameResult struct {
+	UpcomingGames []responses.PreviewGame
+	TopRatedGames []responses.PreviewGame
+	PopularGames  []responses.PreviewGame
+}
+
 // Get Previews
 // @Summary Get Previews
 // @Description Returns previews
@@ -236,12 +271,16 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 
 		go func() {
 			moviePopularSP, _ := movieModel.GetPopularStreamingPlatforms(data.Region)
+			movieDataCh <- MovieResult{MoviePopularSP: moviePopularSP}
+		}()
+
+		go func() {
 			moviePopularPC, _ := movieModel.GetPopularProductionCompanies()
-			movieDataCh <- MovieResult{MoviePopularSP: moviePopularSP, MoviePopularPC: moviePopularPC}
+			movieDataCh <- MovieResult{MoviePopularPC: moviePopularPC}
 		}()
 
 		var result MovieResult
-		for i := 0; i < 6; i++ {
+		for i := 0; i < 7; i++ {
 			data := <-movieDataCh
 			result.UpcomingMovies = append(result.UpcomingMovies, data.UpcomingMovies...)
 			result.PopularMovies = append(result.PopularMovies, data.PopularMovies...)
@@ -282,23 +321,27 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 
 		go func() {
 			dayOfWeekTVSeries, _ := tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek(int16(time.Now().UTC().Weekday()) + 1)
-			tvDataCh <- TVResult{airingTVSeries: dayOfWeekTVSeries}
+			tvDataCh <- TVResult{AiringTVSeries: dayOfWeekTVSeries}
 		}()
 
 		go func() {
 			tvSeriesPopularSP, _ := tvModel.GetPopularStreamingPlatforms(data.Region)
+			tvDataCh <- TVResult{TVSeriesPopularSP: tvSeriesPopularSP}
+		}()
+
+		go func() {
 			tvPopularPC, _ := tvModel.GetPopularProductionCompanies()
-			tvDataCh <- TVResult{TVSeriesPopularSP: tvSeriesPopularSP, TVPopularPC: tvPopularPC}
+			tvDataCh <- TVResult{TVPopularPC: tvPopularPC}
 		}()
 
 		var result TVResult
-		for i := 0; i < 6; i++ {
+		for i := 0; i < 7; i++ {
 			data := <-tvDataCh
 			result.UpcomingTVSeries = append(result.UpcomingTVSeries, data.UpcomingTVSeries...)
 			result.PopularTVSeries = append(result.PopularTVSeries, data.PopularTVSeries...)
 			result.TopTVSeries = append(result.TopTVSeries, data.TopTVSeries...)
 			result.PopularActors = append(result.PopularActors, data.PopularActors...)
-			result.airingTVSeries = append(result.airingTVSeries, data.airingTVSeries...)
+			result.AiringTVSeries = append(result.AiringTVSeries, data.AiringTVSeries...)
 			result.TVSeriesPopularSP = append(result.TVSeriesPopularSP, data.TVSeriesPopularSP...)
 			result.TVPopularPC = append(result.TVPopularPC, data.TVPopularPC...)
 		}
@@ -333,12 +376,16 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 
 		go func() {
 			animePopularSP, _ := animeModel.GetPopularStreamingPlatforms()
+			animeDataCh <- AnimeResult{AnimePopularSP: animePopularSP}
+		}()
+
+		go func() {
 			animePopularStudios, _ := animeModel.GetPopularStudios()
-			animeDataCh <- AnimeResult{AnimePopularSP: animePopularSP, AnimePopularStudios: animePopularStudios}
+			animeDataCh <- AnimeResult{AnimePopularStudios: animePopularStudios}
 		}()
 
 		var result AnimeResult
-		for i := 0; i < 5; i++ {
+		for i := 0; i < 6; i++ {
 			data := <-animeDataCh
 			result.UpcomingAnimes = append(result.UpcomingAnimes, data.UpcomingAnimes...)
 			result.TopRatedAnimes = append(result.TopRatedAnimes, data.TopRatedAnimes...)
@@ -401,7 +448,7 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 			"upcoming":             tvData.UpcomingTVSeries,
 			"popular":              tvData.PopularTVSeries,
 			"top":                  tvData.TopTVSeries,
-			"extra":                tvData.airingTVSeries,
+			"extra":                tvData.AiringTVSeries,
 			"actors":               tvData.PopularActors,
 			"streaming_platforms":  tvData.TVSeriesPopularSP,
 			"production_companies": tvData.TVPopularPC,
@@ -421,39 +468,4 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 			"extra":    nil,
 		},
 	})
-}
-
-type MovieResult struct {
-	UpcomingMovies  []responses.PreviewMovie
-	PopularMovies   []responses.PreviewMovie
-	TopMovies       []responses.PreviewMovie
-	PopularActors   []responses.ActorDetails
-	MoviesInTheater []responses.PreviewMovie
-	MoviePopularSP  []responses.StreamingPlatform
-	MoviePopularPC  []responses.StreamingPlatform
-}
-
-type TVResult struct {
-	UpcomingTVSeries  []responses.PreviewTVSeries
-	PopularTVSeries   []responses.PreviewTVSeries
-	TopTVSeries       []responses.PreviewTVSeries
-	PopularActors     []responses.ActorDetails
-	airingTVSeries    []responses.PreviewTVSeries
-	TVSeriesPopularSP []responses.StreamingPlatform
-	TVPopularPC       []responses.StreamingPlatform
-}
-
-type AnimeResult struct {
-	UpcomingAnimes      []responses.PreviewAnime
-	TopRatedAnimes      []responses.PreviewAnime
-	PopularAnimes       []responses.PreviewAnime
-	AiringAnime         []responses.PreviewAnime
-	AnimePopularSP      []responses.AnimeNameURL
-	AnimePopularStudios []responses.AnimeNameURL
-}
-
-type GameResult struct {
-	UpcomingGames []responses.PreviewGame
-	TopRatedGames []responses.PreviewGame
-	PopularGames  []responses.PreviewGame
 }

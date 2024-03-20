@@ -37,6 +37,11 @@ type LogStreak struct {
 	CurrentStreak int
 }
 
+type BasicUserInfoResult struct {
+	UserInfo responses.User
+	Error    error
+}
+
 var (
 	errAlreadyRegistered = "User already registered."
 	errPasswordNoMatch   = "Passwords do not match."
@@ -203,22 +208,45 @@ func (u *UserController) GetExtraStatistics(c *gin.Context) {
 func (u *UserController) GetBasicUserInfo(c *gin.Context) {
 	uid := jwt.ExtractClaims(c)["id"].(string)
 
-	userModel := models.NewUserModel(u.Database)
-	userInfo, err := userModel.GetUserByID(uid)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	resultCh := make(chan BasicUserInfoResult)
+	go func() {
+		defer close(resultCh)
 
+		userCh := make(chan responses.User)
+		go func() {
+			userModel := models.NewUserModel(u.Database)
+
+			userInfo, err := userModel.GetUserByID(uid)
+			if err != nil {
+				resultCh <- BasicUserInfoResult{Error: err}
+				return
+			}
+
+			userCh <- userInfo
+		}()
+
+		streakCh := make(chan int)
+		go func() {
+			logsModel := models.NewLogsModel(u.Database)
+
+			_, currentStreak := logsModel.GetLogStreak(uid)
+
+			streakCh <- currentStreak
+		}()
+
+		userInfo := <-userCh
+		userInfo.Streak = <-streakCh
+
+		resultCh <- BasicUserInfoResult{UserInfo: userInfo}
+	}()
+
+	result := <-resultCh
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
-	logsModel := models.NewLogsModel(u.Database)
-
-	_, currentStreak := logsModel.GetLogStreak(uid)
-	userInfo.Streak = currentStreak
-
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched basic user info.", "data": userInfo})
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully fetched basic user info.", "data": result.UserInfo})
 }
 
 // User Info
