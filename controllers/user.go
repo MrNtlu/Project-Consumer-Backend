@@ -1219,6 +1219,7 @@ func (u *UserController) DeleteUser(c *gin.Context) {
 	customListsModel := models.NewCustomListModel(u.Database)
 	reviewsModel := models.NewReviewModel(u.Database)
 	logsModel := models.NewLogsModel(u.Database)
+	recommendationModel := models.NewRecommendationModel(u.Database)
 
 	go userListModel.DeleteUserListByUserID(uid)
 	go userInteractionModel.DeleteAllConsumeLaterByUserID(uid)
@@ -1227,6 +1228,7 @@ func (u *UserController) DeleteUser(c *gin.Context) {
 	go customListsModel.DeleteAllCustomListsByUserID(uid)
 	go suggestionModel.DeleteAllAISuggestionsByUserID(uid)
 	go logsModel.DeleteLogsByUserID(uid)
+	go recommendationModel.DeleteAllRecommendationByUserID(uid)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully deleted user."})
 }

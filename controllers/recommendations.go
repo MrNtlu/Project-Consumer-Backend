@@ -293,3 +293,138 @@ func (rn *RecommendationController) CreateRecommendation(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": recommendationWithContent})
 }
+
+// Get Recommendations by Content
+// @Summary Get Recommendations by Content
+// @Description Get Recommendations by Content
+// @Tags recommendation
+// @Accept application/json
+// @Produce application/json
+// @Param sortrecommendation body requests.SortRecommendation true "Sort Recommendation"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {object} responses.RecommendationWithContent
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /recommendation [get]
+func (rn *RecommendationController) GetRecommendationsByContentID(c *gin.Context) {
+	var data requests.SortRecommendation
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	recommendationModel := models.NewRecommendationModel(rn.Database)
+
+	var (
+		userID    string
+		isUIDNull bool
+	)
+	uid, OK := c.Get("uuid")
+	if OK && uid != nil {
+		isUIDNull = false
+		userID = uid.(string)
+	} else {
+		isUIDNull = true
+		userID = ""
+	}
+
+	recommendations, pagination, err := recommendationModel.GetRecommendationsByContentID(userID, isUIDNull, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": recommendations})
+}
+
+// Get Recommendations by User ID
+// @Summary Get Recommendations by User ID
+// @Description Get Recommendations by User ID
+// @Tags recommendation
+// @Accept application/json
+// @Produce application/json
+// @Param sortrecommendationbycontentid body requests.SortRecommendationByUserID true "Sort Recommendation by Content ID"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {object} responses.RecommendationWithContent
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /recommendation/profile [get]
+func (rn *RecommendationController) GetRecommendationsByUserID(c *gin.Context) {
+	var data requests.SortRecommendationByUserID
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	recommendationModel := models.NewRecommendationModel(rn.Database)
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	recommendations, pagination, err := recommendationModel.GetRecommendationsByUserID(uid, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": recommendations})
+}
+
+// Delete Recommendation
+// @Summary Delete Recommendation
+// @Description Delete Recommendation
+// @Tags recommendation
+// @Accept application/json
+// @Produce application/json
+// @Param id body requests.ID true "ID"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {object} responses.RecommendationWithContent
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /recommendation [delete]
+func (rn *RecommendationController) DeleteRecommendationByID(c *gin.Context) {
+	var data requests.ID
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	recommendationModel := models.NewRecommendationModel(rn.Database)
+
+	isDeleted, err := recommendationModel.DeleteRecommendationByID(uid, data.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	if isDeleted {
+		logModel := models.NewLogsModel(rn.Database)
+
+		go logModel.CreateLog(uid, requests.CreateLog{
+			LogType:          models.RecommendationLogType,
+			LogAction:        models.DeleteLogAction,
+			LogActionDetails: "",
+		})
+
+		c.JSON(http.StatusOK, gin.H{"message": "Recommendation deleted successfully."})
+		return
+	}
+
+	c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+}

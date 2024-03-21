@@ -3120,6 +3120,62 @@ const docTemplate = `{
             }
         },
         "/recommendation": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get Recommendations by Content",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recommendation"
+                ],
+                "summary": "Get Recommendations by Content",
+                "parameters": [
+                    {
+                        "description": "Sort Recommendation",
+                        "name": "sortrecommendation",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortRecommendation"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.RecommendationWithContent"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -3158,6 +3214,120 @@ const docTemplate = `{
                 "responses": {
                     "201": {
                         "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/responses.RecommendationWithContent"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete Recommendation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recommendation"
+                ],
+                "summary": "Delete Recommendation",
+                "parameters": [
+                    {
+                        "description": "ID",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ID"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.RecommendationWithContent"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/recommendation/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get Recommendations by User ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recommendation"
+                ],
+                "summary": "Get Recommendations by User ID",
+                "parameters": [
+                    {
+                        "description": "Sort Recommendation by Content ID",
+                        "name": "sortrecommendationbycontentid",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortRecommendationByUserID"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/responses.RecommendationWithContent"
                         }
@@ -6211,6 +6381,9 @@ const docTemplate = `{
                         "tv"
                     ]
                 },
+                "genre": {
+                    "type": "string"
+                },
                 "sort": {
                     "type": "string",
                     "enum": [
@@ -6430,6 +6603,66 @@ const docTemplate = `{
                         "latest",
                         "oldest"
                     ]
+                }
+            }
+        },
+        "requests.SortRecommendation": {
+            "type": "object",
+            "required": [
+                "contentID",
+                "contentType",
+                "page",
+                "sort"
+            ],
+            "properties": {
+                "contentID": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string",
+                    "enum": [
+                        "anime",
+                        "game",
+                        "movie",
+                        "tv"
+                    ]
+                },
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "latest",
+                        "oldest"
+                    ]
+                }
+            }
+        },
+        "requests.SortRecommendationByUserID": {
+            "type": "object",
+            "required": [
+                "page",
+                "sort",
+                "userID"
+            ],
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": [
+                        "popularity",
+                        "latest",
+                        "oldest"
+                    ]
+                },
+                "userID": {
+                    "type": "string"
                 }
             }
         },

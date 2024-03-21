@@ -56,10 +56,10 @@ func createRecommendationObject(
 }
 
 /*
-- Get user's recommendations
-- Get self recommendations
-- Get recommendations by content
-- Get recommendations
+- Change Recommendation
+- Like/Dislike Recommendation
+- Liked Recommendations
+- Recommendations independent from content
 */
 
 func (recommendationModel *RecommendationModel) CreateRecommendation(
@@ -91,8 +91,157 @@ func (recommendationModel *RecommendationModel) CreateRecommendation(
 	return *recommendation, nil
 }
 
-func (recommendationModel *RecommendationModel) GetRecommendationsByUID(
-	uid string, data requests.SortRecommendation,
+func (recommendationModel *RecommendationModel) GetRecommendationsByContentID(
+	uid string, isUIDNull bool, data requests.SortRecommendation,
+) ([]responses.RecommendationWithContent, p.PaginationData, error) {
+	var (
+		sortType         string
+		sortOrder        int8
+		lookupCollection string
+		set              bson.M
+	)
+
+	switch data.Sort {
+	case "popularity":
+		sortType = "popularity"
+		sortOrder = -1
+	case "latest":
+		sortType = "created_at"
+		sortOrder = -1
+	case "oldest":
+		sortType = "created_at"
+		sortOrder = 1
+	}
+
+	switch data.ContentType {
+	case "anime":
+		lookupCollection = "animes"
+	case "game":
+		lookupCollection = "games"
+	case "movie":
+		lookupCollection = "movies"
+	case "tv":
+		lookupCollection = "tv-series"
+	}
+
+	match := bson.M{"$match": bson.M{
+		"content_id": data.ContentID,
+	}}
+
+	if !isUIDNull {
+		set = bson.M{"$set": bson.M{
+			"is_author": bson.M{
+				"$eq": bson.A{"$user_id", uid},
+			},
+			"obj_user_id": bson.M{
+				"$toObjectId": "$user_id",
+			},
+			"obj_content_id": bson.M{
+				"$toObjectId": "$content_id",
+			},
+			"obj_recommend_id": bson.M{
+				"$toObjectId": "$recommendation_id",
+			},
+			"popularity": bson.M{
+				"$size": "$likes",
+			},
+			"is_liked": bson.M{
+				"$cond": bson.M{
+					"if": bson.M{
+						"$in": bson.A{
+							uid,
+							"$likes",
+						},
+					},
+					"then": true,
+					"else": false,
+				},
+			},
+		}}
+	} else {
+		set = bson.M{"$set": bson.M{
+			"is_author": false,
+			"obj_user_id": bson.M{
+				"$toObjectId": "$user_id",
+			},
+			"obj_content_id": bson.M{
+				"$toObjectId": "$content_id",
+			},
+			"obj_recommend_id": bson.M{
+				"$toObjectId": "$recommendation_id",
+			},
+			"popularity": bson.M{
+				"$size": "$likes",
+			},
+			"is_liked": false,
+		}}
+	}
+
+	authorLookup := bson.M{"$lookup": bson.M{
+		"from":         "users",
+		"localField":   "obj_user_id",
+		"foreignField": "_id",
+		"as":           "author",
+	}}
+
+	unwindAuthor := bson.M{"$unwind": bson.M{
+		"path":                       "$author",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	contentLookup := bson.M{"$lookup": bson.M{
+		"from":         lookupCollection,
+		"localField":   "obj_content_id",
+		"foreignField": "_id",
+		"as":           "content",
+	}}
+
+	unwindContent := bson.M{"$unwind": bson.M{
+		"path":                       "$content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	recommendationLookup := bson.M{"$lookup": bson.M{
+		"from":         lookupCollection,
+		"localField":   "obj_recommend_id",
+		"foreignField": "_id",
+		"as":           "recommendation_content",
+	}}
+
+	unwindRecommendation := bson.M{"$unwind": bson.M{
+		"path":                       "$recommendation_content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	paginatedData, err := p.New(recommendationModel.RecommendationCollection).Context(context.TODO()).
+		Limit(recommendationPagination).Page(data.Page).Sort(sortType, sortOrder).Aggregate(
+		match, set, authorLookup, unwindAuthor, contentLookup,
+		unwindContent, recommendationLookup, unwindRecommendation,
+	)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"request": data,
+		}).Error("failed to aggregate recommendations", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to get recommendations.")
+	}
+
+	var recommendations []responses.RecommendationWithContent
+	for _, raw := range paginatedData.Data {
+		var recommendation *responses.RecommendationWithContent
+		if marshalErr := bson.Unmarshal(raw, &recommendation); marshalErr == nil {
+			recommendations = append(recommendations, *recommendation)
+		}
+	}
+
+	return recommendations, paginatedData.Pagination, nil
+}
+
+func (recommendationModel *RecommendationModel) GetRecommendationsByUserID(
+	uid string, data requests.SortRecommendationByUserID,
 ) ([]responses.RecommendationWithContent, p.PaginationData, error) {
 	var (
 		sortType  string
@@ -112,21 +261,37 @@ func (recommendationModel *RecommendationModel) GetRecommendationsByUID(
 	}
 
 	match := bson.M{"$match": bson.M{
-		"user_id": uid,
+		"user_id": data.UserID,
 	}}
 
 	set := bson.M{"$set": bson.M{
-		"is_author": true,
+		"is_author": bson.M{
+			"$eq": bson.A{"$user_id", uid},
+		},
 		"obj_user_id": bson.M{
 			"$toObjectId": "$user_id",
 		},
 		"obj_content_id": bson.M{
 			"$toObjectId": "$content_id",
 		},
+		"obj_recommendation_id": bson.M{
+			"$toObjectId": "$recommendation_id",
+		},
 		"popularity": bson.M{
 			"$size": "$likes",
 		},
-		"is_liked": false,
+		"is_liked": bson.M{
+			"$cond": bson.M{
+				"if": bson.M{
+					"$in": bson.A{
+						uid,
+						"$likes",
+					},
+				},
+				"then": true,
+				"else": false,
+			},
+		},
 	}}
 
 	lookup := bson.M{"$lookup": bson.M{
@@ -151,7 +316,7 @@ func (recommendationModel *RecommendationModel) GetRecommendationsByUID(
 				"$lookup": bson.M{
 					"from": "movies",
 					"let": bson.M{
-						"content_id": "$content_id",
+						"content_id": "$obj_content_id",
 					},
 					"pipeline": bson.A{
 						bson.M{
@@ -170,6 +335,31 @@ func (recommendationModel *RecommendationModel) GetRecommendationsByUID(
 						},
 					},
 					"as": "content",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "movies",
+					"let": bson.M{
+						"content_id": "$obj_recommendation_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "recommendation_content",
 				},
 			},
 		},
@@ -181,7 +371,7 @@ func (recommendationModel *RecommendationModel) GetRecommendationsByUID(
 				"$lookup": bson.M{
 					"from": "tv-series",
 					"let": bson.M{
-						"content_id": "$content_id",
+						"content_id": "$obj_content_id",
 					},
 					"pipeline": bson.A{
 						bson.M{
@@ -200,6 +390,31 @@ func (recommendationModel *RecommendationModel) GetRecommendationsByUID(
 						},
 					},
 					"as": "content",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "tv-series",
+					"let": bson.M{
+						"content_id": "$obj_content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "recommendation_content",
 				},
 			},
 		},
@@ -211,7 +426,7 @@ func (recommendationModel *RecommendationModel) GetRecommendationsByUID(
 				"$lookup": bson.M{
 					"from": "animes",
 					"let": bson.M{
-						"content_id": "$content_id",
+						"content_id": "$obj_content_id",
 					},
 					"pipeline": bson.A{
 						bson.M{
@@ -232,6 +447,31 @@ func (recommendationModel *RecommendationModel) GetRecommendationsByUID(
 					"as": "content",
 				},
 			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "animes",
+					"let": bson.M{
+						"content_id": "$obj_recommendation_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "recommendation_content",
+				},
+			},
 		},
 		"games": bson.A{
 			bson.M{
@@ -241,7 +481,7 @@ func (recommendationModel *RecommendationModel) GetRecommendationsByUID(
 				"$lookup": bson.M{
 					"from": "games",
 					"let": bson.M{
-						"content_id": "$content_id",
+						"content_id": "$obj_content_id",
 					},
 					"pipeline": bson.A{
 						bson.M{
@@ -260,6 +500,31 @@ func (recommendationModel *RecommendationModel) GetRecommendationsByUID(
 						},
 					},
 					"as": "content",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "games",
+					"let": bson.M{
+						"content_id": "$obj_recommendation_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       "$title",
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "recommendation_content",
 				},
 			},
 		},
@@ -287,47 +552,17 @@ func (recommendationModel *RecommendationModel) GetRecommendationsByUID(
 		"preserveNullAndEmptyArrays": false,
 	}}
 
-	group := bson.M{"$group": bson.M{
-		"_id": "$_id",
-		"user_id": bson.M{
-			"$first": "$user_id",
-		},
-		"content_id": bson.M{
-			"$first": "$content_id",
-		},
-		"review": bson.M{
-			"$first": "$review",
-		},
-		"author": bson.M{
-			"$first": "$author",
-		},
-		"popularity": bson.M{
-			"$first": "$popularity",
-		},
-		"content": bson.M{
-			"$first": "$content",
-		},
-		"content_type": bson.M{
-			"$first": "$content_type",
-		},
-		"is_author": bson.M{
-			"$first": "$is_author",
-		},
-		"is_liked": bson.M{
-			"$first": "$is_liked",
-		},
-		"likes": bson.M{
-			"$push": "$likes",
-		},
-		"created_at": bson.M{
-			"$first": "$created_at",
-		},
+	unwindRecommendationContent := bson.M{"$unwind": bson.M{
+		"path":                       "$recommendation_content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
 	}}
 
 	paginatedData, err := p.New(recommendationModel.RecommendationCollection).Context(context.TODO()).Limit(recommendationPagination).
 		Page(data.Page).Sort(sortType, sortOrder).Aggregate(
 		match, set, lookup, unwind, facet, project,
-		unwindRecommendations, replaceRoot, unwindContent, group,
+		unwindRecommendations, replaceRoot,
+		unwindContent, unwindRecommendationContent,
 	)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -347,4 +582,37 @@ func (recommendationModel *RecommendationModel) GetRecommendationsByUID(
 	}
 
 	return recommendations, paginatedData.Pagination, nil
+}
+
+func (recommendationModel *RecommendationModel) DeleteRecommendationByID(uid, recommendationId string) (bool, error) {
+	objectReviewID, _ := primitive.ObjectIDFromHex(recommendationId)
+
+	count, err := recommendationModel.RecommendationCollection.DeleteOne(context.TODO(), bson.M{
+		"_id":     objectReviewID,
+		"user_id": uid,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":               uid,
+			"recommendation_id": recommendationId,
+		}).Error("failed to delete recommendation: ", err)
+
+		return false, fmt.Errorf("Failed to delete recommendation.")
+	}
+
+	return count.DeletedCount > 0, nil
+}
+
+func (recommendationModel *RecommendationModel) DeleteAllRecommendationByUserID(uid string) error {
+	if _, err := recommendationModel.RecommendationCollection.DeleteMany(context.TODO(), bson.M{
+		"user_id": uid,
+	}); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid": uid,
+		}).Error("failed to delete recommendations: ", err)
+
+		return fmt.Errorf("Failed to delete recommendations.")
+	}
+
+	return nil
 }

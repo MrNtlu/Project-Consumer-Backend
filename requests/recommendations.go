@@ -8,8 +8,10 @@ type CreateRecommendation struct {
 }
 
 type SortRecommendation struct {
-	Sort string `form:"sort" binding:"required,oneof=popularity latest oldest"`
-	Page int64  `form:"page" json:"page" binding:"required,number,min=1"`
+	ContentID   string `form:"content_id" binding:"required"`
+	ContentType string `form:"content_type" binding:"required,oneof=anime game movie tv"`
+	Sort        string `form:"sort" binding:"required,oneof=popularity latest oldest"`
+	Page        int64  `form:"page" json:"page" binding:"required,number,min=1"`
 }
 
 type SortRecommendationByUserID struct {

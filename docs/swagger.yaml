@@ -871,6 +871,8 @@ definitions:
         - movie
         - tv
         type: string
+      genre:
+        type: string
       sort:
         enum:
         - new
@@ -1033,6 +1035,50 @@ definitions:
         type: string
     required:
     - sort
+    type: object
+  requests.SortRecommendation:
+    properties:
+      contentID:
+        type: string
+      contentType:
+        enum:
+        - anime
+        - game
+        - movie
+        - tv
+        type: string
+      page:
+        minimum: 1
+        type: integer
+      sort:
+        enum:
+        - popularity
+        - latest
+        - oldest
+        type: string
+    required:
+    - contentID
+    - contentType
+    - page
+    - sort
+    type: object
+  requests.SortRecommendationByUserID:
+    properties:
+      page:
+        minimum: 1
+        type: integer
+      sort:
+        enum:
+        - popularity
+        - latest
+        - oldest
+        type: string
+      userID:
+        type: string
+    required:
+    - page
+    - sort
+    - userID
     type: object
   requests.SortReview:
     properties:
@@ -5145,6 +5191,78 @@ paths:
       tags:
       - preview
   /recommendation:
+    delete:
+      consumes:
+      - application/json
+      description: Delete Recommendation
+      parameters:
+      - description: ID
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ID'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.RecommendationWithContent'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete Recommendation
+      tags:
+      - recommendation
+    get:
+      consumes:
+      - application/json
+      description: Get Recommendations by Content
+      parameters:
+      - description: Sort Recommendation
+        in: body
+        name: sortrecommendation
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortRecommendation'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.RecommendationWithContent'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Recommendations by Content
+      tags:
+      - recommendation
     post:
       consumes:
       - application/json
@@ -5179,6 +5297,43 @@ paths:
       security:
       - BearerAuth: []
       summary: Create Recommendation
+      tags:
+      - recommendation
+  /recommendation/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get Recommendations by User ID
+      parameters:
+      - description: Sort Recommendation by Content ID
+        in: body
+        name: sortrecommendationbycontentid
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortRecommendationByUserID'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.RecommendationWithContent'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Recommendations by User ID
       tags:
       - recommendation
   /review:
