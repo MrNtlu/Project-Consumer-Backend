@@ -382,6 +382,128 @@ func (rn *RecommendationController) GetRecommendationsByUserID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": recommendations})
 }
 
+// Get Recommendations for Social
+// @Summary Get Recommendations for Social
+// @Description Get Recommendations for Social
+// @Tags recommendation
+// @Accept application/json
+// @Produce application/json
+// @Param sortrecommendationforsocial body requests.SortRecommendationsForSocial true "Sort Recommendation for Social"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {object} responses.RecommendationWithContent
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /recommendation/social [get]
+func (rn *RecommendationController) GetRecommendationsForSocial(c *gin.Context) {
+	var data requests.SortRecommendationsForSocial
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	recommendationModel := models.NewRecommendationModel(rn.Database)
+
+	var (
+		userID    string
+		isUIDNull bool
+	)
+	uid, OK := c.Get("uuid")
+	if OK && uid != nil {
+		isUIDNull = false
+		userID = uid.(string)
+	} else {
+		isUIDNull = true
+		userID = ""
+	}
+
+	recommendations, pagination, err := recommendationModel.GetRecommendationsForSocial(userID, isUIDNull, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": recommendations})
+}
+
+// Like/Dislike Recommendation
+// @Summary Like/Dislike Recommendation
+// @Description Like Recommendation
+// @Tags recommendation
+// @Accept application/json
+// @Produce application/json
+// @Param likerecommendation body requests.LikeRecommendation true "Like Recommendation"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {object} responses.RecommendationWithContent
+// @Failure 400 {string} string
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /recommendation/like [patch]
+func (rn *RecommendationController) LikeRecommendation(c *gin.Context) {
+	var data requests.LikeRecommendation
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	recommendationModel := models.NewRecommendationModel(rn.Database)
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	var (
+		updatedRecommendation responses.RecommendationWithContent
+		err                   error
+	)
+
+	recommendation, err := recommendationModel.GetBaseRecommendationWithContent(uid, false, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	if recommendation.UserID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": ErrNotFound})
+		return
+	}
+
+	if recommendation.UserID == uid {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "You cannot like your own recommendation.",
+		})
+
+		return
+	}
+
+	if updatedRecommendation, err = recommendationModel.LikeRecommendation(uid, data.RecommendationID, recommendation); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	logModel := models.NewLogsModel(rn.Database)
+
+	go logModel.CreateLog(uid, requests.CreateLog{
+		LogType:          models.RecommendationLogType,
+		LogAction:        models.UpdateLogAction,
+		LogActionDetails: "Vote",
+		ContentID:        recommendation.ContentID,
+		ContentTitle:     recommendation.Content.TitleOriginal,
+		ContentType:      recommendation.ContentType,
+	})
+
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully liked.", "data": updatedRecommendation})
+}
+
 // Delete Recommendation
 // @Summary Delete Recommendation
 // @Description Delete Recommendation

@@ -16,14 +16,15 @@ func recommendationRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddlewar
 	{
 		recommendation.POST("", recommendationController.CreateRecommendation)
 		recommendation.DELETE("", recommendationController.DeleteRecommendationByID)
-		// recommendation.GET("/liked", reviewController.GetLikedReviews)
+		// recommendation.GET("/liked", recommendationController.GetLikedReviews)
 		recommendation.GET("/profile", recommendationController.GetRecommendationsByUserID)
-		// recommendation.PATCH("", reviewController.UpdateReview)
-		// recommendation.PATCH("/like", reviewController.VoteReview)
+		// recommendation.PATCH("", recommendationController.UpdateReview)
+		recommendation.PATCH("/like", recommendationController.LikeRecommendation)
 	}
 
 	recommendationOptional := router.Group("/recommendation").Use(helpers.OptionalTokenCheck)
 	{
 		recommendationOptional.GET("", recommendationController.GetRecommendationsByContentID)
+		recommendationOptional.GET("/social", recommendationController.GetRecommendationsForSocial)
 	}
 }

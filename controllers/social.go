@@ -21,10 +21,11 @@ func NewSocialController(mongoDB *db.MongoDB) SocialController {
 }
 
 type SocialResult struct {
-	PopularReviews []responses.ReviewDetails
-	CustomLists    []responses.CustomList
-	Leaderboard    []responses.Leaderboard
-	Error          error
+	PopularReviews  []responses.ReviewDetails
+	Recommendations []responses.RecommendationWithContent
+	CustomLists     []responses.CustomList
+	Leaderboard     []responses.Leaderboard
+	Error           error
 }
 
 // Get Socials
@@ -37,9 +38,7 @@ type SocialResult struct {
 // @Failure 500 {string} string
 // @Router /social [get]
 func (s *SocialController) GetSocials(c *gin.Context) {
-	reviewModel := models.NewReviewModel(s.Database)
 	userModel := models.NewUserModel(s.Database)
-	customListModel := models.NewCustomListModel(s.Database)
 
 	uid, ok := c.Get("uuid")
 
@@ -61,6 +60,7 @@ func (s *SocialController) GetSocials(c *gin.Context) {
 				Page: 1,
 			}
 
+			reviewModel := models.NewReviewModel(s.Database)
 			if ok && uid != nil {
 				userId := uid.(string)
 				popularReviews, _, err = reviewModel.GetReviewsIndependentFromContent(&userId, sortRequest)
@@ -89,6 +89,7 @@ func (s *SocialController) GetSocials(c *gin.Context) {
 				Sort: "popularity",
 			}
 
+			customListModel := models.NewCustomListModel(s.Database)
 			if ok && uid != nil {
 				userId := uid.(string)
 				customLists, err = customListModel.GetCustomListsByUserID(&userId, sortCustomListUID, true, true)
@@ -119,9 +120,39 @@ func (s *SocialController) GetSocials(c *gin.Context) {
 			leaderboardCh <- leaderboard
 		}()
 
+		recommendationCh := make(chan []responses.RecommendationWithContent)
+		go func() {
+			var (
+				err             error
+				recommendations []responses.RecommendationWithContent
+			)
+			sortRecommendations := requests.SortRecommendationsForSocial{
+				Sort: "popularity",
+				Page: 1,
+			}
+
+			recommendationModel := models.NewRecommendationModel(s.Database)
+			if ok && uid != nil {
+				var userId string = uid.(string)
+				recommendations, _, err = recommendationModel.GetRecommendationsForSocial(userId, false, sortRecommendations)
+				if err != nil {
+					resultCh <- SocialResult{Error: err}
+					return
+				}
+			} else {
+				recommendations, _, err = recommendationModel.GetRecommendationsForSocial("", true, sortRecommendations)
+				if err != nil {
+					resultCh <- SocialResult{Error: err}
+					return
+				}
+			}
+			recommendationCh <- recommendations
+		}()
+
 		socialResult.PopularReviews = <-reviewCh
 		socialResult.CustomLists = <-customListCh
 		socialResult.Leaderboard = <-leaderboardCh
+		socialResult.Recommendations = <-recommendationCh
 
 		resultCh <- socialResult
 	}()
@@ -133,8 +164,9 @@ func (s *SocialController) GetSocials(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": responses.SocialPreview{
-		Reviews:     result.PopularReviews,
-		Leaderboard: result.Leaderboard,
-		CustomLists: result.CustomLists,
+		Reviews:         result.PopularReviews,
+		Leaderboard:     result.Leaderboard,
+		CustomLists:     result.CustomLists,
+		Recommendations: result.Recommendations,
 	}})
 }

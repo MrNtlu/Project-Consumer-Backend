@@ -717,6 +717,21 @@ definitions:
     - id
     - is_episode
     type: object
+  requests.LikeRecommendation:
+    properties:
+      id:
+        type: string
+      type:
+        enum:
+        - anime
+        - game
+        - movie
+        - tv
+        type: string
+    required:
+    - id
+    - type
+    type: object
   requests.LogStatInterval:
     properties:
       interval:
@@ -1079,6 +1094,28 @@ definitions:
     - page
     - sort
     - userID
+    type: object
+  requests.SortRecommendationsForSocial:
+    properties:
+      contentType:
+        enum:
+        - anime
+        - game
+        - movie
+        - tv
+        type: string
+      page:
+        minimum: 1
+        type: integer
+      sort:
+        enum:
+        - popularity
+        - latest
+        - oldest
+        type: string
+    required:
+    - page
+    - sort
     type: object
   requests.SortReview:
     properties:
@@ -2758,6 +2795,10 @@ definitions:
       leaderboard:
         items:
           $ref: '#/definitions/responses.Leaderboard'
+        type: array
+      recommendations:
+        items:
+          $ref: '#/definitions/responses.RecommendationWithContent'
         type: array
       reviews:
         items:
@@ -5299,6 +5340,47 @@ paths:
       summary: Create Recommendation
       tags:
       - recommendation
+  /recommendation/like:
+    patch:
+      consumes:
+      - application/json
+      description: Like Recommendation
+      parameters:
+      - description: Like Recommendation
+        in: body
+        name: likerecommendation
+        required: true
+        schema:
+          $ref: '#/definitions/requests.LikeRecommendation'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.RecommendationWithContent'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Like/Dislike Recommendation
+      tags:
+      - recommendation
   /recommendation/profile:
     get:
       consumes:
@@ -5334,6 +5416,43 @@ paths:
       security:
       - BearerAuth: []
       summary: Get Recommendations by User ID
+      tags:
+      - recommendation
+  /recommendation/social:
+    get:
+      consumes:
+      - application/json
+      description: Get Recommendations for Social
+      parameters:
+      - description: Sort Recommendation for Social
+        in: body
+        name: sortrecommendationforsocial
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortRecommendationsForSocial'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.RecommendationWithContent'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Recommendations for Social
       tags:
       - recommendation
   /review:

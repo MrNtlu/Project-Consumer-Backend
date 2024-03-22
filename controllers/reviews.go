@@ -672,6 +672,7 @@ func (r *ReviewController) VoteReview(c *gin.Context) {
 		LogAction:        models.UpdateLogAction,
 		LogActionDetails: "Vote",
 		ContentID:        review.ContentID,
+		ContentType:      review.ContentType,
 	})
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully liked.", "data": updatedReview})
