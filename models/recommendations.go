@@ -754,7 +754,7 @@ func (recommendationModel *RecommendationModel) GetRecommendationsForSocial(
 				"$lookup": bson.M{
 					"from": "tv-series",
 					"let": bson.M{
-						"content_id": "$obj_content_id",
+						"content_id": "$obj_recommendation_id",
 					},
 					"pipeline": bson.A{
 						bson.M{
