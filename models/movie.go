@@ -870,34 +870,14 @@ func (movieModel *MovieModel) GetPopularProductionCompanies() ([]responses.Strea
 func (movieModel *MovieModel) SearchMovieByTitle(data requests.Search) ([]responses.Movie, p.PaginationData, error) {
 	search := bson.M{"$search": bson.M{
 		"index": "movies_search",
-		"compound": bson.M{
-			"should": bson.A{
-				bson.M{
-					"text": bson.M{
-						"query": data.Search,
-						"path": bson.A{
-							"title_en",
-							"title_original",
-						},
-						"fuzzy": bson.M{
-							"maxEdits": 1,
-						},
-						"score": bson.M{
-							"boost": bson.M{
-								"value": 3,
-							},
-						},
-					},
-				},
-				bson.M{
-					"text": bson.M{
-						"query": data.Search,
-						"path":  "translations.title",
-						"fuzzy": bson.M{
-							"maxEdits": 1,
-						},
-					},
-				},
+		"text": bson.M{
+			"query": data.Search,
+			"path": bson.A{
+				"title_en",
+				"title_original",
+			},
+			"fuzzy": bson.M{
+				"maxEdits": 1,
 			},
 		},
 	}}

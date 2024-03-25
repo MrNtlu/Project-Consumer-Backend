@@ -4,7 +4,7 @@ type CreateRecommendation struct {
 	ContentID        string  `json:"content_id" binding:"required"`
 	RecommendationID string  `json:"recommendation_id" binding:"required"`
 	ContentType      string  `json:"content_type" binding:"required,oneof=anime game movie tv"`
-	Reason           *string `json:"reason" binding:"omitempty,min=6,max=1000"`
+	Reason           *string `json:"reason" binding:"omitempty,min=6,max=250"`
 }
 
 type LikeRecommendation struct {

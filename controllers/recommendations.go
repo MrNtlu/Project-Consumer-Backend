@@ -22,6 +22,8 @@ func NewRecommendationController(mongoDB *db.MongoDB) RecommendationController {
 	}
 }
 
+const errCannotRecommendSelf = "You cannot recommend a content for itself."
+
 // Create Recommendation
 // @Summary Create Recommendation
 // @Description Creates Recommendation
@@ -50,6 +52,14 @@ func (rn *RecommendationController) CreateRecommendation(c *gin.Context) {
 		recommendationTitleOriginal string
 		recommendationImage         string
 	)
+
+	if data.RecommendationID == data.ContentID {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": errCannotRecommendSelf,
+		})
+
+		return
+	}
 
 	switch data.ContentType {
 	case "anime":

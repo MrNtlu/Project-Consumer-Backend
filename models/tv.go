@@ -1053,7 +1053,10 @@ func (tvModel *TVModel) SearchTVSeriesByTitle(data requests.Search) ([]responses
 		"index": "tv_series_search",
 		"text": bson.M{
 			"query": data.Search,
-			"path":  bson.A{"title_en", "title_original", "translations.title"},
+			"path": bson.A{
+				"title_en",
+				"title_original",
+			},
 			"fuzzy": bson.M{
 				"maxEdits": 1,
 			},

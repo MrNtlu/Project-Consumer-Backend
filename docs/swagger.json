@@ -5987,7 +5987,7 @@
                 },
                 "reason": {
                     "type": "string",
-                    "maxLength": 1000,
+                    "maxLength": 250,
                     "minLength": 6
                 },
                 "recommendation_id": {
@@ -8725,12 +8725,6 @@
                 "top_rated": {
                     "type": "number"
                 },
-                "translations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.Translation"
-                    }
-                },
                 "videos": {
                     "type": "array",
                     "items": {
@@ -8822,12 +8816,6 @@
                 },
                 "tmdb_vote_count": {
                     "type": "integer"
-                },
-                "translations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.Translation"
-                    }
                 },
                 "videos": {
                     "type": "array",
@@ -9566,12 +9554,6 @@
                 "total_seasons": {
                     "type": "integer"
                 },
-                "translations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.Translation"
-                    }
-                },
                 "videos": {
                     "type": "array",
                     "items": {
@@ -9676,12 +9658,6 @@
                 "total_seasons": {
                     "type": "integer"
                 },
-                "translations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.Translation"
-                    }
-                },
                 "tv_list": {
                     "$ref": "#/definitions/responses.TVDetailsList"
                 },
@@ -9759,26 +9735,6 @@
                     "type": "string"
                 },
                 "title_original": {
-                    "type": "string"
-                }
-            }
-        },
-        "responses.Translation": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "lan_code": {
-                    "type": "string"
-                },
-                "lan_name": {
-                    "type": "string"
-                },
-                "lan_name_en": {
-                    "type": "string"
-                },
-                "title": {
                     "type": "string"
                 }
             }

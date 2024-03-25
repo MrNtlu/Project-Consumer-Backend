@@ -5990,7 +5990,7 @@ const docTemplate = `{
                 },
                 "reason": {
                     "type": "string",
-                    "maxLength": 1000,
+                    "maxLength": 250,
                     "minLength": 6
                 },
                 "recommendation_id": {
@@ -8728,12 +8728,6 @@ const docTemplate = `{
                 "top_rated": {
                     "type": "number"
                 },
-                "translations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.Translation"
-                    }
-                },
                 "videos": {
                     "type": "array",
                     "items": {
@@ -8825,12 +8819,6 @@ const docTemplate = `{
                 },
                 "tmdb_vote_count": {
                     "type": "integer"
-                },
-                "translations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.Translation"
-                    }
                 },
                 "videos": {
                     "type": "array",
@@ -9569,12 +9557,6 @@ const docTemplate = `{
                 "total_seasons": {
                     "type": "integer"
                 },
-                "translations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.Translation"
-                    }
-                },
                 "videos": {
                     "type": "array",
                     "items": {
@@ -9679,12 +9661,6 @@ const docTemplate = `{
                 "total_seasons": {
                     "type": "integer"
                 },
-                "translations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.Translation"
-                    }
-                },
                 "tv_list": {
                     "$ref": "#/definitions/responses.TVDetailsList"
                 },
@@ -9762,26 +9738,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "title_original": {
-                    "type": "string"
-                }
-            }
-        },
-        "responses.Translation": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "lan_code": {
-                    "type": "string"
-                },
-                "lan_name": {
-                    "type": "string"
-                },
-                "lan_name_en": {
-                    "type": "string"
-                },
-                "title": {
                     "type": "string"
                 }
             }

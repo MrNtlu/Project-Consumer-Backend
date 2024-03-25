@@ -505,7 +505,7 @@ definitions:
         - tv
         type: string
       reason:
-        maxLength: 1000
+        maxLength: 250
         minLength: 6
         type: string
       recommendation_id:
@@ -2378,10 +2378,6 @@ definitions:
         type: integer
       top_rated:
         type: number
-      translations:
-        items:
-          $ref: '#/definitions/responses.Translation'
-        type: array
       videos:
         items:
           $ref: '#/definitions/responses.Trailer'
@@ -2443,10 +2439,6 @@ definitions:
         type: number
       tmdb_vote_count:
         type: integer
-      translations:
-        items:
-          $ref: '#/definitions/responses.Translation'
-        type: array
       videos:
         items:
           $ref: '#/definitions/responses.Trailer'
@@ -2931,10 +2923,6 @@ definitions:
         type: integer
       total_seasons:
         type: integer
-      translations:
-        items:
-          $ref: '#/definitions/responses.Translation'
-        type: array
       videos:
         items:
           $ref: '#/definitions/responses.Trailer'
@@ -3004,10 +2992,6 @@ definitions:
         type: integer
       total_seasons:
         type: integer
-      translations:
-        items:
-          $ref: '#/definitions/responses.Translation'
-        type: array
       tv_list:
         $ref: '#/definitions/responses.TVDetailsList'
       videos:
@@ -3059,19 +3043,6 @@ definitions:
       name:
         type: string
       title_original:
-        type: string
-    type: object
-  responses.Translation:
-    properties:
-      description:
-        type: string
-      lan_code:
-        type: string
-      lan_name:
-        type: string
-      lan_name_en:
-        type: string
-      title:
         type: string
     type: object
   responses.User:

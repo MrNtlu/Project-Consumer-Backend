@@ -44,7 +44,6 @@ type TVSeries struct {
 	Seasons             []Season               `bson:"seasons" json:"seasons"`
 	Networks            []ProductionAndCompany `bson:"networks" json:"networks"`
 	Actors              []Actor                `bson:"actors" json:"actors"`
-	Translations        []Translation          `bson:"translations" json:"translations"`
 	Review              ReviewSummary          `bson:"reviews" json:"reviews"`
 }
 
@@ -71,7 +70,6 @@ type TVSeriesDetails struct {
 	Seasons             []Season               `bson:"seasons" json:"seasons"`
 	Networks            []ProductionAndCompany `bson:"networks" json:"networks"`
 	ProductionCompanies []ProductionAndCompany `bson:"production_companies" json:"production_companies"`
-	Translations        []Translation          `bson:"translations" json:"translations"`
 	Actors              []Actor                `bson:"actors" json:"actors"`
 	TVList              *TVDetailsList         `bson:"tv_list" json:"tv_list"`
 	WatchLater          *ConsumeLater          `bson:"watch_later" json:"watch_later"`
