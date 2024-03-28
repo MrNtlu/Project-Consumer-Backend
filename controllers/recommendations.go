@@ -442,6 +442,44 @@ func (rn *RecommendationController) GetRecommendationsForSocial(c *gin.Context) 
 	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": recommendations})
 }
 
+// Get Liked Recommendations
+// @Summary Get Liked Recommendations
+// @Description Get Liked Recommendations
+// @Tags recommendation
+// @Accept application/json
+// @Produce application/json
+// @Param sortreview body requests.SortReview true "Sort Review"
+// @Security BearerAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {object} responses.RecommendationWithContent
+// @Failure 404 {string} string
+// @Failure 500 {string} string
+// @Router /recommendation/liked [get]
+func (rn *RecommendationController) GetLikedRecommendations(c *gin.Context) {
+	var data requests.SortReview
+	if err := c.ShouldBindQuery(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": validatorErrorHandler(err),
+		})
+
+		return
+	}
+
+	recommendationModel := models.NewRecommendationModel(rn.Database)
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	recommendations, pagination, err := recommendationModel.GetLikedRecommendations(uid, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": recommendations})
+}
+
 // Like/Dislike Recommendation
 // @Summary Like/Dislike Recommendation
 // @Description Like Recommendation

@@ -1040,17 +1040,6 @@ definitions:
     required:
     - sort
     type: object
-  requests.SortLikedReview:
-    properties:
-      sort:
-        enum:
-        - popularity
-        - latest
-        - oldest
-        type: string
-    required:
-    - sort
-    type: object
   requests.SortRecommendation:
     properties:
       contentID:
@@ -3053,6 +3042,8 @@ definitions:
         $ref: '#/definitions/responses.Notification'
       can_change_username:
         type: boolean
+      created_at:
+        type: string
       email:
         type: string
       fcm_token:
@@ -3090,6 +3081,8 @@ definitions:
         items:
           $ref: '#/definitions/responses.ConsumeLater'
         type: array
+      created_at:
+        type: string
       custom_lists:
         items:
           $ref: '#/definitions/responses.CustomList'
@@ -5352,6 +5345,43 @@ paths:
       summary: Like/Dislike Recommendation
       tags:
       - recommendation
+  /recommendation/liked:
+    get:
+      consumes:
+      - application/json
+      description: Get Liked Recommendations
+      parameters:
+      - description: Sort Review
+        in: body
+        name: sortreview
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SortReview'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.RecommendationWithContent'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get Liked Recommendations
+      tags:
+      - recommendation
   /recommendation/profile:
     get:
       consumes:
@@ -5659,12 +5689,12 @@ paths:
       - application/json
       description: Get Liked by User
       parameters:
-      - description: Sort Liked Review
+      - description: Sort Review
         in: body
-        name: sortlikedreview
+        name: sortreview
         required: true
         schema:
-          $ref: '#/definitions/requests.SortLikedReview'
+          $ref: '#/definitions/requests.SortReview'
       - description: Authentication header
         in: header
         name: Authorization
@@ -6221,7 +6251,7 @@ paths:
             type: string
       security:
       - ApiKeyAuth: []
-      summary: Updates user image
+      summary: Change user image
       tags:
       - user
   /user/info:

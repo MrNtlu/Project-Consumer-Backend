@@ -1212,7 +1212,7 @@ func (reviewModel *ReviewModel) GetReviewDetails(uid *string, reviewID string) (
 	return responses.ReviewDetails{}, nil
 }
 
-func (reviewModel *ReviewModel) GetLikedReviews(uid string, data requests.SortLikedReview) ([]responses.ReviewWithContent, error) {
+func (reviewModel *ReviewModel) GetLikedReviews(uid string, data requests.SortReview) ([]responses.ReviewDetails, p.PaginationData, error) {
 	var (
 		sortType  string
 		sortOrder int8
@@ -1474,33 +1474,29 @@ func (reviewModel *ReviewModel) GetLikedReviews(uid string, data requests.SortLi
 		},
 	}}
 
-	sort := bson.M{"$sort": bson.M{
-		sortType: sortOrder,
-	}}
-
-	cursor, err := reviewModel.ReviewCollection.Aggregate(context.TODO(), bson.A{
-		match, set, lookup, unwind, facet, project, unwindReviews, replaceRoot,
-		unwindContent, group, sort,
-	})
+	paginatedData, err := p.New(reviewModel.ReviewCollection).Context(context.TODO()).Limit(reviewPagination).
+		Page(data.Page).Sort(sortType, sortOrder).Aggregate(
+		match, set, lookup, unwind, facet, project,
+		unwindReviews, replaceRoot, unwindContent, group,
+	)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"data": data.Sort,
+			"data": data,
 			"uid":  uid,
 		}).Error("failed to aggregate liked reviews: ", err)
 
-		return nil, fmt.Errorf("Failed to aggregate liked reviews.")
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to aggregate liked reviews.")
 	}
 
-	var reviewDetails []responses.ReviewWithContent
-	if err = cursor.All(context.TODO(), &reviewDetails); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"data": data.Sort,
-			"uid":  uid,
-		}).Error("failed to decode liked reviews: ", err)
-
-		return nil, fmt.Errorf("Failed to decode liked reviews.")
+	var reviews []responses.ReviewDetails
+	for _, raw := range paginatedData.Data {
+		var review *responses.ReviewDetails
+		if marshalErr := bson.Unmarshal(raw, &review); marshalErr == nil {
+			reviews = append(reviews, *review)
+		}
 	}
-	return reviewDetails, nil
+
+	return reviews, paginatedData.Pagination, nil
 }
 
 func (reviewModel *ReviewModel) GetReviewSummaryForDetails(contentID, uid string, contentExternalID *string, contentExternalIntID *int64) (responses.ReviewSummary, error) {

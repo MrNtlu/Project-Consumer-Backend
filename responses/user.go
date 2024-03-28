@@ -1,6 +1,8 @@
 package responses
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -37,6 +39,7 @@ type User struct {
 	CanChangeUsername bool               `bson:"can_change_username" json:"can_change_username"`
 	AppNotification   Notification       `bson:"app_notification" json:"app_notification"`
 	Streak            int                `bson:"streak" json:"streak"`
+	CreatedAt         time.Time          `bson:"created_at" json:"created_at"`
 }
 
 type Notification struct {
@@ -86,6 +89,7 @@ type UserInfo struct {
 	TVTotalScore            float64             `bson:"tv_total_score" json:"tv_total_score"`
 	AnimeTotalScore         float64             `bson:"anime_total_score" json:"anime_total_score"`
 	GameTotalScore          float64             `bson:"game_total_score" json:"game_total_score"`
+	CreatedAt               time.Time           `bson:"created_at" json:"created_at"`
 	LegendContent           []UserInfoContent   `bson:"legend_content" json:"legend_content"`
 	ConsumeLater            []ConsumeLater      `bson:"consume_later" json:"consume_later"`
 	Reviews                 []ReviewWithContent `bson:"reviews" json:"reviews"`

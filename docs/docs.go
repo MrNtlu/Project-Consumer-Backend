@@ -3353,6 +3353,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/recommendation/liked": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get Liked Recommendations",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recommendation"
+                ],
+                "summary": "Get Liked Recommendations",
+                "parameters": [
+                    {
+                        "description": "Sort Review",
+                        "name": "sortreview",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.SortReview"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.RecommendationWithContent"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/recommendation/profile": {
             "get": {
                 "security": [
@@ -3843,12 +3901,12 @@ const docTemplate = `{
                 "summary": "Get Liked by User",
                 "parameters": [
                     {
-                        "description": "Sort Liked Review",
-                        "name": "sortlikedreview",
+                        "description": "Sort Review",
+                        "name": "sortreview",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/requests.SortLikedReview"
+                            "$ref": "#/definitions/requests.SortReview"
                         }
                     },
                     {
@@ -4675,7 +4733,7 @@ const docTemplate = `{
                 "tags": [
                     "user"
                 ],
-                "summary": "Updates user image",
+                "summary": "Change user image",
                 "parameters": [
                     {
                         "description": "Change Image",
@@ -6729,22 +6787,6 @@ const docTemplate = `{
                         "oldest",
                         "alphabetical",
                         "unalphabetical"
-                    ]
-                }
-            }
-        },
-        "requests.SortLikedReview": {
-            "type": "object",
-            "required": [
-                "sort"
-            ],
-            "properties": {
-                "sort": {
-                    "type": "string",
-                    "enum": [
-                        "popularity",
-                        "latest",
-                        "oldest"
                     ]
                 }
             }
@@ -9754,6 +9796,9 @@ const docTemplate = `{
                 "can_change_username": {
                     "type": "boolean"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
@@ -9808,6 +9853,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/responses.ConsumeLater"
                     }
+                },
+                "created_at": {
+                    "type": "string"
                 },
                 "custom_lists": {
                     "type": "array",

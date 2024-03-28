@@ -55,11 +55,6 @@ func createRecommendationObject(
 	}
 }
 
-/*
-- Change Recommendation
-- Liked Recommendations
-*/
-
 func (recommendationModel *RecommendationModel) CreateRecommendation(
 	uid string, data requests.CreateRecommendation,
 ) (Recommendation, error) {
@@ -569,6 +564,337 @@ func (recommendationModel *RecommendationModel) GetRecommendationsByUserID(
 		}).Error("failed to aggregate recommendations: ", err)
 
 		return nil, p.PaginationData{}, fmt.Errorf("Failed to aggregate recommendations.")
+	}
+
+	var recommendations []responses.RecommendationWithContent
+	for _, raw := range paginatedData.Data {
+		var recommendation *responses.RecommendationWithContent
+		if marshalErr := bson.Unmarshal(raw, &recommendation); marshalErr == nil {
+			recommendations = append(recommendations, *recommendation)
+		}
+	}
+
+	return recommendations, paginatedData.Pagination, nil
+}
+
+func (recommendationModel *RecommendationModel) GetLikedRecommendations(uid string, data requests.SortReview) ([]responses.RecommendationWithContent, p.PaginationData, error) {
+	var (
+		sortType  string
+		sortOrder int8
+	)
+
+	switch data.Sort {
+	case "popularity":
+		sortType = "popularity"
+		sortOrder = -1
+	case "latest":
+		sortType = "created_at"
+		sortOrder = -1
+	case "oldest":
+		sortType = "created_at"
+		sortOrder = 1
+	}
+
+	match := bson.M{"$match": bson.M{
+		"likes": bson.M{
+			"$in": bson.A{uid},
+		},
+	}}
+
+	set := bson.M{"$set": bson.M{
+		"is_author": false,
+		"is_liked":  true,
+		"obj_user_id": bson.M{
+			"$toObjectId": "$user_id",
+		},
+		"obj_content_id": bson.M{
+			"$toObjectId": "$content_id",
+		},
+		"obj_recommendation_id": bson.M{
+			"$toObjectId": "$recommendation_id",
+		},
+		"popularity": bson.M{
+			"$size": "$likes",
+		},
+	}}
+
+	lookup := bson.M{"$lookup": bson.M{
+		"from":         "users",
+		"localField":   "obj_user_id",
+		"foreignField": "_id",
+		"as":           "author",
+	}}
+
+	unwind := bson.M{"$unwind": bson.M{
+		"path":                       "$author",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	facet := bson.M{"$facet": bson.M{
+		"movies": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "movie"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "movies",
+					"let": bson.M{
+						"content_id": "$obj_content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "movies",
+					"let": bson.M{
+						"content_id": "$obj_recommendation_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "recommendation_content",
+				},
+			},
+		},
+		"tv": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "tv"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "tv-series",
+					"let": bson.M{
+						"content_id": "$obj_content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "tv-series",
+					"let": bson.M{
+						"content_id": "$obj_content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "recommendation_content",
+				},
+			},
+		},
+		"anime": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "anime"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "animes",
+					"let": bson.M{
+						"content_id": "$obj_content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "animes",
+					"let": bson.M{
+						"content_id": "$obj_recommendation_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       1,
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "recommendation_content",
+				},
+			},
+		},
+		"games": bson.A{
+			bson.M{
+				"$match": bson.M{"content_type": "game"},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "games",
+					"let": bson.M{
+						"content_id": "$obj_content_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       "$title",
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "content",
+				},
+			},
+			bson.M{
+				"$lookup": bson.M{
+					"from": "games",
+					"let": bson.M{
+						"content_id": "$obj_recommendation_id",
+					},
+					"pipeline": bson.A{
+						bson.M{
+							"$match": bson.M{
+								"$expr": bson.M{
+									"$eq": bson.A{"$_id", "$$content_id"},
+								},
+							},
+						},
+						bson.M{
+							"$project": bson.M{
+								"title_en":       "$title",
+								"title_original": 1,
+								"image_url":      1,
+							},
+						},
+					},
+					"as": "recommendation_content",
+				},
+			},
+		},
+	}}
+
+	project := bson.M{"$project": bson.M{
+		"recommendations": bson.M{
+			"$concatArrays": bson.A{"$movies", "$tv", "$anime", "$games"},
+		},
+	}}
+
+	unwindRecommendations := bson.M{"$unwind": bson.M{
+		"path":                       "$recommendations",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	replaceRoot := bson.M{"$replaceRoot": bson.M{
+		"newRoot": "$recommendations",
+	}}
+
+	unwindContent := bson.M{"$unwind": bson.M{
+		"path":                       "$content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	unwindRecommendationContent := bson.M{"$unwind": bson.M{
+		"path":                       "$recommendation_content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	paginatedData, err := p.New(recommendationModel.RecommendationCollection).Context(context.TODO()).Limit(recommendationPagination).
+		Page(data.Page).Sort(sortType, sortOrder).Aggregate(
+		match, set, lookup, unwind, facet, project,
+		unwindRecommendations, replaceRoot,
+		unwindContent, unwindRecommendationContent,
+	)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"data": data,
+			"uid":  uid,
+		}).Error("failed to aggregate liked recommendations: ", err)
+
+		return nil, p.PaginationData{}, fmt.Errorf("Failed to aggregate liked recommendations.")
 	}
 
 	var recommendations []responses.RecommendationWithContent

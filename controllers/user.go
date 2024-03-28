@@ -671,8 +671,8 @@ func (u *UserController) UpdateFCMToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated FCM Token."})
 }
 
-// Update User Image
-// @Summary Updates user image
+// Change User Image
+// @Summary Change user image
 // @Description User can update their image
 // @Tags user
 // @Accept application/json
@@ -683,7 +683,7 @@ func (u *UserController) UpdateFCMToken(c *gin.Context) {
 // @Success 200 {string} string
 // @Failure 500 {string} string
 // @Router /user/image [patch]
-func (u *UserController) UpdateUser(c *gin.Context) {
+func (u *UserController) ChangeUserImage(c *gin.Context) {
 	var data requests.ChangeImage
 	if shouldReturn := bindJSONData(&data, c); shouldReturn {
 		return

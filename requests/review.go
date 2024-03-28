@@ -31,10 +31,6 @@ type SortReview struct {
 	Page int64  `form:"page" json:"page" binding:"required,number,min=1"`
 }
 
-type SortLikedReview struct {
-	Sort string `form:"sort" binding:"required,oneof=popularity latest oldest"`
-}
-
 type SortReviewByUserID struct {
 	UserID string `form:"user_id" binding:"required"`
 	Sort   string `form:"sort" binding:"required,oneof=popularity latest oldest"`

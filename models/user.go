@@ -28,8 +28,8 @@ func NewUserModel(mongoDB *db.MongoDB) *UserModel {
 	}
 }
 
-const legendMovieThreshold = 7
-const legendTVThreshold = 2
+const legendMovieThreshold = 6
+const legendTVThreshold = 3
 const legendAnimeThreshold = 3
 const legendMangaThreshold = 3
 const legendGameThreshold = 3
@@ -1295,6 +1295,7 @@ func (userModel *UserModel) GetUserInfo(username, uid string, isUserName bool) (
 		"tv_count":        "$tv_count",
 		"game_count":      "$game_count",
 		"fcm_token":       "$fcm_token",
+		"created_at":      "$created_at",
 		"legend_anime_list": bson.M{
 			"$map": bson.M{
 				"input": bson.M{
@@ -1424,6 +1425,14 @@ func (userModel *UserModel) GetUserInfo(username, uid string, isUserName bool) (
 								},
 							},
 						},
+						bson.M{
+							"$sort": bson.M{
+								"times_finished": -1,
+							},
+						},
+						bson.M{
+							"$limit": 10,
+						},
 					},
 					"as": "legend_movie_list",
 				},
@@ -1465,6 +1474,14 @@ func (userModel *UserModel) GetUserInfo(username, uid string, isUserName bool) (
 								},
 							},
 						},
+						bson.M{
+							"$sort": bson.M{
+								"times_finished": -1,
+							},
+						},
+						bson.M{
+							"$limit": 10,
+						},
 					},
 					"as": "legend_tv_list",
 				},
@@ -1505,6 +1522,14 @@ func (userModel *UserModel) GetUserInfo(username, uid string, isUserName bool) (
 									},
 								},
 							},
+						},
+						bson.M{
+							"$sort": bson.M{
+								"times_finished": -1,
+							},
+						},
+						bson.M{
+							"$limit": 10,
 						},
 					},
 					"as": "legend_anime_list",
@@ -1558,6 +1583,14 @@ func (userModel *UserModel) GetUserInfo(username, uid string, isUserName bool) (
 									},
 								},
 							},
+						},
+						bson.M{
+							"$sort": bson.M{
+								"times_finished": -1,
+							},
+						},
+						bson.M{
+							"$limit": 10,
 						},
 					},
 					"as": "legend_game_list",

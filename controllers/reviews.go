@@ -461,7 +461,7 @@ func (r *ReviewController) GetReviewsByContentID(c *gin.Context) {
 // @Tags review
 // @Accept application/json
 // @Produce application/json
-// @Param sortlikedreview body requests.SortLikedReview true "Sort Liked Review"
+// @Param sortreview body requests.SortReview true "Sort Review"
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
 // @Success 200 {array} responses.ReviewWithContent
@@ -469,7 +469,7 @@ func (r *ReviewController) GetReviewsByContentID(c *gin.Context) {
 // @Failure 500 {string} string
 // @Router /review/liked [get]
 func (r *ReviewController) GetLikedReviews(c *gin.Context) {
-	var data requests.SortLikedReview
+	var data requests.SortReview
 	if err := c.ShouldBindQuery(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": validatorErrorHandler(err),
@@ -481,7 +481,7 @@ func (r *ReviewController) GetLikedReviews(c *gin.Context) {
 	uid := jwt.ExtractClaims(c)["id"].(string)
 	reviewModel := models.NewReviewModel(r.Database)
 
-	reviews, err := reviewModel.GetLikedReviews(uid, data)
+	reviews, pagination, err := reviewModel.GetLikedReviews(uid, data)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -490,7 +490,7 @@ func (r *ReviewController) GetLikedReviews(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": reviews})
+	c.JSON(http.StatusOK, gin.H{"pagination": pagination, "data": reviews})
 }
 
 // Get User Reviews
