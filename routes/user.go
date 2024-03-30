@@ -10,8 +10,14 @@ import (
 
 func userRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongoDB *db.MongoDB) {
 	userController := controllers.NewUserController(mongoDB)
+	feedbackController := controllers.NewFeedbackController(mongoDB)
 
 	router.GET("/confirm-password-reset", userController.ConfirmPasswordReset)
+
+	feedback := router.Group("/feedback").Use(jwtToken.MiddlewareFunc())
+	{
+		feedback.POST("/feedback", feedbackController.SendFeedback)
+	}
 
 	auth := router.Group("/auth")
 	{
@@ -38,7 +44,8 @@ func userRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongoDB
 			user.DELETE("/delete", userController.DeleteUser)
 			user.PATCH("/password", userController.ChangePassword)
 			user.PATCH("/image", userController.ChangeUserImage)
-			user.PATCH("/notification", userController.ChangeNotificationPreference)
+			user.PATCH("/notification/app", userController.ChangeAppNotificationPreference)
+			user.PATCH("/notification/mail", userController.ChangeMailNotificationPreference)
 			user.PATCH("/token", userController.UpdateFCMToken)
 			user.PATCH("/membership", userController.ChangeUserMembership)
 			user.PATCH("/username", userController.ChangeUsername)

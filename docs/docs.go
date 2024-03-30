@@ -1493,6 +1493,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/feedback": {
+            "post": {
+                "description": "Send feedback",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feedback"
+                ],
+                "summary": "Send feedback",
+                "parameters": [
+                    {
+                        "description": "Feedback",
+                        "name": "feedback",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.Feedback"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/game": {
             "get": {
                 "description": "Returns games by sort and filter",
@@ -4857,14 +4897,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/notification": {
+        "/user/notification/app": {
             "patch": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Users can change their notification preference",
+                "description": "Users can change their app notification preference",
                 "consumes": [
                     "application/json"
                 ],
@@ -4874,7 +4914,59 @@ const docTemplate = `{
                 "tags": [
                     "user"
                 ],
-                "summary": "Change User Notification Preference",
+                "summary": "Change User App Notification Preference",
+                "parameters": [
+                    {
+                        "description": "Set notification",
+                        "name": "changenotification",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ChangeNotification"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/notification/mail": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Users can change their mail notification preference",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Change User Mail Notification Preference",
                 "parameters": [
                     {
                         "description": "Set notification",
@@ -5535,10 +5627,16 @@ const docTemplate = `{
         "models.Notification": {
             "type": "object",
             "properties": {
-                "friend_request": {
+                "follows": {
+                    "type": "boolean"
+                },
+                "promotions": {
                     "type": "boolean"
                 },
                 "review_likes": {
+                    "type": "boolean"
+                },
+                "updates": {
                     "type": "boolean"
                 }
             }
@@ -5768,14 +5866,22 @@ const docTemplate = `{
         "requests.ChangeNotification": {
             "type": "object",
             "required": [
-                "friend_request",
-                "review_likes"
+                "follows",
+                "promotions",
+                "review_likes",
+                "updates"
             ],
             "properties": {
-                "friend_request": {
+                "follows": {
+                    "type": "boolean"
+                },
+                "promotions": {
                     "type": "boolean"
                 },
                 "review_likes": {
+                    "type": "boolean"
+                },
+                "updates": {
                     "type": "boolean"
                 }
             }
@@ -6193,6 +6299,17 @@ const docTemplate = `{
                         "tv",
                         "manga"
                     ]
+                }
+            }
+        },
+        "requests.Feedback": {
+            "type": "object",
+            "required": [
+                "feedback"
+            ],
+            "properties": {
+                "feedback": {
+                    "type": "string"
                 }
             }
         },

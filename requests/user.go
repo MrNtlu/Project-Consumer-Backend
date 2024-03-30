@@ -32,8 +32,10 @@ type ChangeFCMToken struct {
 }
 
 type ChangeNotification struct {
-	FriendRequest *bool `json:"friend_request" binding:"required"`
-	ReviewLikes   *bool `json:"review_likes" binding:"required"`
+	Promotions  *bool `json:"promotions" binding:"required"`
+	Updates     *bool `json:"updates" binding:"required"`
+	Follows     *bool `json:"follows" binding:"required"`
+	ReviewLikes *bool `json:"review_likes" binding:"required"`
 }
 
 type ChangeMembership struct {

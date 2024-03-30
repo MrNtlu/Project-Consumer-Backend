@@ -149,9 +149,13 @@ definitions:
     type: object
   models.Notification:
     properties:
-      friend_request:
+      follows:
+        type: boolean
+      promotions:
         type: boolean
       review_likes:
+        type: boolean
+      updates:
         type: boolean
     type: object
   models.TVSeriesWatchList:
@@ -306,13 +310,19 @@ definitions:
     type: object
   requests.ChangeNotification:
     properties:
-      friend_request:
+      follows:
+        type: boolean
+      promotions:
         type: boolean
       review_likes:
         type: boolean
+      updates:
+        type: boolean
     required:
-    - friend_request
+    - follows
+    - promotions
     - review_likes
+    - updates
     type: object
   requests.ChangePassword:
     properties:
@@ -617,6 +627,13 @@ definitions:
     required:
     - id
     - type
+    type: object
+  requests.Feedback:
+    properties:
+      feedback:
+        type: string
+    required:
+    - feedback
     type: object
   requests.FilterByStreamingPlatform:
     properties:
@@ -4143,6 +4160,32 @@ paths:
       summary: Get Custom List
       tags:
       - custom_list
+  /feedback:
+    post:
+      consumes:
+      - application/json
+      description: Send feedback
+      parameters:
+      - description: Feedback
+        in: body
+        name: feedback
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Feedback'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Send feedback
+      tags:
+      - feedback
   /game:
     get:
       consumes:
@@ -6311,11 +6354,11 @@ paths:
       summary: Change User Membership
       tags:
       - user
-  /user/notification:
+  /user/notification/app:
     patch:
       consumes:
       - application/json
-      description: Users can change their notification preference
+      description: Users can change their app notification preference
       parameters:
       - description: Set notification
         in: body
@@ -6341,7 +6384,40 @@ paths:
             type: string
       security:
       - ApiKeyAuth: []
-      summary: Change User Notification Preference
+      summary: Change User App Notification Preference
+      tags:
+      - user
+  /user/notification/mail:
+    patch:
+      consumes:
+      - application/json
+      description: Users can change their mail notification preference
+      parameters:
+      - description: Set notification
+        in: body
+        name: changenotification
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ChangeNotification'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Change User Mail Notification Preference
       tags:
       - user
   /user/password:

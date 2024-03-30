@@ -59,8 +59,10 @@ type User struct {
 }
 
 type Notification struct {
-	FriendRequest bool `bson:"friend_request" json:"friend_request"`
-	ReviewLikes   bool `bson:"review_likes" json:"review_likes"`
+	Promotions  bool `bson:"promotions" json:"promotions"`
+	Updates     bool `bson:"updates" json:"updates"`
+	Follows     bool `bson:"follows" json:"follows"`
+	ReviewLikes bool `bson:"review_likes" json:"review_likes"`
 }
 
 // Create
@@ -79,8 +81,8 @@ func createUserObject(emailAddress, username, password, fcmToken, image string) 
 		IsOAuthUser:       false,
 		IsBanned:          false,
 		CanChangeUsername: false,
-		AppNotification:   createNotificationObject(true, true),
-		MailNotification:  createNotificationObject(false, false),
+		AppNotification:   createNotificationObject(true, true, true, true),
+		MailNotification:  createNotificationObject(true, true, false, false),
 		FCMToken:          fcmToken,
 	}
 }
@@ -99,18 +101,20 @@ func createOAuthUserObject(emailAddress, username, fcmToken, image string, refre
 		IsOAuthUser:       true,
 		IsBanned:          false,
 		CanChangeUsername: true,
-		AppNotification:   createNotificationObject(true, true),
-		MailNotification:  createNotificationObject(false, false),
+		AppNotification:   createNotificationObject(true, true, true, true),
+		MailNotification:  createNotificationObject(true, true, false, false),
 		OAuthType:         &oAuthType,
 		RefreshToken:      refreshToken,
 		FCMToken:          fcmToken,
 	}
 }
 
-func createNotificationObject(friendRequest, reviewLikes bool) Notification {
+func createNotificationObject(promotions, updates, follows, reviewLikes bool) Notification {
 	return Notification{
-		FriendRequest: friendRequest,
-		ReviewLikes:   reviewLikes,
+		Promotions:  promotions,
+		Updates:     updates,
+		Follows:     follows,
+		ReviewLikes: reviewLikes,
 	}
 }
 

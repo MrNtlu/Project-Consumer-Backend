@@ -851,7 +851,7 @@ func (u *UserController) SendFriendRequest(c *gin.Context) {
 		return
 	}
 
-	if receiver.AppNotification.FriendRequest {
+	if receiver.AppNotification.Follows {
 		go helpers.SendNotification(
 			receiver.FCMToken,
 			"New Friend Request",
@@ -950,9 +950,9 @@ func (u *UserController) ChangeUserMembership(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated membership."})
 }
 
-// Change Notification Preference
-// @Summary Change User Notification Preference
-// @Description Users can change their notification preference
+// Change App Notification Preference
+// @Summary Change User App Notification Preference
+// @Description Users can change their app notification preference
 // @Tags user
 // @Accept application/json
 // @Produce application/json
@@ -961,8 +961,8 @@ func (u *UserController) ChangeUserMembership(c *gin.Context) {
 // @Param Authorization header string true "Authentication header"
 // @Success 200 {string} string
 // @Failure 500 {string} string
-// @Router /user/notification [patch]
-func (u *UserController) ChangeNotificationPreference(c *gin.Context) {
+// @Router /user/notification/app [patch]
+func (u *UserController) ChangeAppNotificationPreference(c *gin.Context) {
 	var data requests.ChangeNotification
 	if shouldReturn := bindJSONData(&data, c); shouldReturn {
 		return
@@ -980,7 +980,9 @@ func (u *UserController) ChangeNotificationPreference(c *gin.Context) {
 		return
 	}
 
-	user.AppNotification.FriendRequest = *data.FriendRequest
+	user.AppNotification.Promotions = *data.Promotions
+	user.AppNotification.Updates = *data.Updates
+	user.AppNotification.Follows = *data.Follows
 	user.AppNotification.ReviewLikes = *data.ReviewLikes
 
 	if err = userModel.UpdateUser(user); err != nil {
@@ -991,7 +993,53 @@ func (u *UserController) ChangeNotificationPreference(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully changed notification preference."})
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully changed app notification preference."})
+}
+
+// Change Mail Notification Preference
+// @Summary Change User Mail Notification Preference
+// @Description Users can change their mail notification preference
+// @Tags user
+// @Accept application/json
+// @Produce application/json
+// @Param changenotification body requests.ChangeNotification true "Set notification"
+// @Security ApiKeyAuth
+// @Param Authorization header string true "Authentication header"
+// @Success 200 {string} string
+// @Failure 500 {string} string
+// @Router /user/notification/mail [patch]
+func (u *UserController) ChangeMailNotificationPreference(c *gin.Context) {
+	var data requests.ChangeNotification
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	userModel := models.NewUserModel(u.Database)
+
+	user, err := userModel.FindUserByID(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	user.MailNotification.Promotions = *data.Promotions
+	user.MailNotification.Updates = *data.Updates
+	user.MailNotification.Follows = *data.Follows
+	user.MailNotification.ReviewLikes = *data.ReviewLikes
+
+	if err = userModel.UpdateUser(user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully changed mail notification preference."})
 }
 
 // Change Password

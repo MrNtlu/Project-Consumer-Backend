@@ -304,10 +304,9 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 		movieList, tvList, animeList, gameList = parseResponseString(resp.Recommendation)
 		createdAt = time.Now().UTC()
 
-		if aiSuggestion.UserID == "" {
-			go aiSuggestionsModel.CreateAISuggestions(uid, movieList, tvList, animeList, gameList)
-		} else {
-			if _, err := aiSuggestionsModel.DeleteAISuggestionsByUserID(uid); err != nil {
+		if len(movieList) == 0 && len(tvList) == 0 && len(animeList) == 0 && len(gameList) == 0 {
+			resp, err = openAIModel.GetRecommendation(inputString)
+			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": err.Error(),
 				})
@@ -315,7 +314,29 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 				return
 			}
 
-			go aiSuggestionsModel.CreateAISuggestions(uid, movieList, tvList, animeList, gameList)
+			movieList, tvList, animeList, gameList = parseResponseString(resp.Recommendation)
+		}
+
+		if len(movieList) == 0 && len(tvList) == 0 && len(animeList) == 0 && len(gameList) == 0 {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Couldn't generate new, sorry.",
+			})
+
+			return
+		} else {
+			if aiSuggestion.UserID == "" {
+				go aiSuggestionsModel.CreateAISuggestions(uid, movieList, tvList, animeList, gameList)
+			} else {
+				if _, err := aiSuggestionsModel.DeleteAISuggestionsByUserID(uid); err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{
+						"error": err.Error(),
+					})
+
+					return
+				}
+
+				go aiSuggestionsModel.CreateAISuggestions(uid, movieList, tvList, animeList, gameList)
+			}
 		}
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{
