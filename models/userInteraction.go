@@ -197,6 +197,7 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 								"description":    1,
 								"genres":         1,
 								"score":          "$tmdb_vote",
+								"streaming":      "$streaming.streaming_platforms.name",
 								"release_date": bson.M{
 									"$toDate": "$release_date",
 								},
@@ -237,6 +238,7 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 								"description":    1,
 								"genres":         1,
 								"score":          "$tmdb_vote",
+								"streaming":      "$streaming.streaming_platforms.name",
 								"release_date": bson.M{
 									"$toDate": "$first_air_date",
 								},
@@ -277,6 +279,7 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 								"description":    1,
 								"genres":         "$genres.name",
 								"score":          "$mal_score",
+								"streaming":      "$streaming.name",
 								"release_date": bson.M{
 									"$toDate": "$aired.from",
 								},
@@ -351,18 +354,56 @@ func (userInteractionModel *UserInteractionModel) GetConsumeLater(uid string, da
 		"preserveNullAndEmptyArrays": false,
 	}}
 
-	matchGenreFields := bson.M{}
+	matchFilterFields := bson.M{}
 	if data.Genre != nil {
-		matchGenreFields["content.genres"] = bson.M{
+		matchFilterFields["content.genres"] = bson.M{
 			"$in": bson.A{data.Genre},
 		}
 	}
 
-	matchGenre := bson.M{"$match": matchGenreFields}
+	if data.StreamingPlatform != nil {
+		matchFilterFields["content.streaming"] = bson.M{
+			"$in": bson.A{data.StreamingPlatform},
+		}
+	}
 
-	cursor, err := userInteractionModel.ConsumeLaterCollection.Aggregate(context.TODO(), bson.A{
-		match, set, facet, project, unwind, replaceRoot, unwindContent, sort, matchGenre,
-	})
+	matchFilter := bson.M{"$match": matchFilterFields}
+
+	var aggregationList bson.A
+	if data.StreamingPlatform != nil {
+		streamingSet := bson.M{"$set": bson.M{
+			"content.streaming": bson.M{
+				"$map": bson.M{
+					"input": "$content.streaming",
+					"as":    "stream",
+					"in":    bson.M{"$arrayElemAt": bson.A{"$$stream", 0}},
+				},
+			},
+		}}
+
+		streamingDuplicateSet := bson.M{"$set": bson.M{
+			"content.streaming": bson.M{
+				"$reduce": bson.M{
+					"input":        "$content.streaming",
+					"initialValue": bson.A{},
+					"in":           bson.M{"$setUnion": bson.A{"$$value", bson.A{"$$this"}}},
+				},
+			},
+		}}
+
+		aggregationList = bson.A{
+			match, set, facet, project, unwind,
+			replaceRoot, unwindContent, streamingSet,
+			streamingDuplicateSet, matchFilter, sort,
+		}
+	} else {
+		aggregationList = bson.A{
+			match, set, facet, project, unwind,
+			replaceRoot, unwindContent, matchFilter, sort,
+		}
+	}
+
+	cursor, err := userInteractionModel.ConsumeLaterCollection.Aggregate(context.TODO(), aggregationList)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid":  uid,

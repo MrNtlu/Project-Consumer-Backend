@@ -6709,6 +6709,9 @@
                         "soon",
                         "later"
                     ]
+                },
+                "streamingPlatform": {
+                    "type": "string"
                 }
             }
         },

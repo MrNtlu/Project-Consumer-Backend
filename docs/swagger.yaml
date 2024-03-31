@@ -914,6 +914,8 @@ definitions:
         - soon
         - later
         type: string
+      streamingPlatform:
+        type: string
     required:
     - sort
     type: object

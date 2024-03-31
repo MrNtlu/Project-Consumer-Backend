@@ -6712,6 +6712,9 @@ const docTemplate = `{
                         "soon",
                         "later"
                     ]
+                },
+                "streamingPlatform": {
+                    "type": "string"
                 }
             }
         },
