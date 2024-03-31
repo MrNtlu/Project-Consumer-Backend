@@ -394,14 +394,26 @@ func (userListModel *UserListModel) UpdateUserListPublicVisibility(userList User
 	return nil
 }
 
-func (userListModel *UserListModel) IncrementAnimeListEpisodeByID(animeList AnimeList, data requests.ID) (AnimeList, error) {
+func (userListModel *UserListModel) IncrementAnimeListEpisodeByID(animeList AnimeList, anime responses.Anime, data requests.ID) (AnimeList, error) {
 	animeList.WatchedEpisodes = animeList.WatchedEpisodes + 1
+
+	var updateFields bson.M
+	if anime.Episodes != nil && (*anime.Episodes > 0 && animeList.WatchedEpisodes >= *anime.Episodes) {
+		animeList.Status = "finished"
+
+		updateFields = bson.M{"$set": bson.M{
+			"status":           "finished",
+			"watched_episodes": animeList.WatchedEpisodes,
+		}}
+	} else {
+		updateFields = bson.M{"$inc": bson.M{
+			"watched_episodes": 1,
+		}}
+	}
 
 	if _, err := userListModel.AnimeListCollection.UpdateOne(context.TODO(), bson.M{
 		"_id": animeList.ID,
-	}, bson.M{"$inc": bson.M{
-		"watched_episodes": 1,
-	}}); err != nil {
+	}, updateFields); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"anime_list_id": animeList.ID,
 		}).Error("failed to increment anime list episode: ", err)
@@ -452,7 +464,11 @@ func (userListModel *UserListModel) UpdateAnimeListByID(animeList AnimeList, dat
 	return animeList, nil
 }
 
-func (userListModel *UserListModel) IncrementMangaListChapterVolumeByID(mangaList MangaList, data requests.IncrementTVSeriesList) (MangaList, error) {
+func (userListModel *UserListModel) IncrementMangaListChapterVolumeByID(
+	mangaList MangaList,
+	manga responses.Manga,
+	data requests.IncrementTVSeriesList,
+) (MangaList, error) {
 	var updateField string
 
 	if *data.IsEpisode {
@@ -463,11 +479,23 @@ func (userListModel *UserListModel) IncrementMangaListChapterVolumeByID(mangaLis
 		updateField = "read_volumes"
 	}
 
+	var updateFields bson.M
+	if *data.IsEpisode && manga.Chapters != nil && *manga.Chapters > 0 && (mangaList.ReadChapters >= *manga.Chapters) {
+		mangaList.Status = "finished"
+
+		updateFields = bson.M{"$set": bson.M{
+			"status":        "finished",
+			"read_chapters": mangaList.ReadChapters,
+		}}
+	} else {
+		updateFields = bson.M{"$inc": bson.M{
+			updateField: 1,
+		}}
+	}
+
 	if _, err := userListModel.MangaListCollection.UpdateOne(context.TODO(), bson.M{
 		"_id": mangaList.ID,
-	}, bson.M{"$inc": bson.M{
-		updateField: 1,
-	}}); err != nil {
+	}, updateFields); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"manga_list_id": mangaList.ID,
 			"data":          data,
@@ -634,7 +662,11 @@ func (userListModel *UserListModel) UpdateMovieListByID(movieList MovieWatchList
 	return movieList, nil
 }
 
-func (userListModel *UserListModel) IncrementTVSeriesListEpisodeSeasonByID(tvList TVSeriesWatchList, data requests.IncrementTVSeriesList) (TVSeriesWatchList, error) {
+func (userListModel *UserListModel) IncrementTVSeriesListEpisodeSeasonByID(
+	tvList TVSeriesWatchList,
+	tvSeries responses.TVSeries,
+	data requests.IncrementTVSeriesList,
+) (TVSeriesWatchList, error) {
 	var updateField string
 
 	if *data.IsEpisode {
@@ -645,11 +677,23 @@ func (userListModel *UserListModel) IncrementTVSeriesListEpisodeSeasonByID(tvLis
 		updateField = "watched_seasons"
 	}
 
+	var updateFields bson.M
+	if *data.IsEpisode && tvSeries.TotalEpisodes > 0 && (tvList.WatchedEpisodes >= tvSeries.TotalEpisodes) {
+		tvList.Status = "finished"
+
+		updateFields = bson.M{"$set": bson.M{
+			"status":           "finished",
+			"watched_episodes": tvList.WatchedEpisodes,
+		}}
+	} else {
+		updateFields = bson.M{"$inc": bson.M{
+			updateField: 1,
+		}}
+	}
+
 	if _, err := userListModel.TVSeriesWatchListCollection.UpdateOne(context.TODO(), bson.M{
 		"_id": tvList.ID,
-	}, bson.M{"$inc": bson.M{
-		updateField: 1,
-	}}); err != nil {
+	}, updateFields); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"tv_list_id": tvList.ID,
 			"data":       data,

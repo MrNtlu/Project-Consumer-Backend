@@ -4161,7 +4161,7 @@ paths:
       tags:
       - custom_list
   /feedback:
-    post:
+    patch:
       consumes:
       - application/json
       description: Send feedback

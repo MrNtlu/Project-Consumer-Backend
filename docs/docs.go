@@ -1494,7 +1494,7 @@ const docTemplate = `{
             }
         },
         "/feedback": {
-            "post": {
+            "patch": {
                 "description": "Send feedback",
                 "consumes": [
                     "application/json"

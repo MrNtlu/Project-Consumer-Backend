@@ -16,7 +16,7 @@ func userRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongoDB
 
 	feedback := router.Group("/feedback").Use(jwtToken.MiddlewareFunc())
 	{
-		feedback.POST("/feedback", feedbackController.SendFeedback)
+		feedback.PATCH("/feedback", feedbackController.SendFeedback)
 	}
 
 	auth := router.Group("/auth")

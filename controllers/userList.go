@@ -510,7 +510,7 @@ func (u *UserListController) IncrementAnimeListEpisodeByID(c *gin.Context) {
 		ID: animeList.AnimeID,
 	})
 
-	if updatedAnimeList, err = userListModel.IncrementAnimeListEpisodeByID(animeList, data); err != nil {
+	if updatedAnimeList, err = userListModel.IncrementAnimeListEpisodeByID(animeList, anime, data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -869,7 +869,7 @@ func (u *UserListController) IncrementTVSeriesListEpisodeSeasonByID(c *gin.Conte
 		ID: tvList.TvID,
 	})
 
-	if updatedTVList, err = userListModel.IncrementTVSeriesListEpisodeSeasonByID(tvList, data); err != nil {
+	if updatedTVList, err = userListModel.IncrementTVSeriesListEpisodeSeasonByID(tvList, tvSeries, data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})

@@ -28,7 +28,7 @@ func NewFeedbackController(mongoDB *db.MongoDB) FeedbackController {
 // @Param feedback body requests.Feedback true "Feedback"
 // @Success 200 {object} string
 // @Failure 500 {string} string
-// @Router /feedback [post]
+// @Router /feedback [patch]
 func (feeedback *FeedbackController) SendFeedback(c *gin.Context) {
 	var data requests.Feedback
 	if shouldReturn := bindJSONData(&data, c); shouldReturn {
