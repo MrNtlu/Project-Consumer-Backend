@@ -385,7 +385,8 @@ func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterM
 
 	matchFields := bson.M{}
 	if data.Status != nil || data.Genres != nil || data.ProductionCompanies != nil ||
-		data.ReleaseDateFrom != nil || data.ReleaseDateTo != nil || data.ProductionCountry != nil {
+		data.ReleaseDateFrom != nil || data.ReleaseDateTo != nil ||
+		data.ProductionCountry != nil || data.StreamingPlatforms != nil {
 
 		if data.Status != nil {
 			switch *data.Status {
@@ -420,6 +421,12 @@ func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterM
 		if data.ProductionCountry != nil {
 			matchFields["production_companies.origin_country"] = bson.M{
 				"$in": bson.A{data.ProductionCountry},
+			}
+		}
+
+		if data.StreamingPlatforms != nil {
+			matchFields["streaming.streaming_platforms.name"] = bson.M{
+				"$in": bson.A{data.StreamingPlatforms},
 			}
 		}
 

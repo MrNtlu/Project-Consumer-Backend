@@ -6670,6 +6670,9 @@
                         "finished"
                     ]
                 },
+                "streamingPlatforms": {
+                    "type": "string"
+                },
                 "studios": {
                     "type": "string"
                 },
@@ -6834,6 +6837,9 @@
                         "released",
                         "planned"
                     ]
+                },
+                "streamingPlatforms": {
+                    "type": "string"
                 }
             }
         },
@@ -6887,6 +6893,9 @@
                         "ended",
                         "airing"
                     ]
+                },
+                "streamingPlatforms": {
+                    "type": "string"
                 }
             }
         },

@@ -4,6 +4,7 @@ type SortFilterTVSeries struct {
 	Status              *string `form:"status" binding:"omitempty,oneof=production ended airing"`
 	Genres              *string `form:"genres"`
 	NumSeason           *int    `form:"season" binding:"omitempty,number,min=1"`
+	StreamingPlatforms  *string `form:"streaming_platforms"`
 	ProductionCompanies *string `form:"production_companies"`
 	ProductionCountry   *string `form:"production_country"`
 	FirstAirDateFrom    *int    `form:"from" binding:"omitempty,number,min=1900,max=2050"`

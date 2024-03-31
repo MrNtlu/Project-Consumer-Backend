@@ -884,6 +884,8 @@ definitions:
         - upcoming
         - finished
         type: string
+      streamingPlatforms:
+        type: string
       studios:
         type: string
       themes:
@@ -1003,6 +1005,8 @@ definitions:
         - released
         - planned
         type: string
+      streamingPlatforms:
+        type: string
     required:
     - page
     - sort
@@ -1041,6 +1045,8 @@ definitions:
         - production
         - ended
         - airing
+        type: string
+      streamingPlatforms:
         type: string
     required:
     - page

@@ -6673,6 +6673,9 @@ const docTemplate = `{
                         "finished"
                     ]
                 },
+                "streamingPlatforms": {
+                    "type": "string"
+                },
                 "studios": {
                     "type": "string"
                 },
@@ -6837,6 +6840,9 @@ const docTemplate = `{
                         "released",
                         "planned"
                     ]
+                },
+                "streamingPlatforms": {
+                    "type": "string"
                 }
             }
         },
@@ -6890,6 +6896,9 @@ const docTemplate = `{
                         "ended",
                         "airing"
                     ]
+                },
+                "streamingPlatforms": {
+                    "type": "string"
                 }
             }
         },

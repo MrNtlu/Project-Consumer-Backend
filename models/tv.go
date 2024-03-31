@@ -564,7 +564,8 @@ func (tvModel *TVModel) GetTVSeriesBySortAndFilter(data requests.SortFilterTVSer
 
 	matchFields := bson.M{}
 	if data.Status != nil || data.Genres != nil || data.ProductionCompanies != nil ||
-		data.FirstAirDateFrom != nil || data.NumSeason != nil || data.ProductionCountry != nil {
+		data.FirstAirDateFrom != nil || data.NumSeason != nil ||
+		data.ProductionCountry != nil || data.StreamingPlatforms != nil {
 
 		if data.Status != nil {
 			var status string
@@ -595,6 +596,12 @@ func (tvModel *TVModel) GetTVSeriesBySortAndFilter(data requests.SortFilterTVSer
 		if data.ProductionCountry != nil {
 			matchFields["production_companies.origin_country"] = bson.M{
 				"$in": bson.A{data.ProductionCountry},
+			}
+		}
+
+		if data.StreamingPlatforms != nil {
+			matchFields["streaming.streaming_platforms.name"] = bson.M{
+				"$in": bson.A{data.StreamingPlatforms},
 			}
 		}
 
