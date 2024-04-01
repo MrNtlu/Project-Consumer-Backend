@@ -599,9 +599,14 @@ func (tvModel *TVModel) GetTVSeriesBySortAndFilter(data requests.SortFilterTVSer
 			}
 		}
 
-		if data.StreamingPlatforms != nil {
+		if data.StreamingPlatforms != nil && (data.IsStreamingPlatformFiltered == nil || (data.IsStreamingPlatformFiltered != nil && !*data.IsStreamingPlatformFiltered)) {
 			matchFields["streaming.streaming_platforms.name"] = bson.M{
 				"$in": bson.A{data.StreamingPlatforms},
+			}
+		} else if data.StreamingPlatforms != nil && data.IsStreamingPlatformFiltered != nil && *data.IsStreamingPlatformFiltered && data.Region != nil {
+			matchFields["$and"] = bson.A{
+				bson.M{"streaming.streaming_platforms.name": bson.M{"$in": bson.A{data.StreamingPlatforms}}},
+				bson.M{"streaming.country_code": data.Region},
 			}
 		}
 

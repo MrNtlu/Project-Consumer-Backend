@@ -6801,6 +6801,9 @@
                 "genres": {
                     "type": "string"
                 },
+                "isStreamingPlatformFiltered": {
+                    "type": "boolean"
+                },
                 "page": {
                     "type": "integer",
                     "minimum": 1
@@ -6809,6 +6812,9 @@
                     "type": "string"
                 },
                 "productionCountry": {
+                    "type": "string"
+                },
+                "region": {
                     "type": "string"
                 },
                 "releaseDateFrom": {
@@ -6863,6 +6869,9 @@
                 "genres": {
                     "type": "string"
                 },
+                "isStreamingPlatformFiltered": {
+                    "type": "boolean"
+                },
                 "numSeason": {
                     "type": "integer",
                     "minimum": 1
@@ -6875,6 +6884,9 @@
                     "type": "string"
                 },
                 "productionCountry": {
+                    "type": "string"
+                },
+                "region": {
                     "type": "string"
                 },
                 "sort": {

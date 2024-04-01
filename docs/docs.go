@@ -6804,6 +6804,9 @@ const docTemplate = `{
                 "genres": {
                     "type": "string"
                 },
+                "isStreamingPlatformFiltered": {
+                    "type": "boolean"
+                },
                 "page": {
                     "type": "integer",
                     "minimum": 1
@@ -6812,6 +6815,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "productionCountry": {
+                    "type": "string"
+                },
+                "region": {
                     "type": "string"
                 },
                 "releaseDateFrom": {
@@ -6866,6 +6872,9 @@ const docTemplate = `{
                 "genres": {
                     "type": "string"
                 },
+                "isStreamingPlatformFiltered": {
+                    "type": "boolean"
+                },
                 "numSeason": {
                     "type": "integer",
                     "minimum": 1
@@ -6878,6 +6887,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "productionCountry": {
+                    "type": "string"
+                },
+                "region": {
                     "type": "string"
                 },
                 "sort": {
