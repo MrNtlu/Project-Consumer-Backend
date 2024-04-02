@@ -64,14 +64,10 @@ type GameResult struct {
 // @Accept application/json
 // @Produce application/json
 // @Param regionfilters body requests.RegionFilters true "Region Filters"
-// @Success 200 {array} responses.PreviewMovie
-// @Success 200 {array} responses.PreviewAnime
-// @Success 200 {array} responses.PreviewTVSeries
-// @Success 200 {array} responses.PreviewGame
-// @Success 200 {array} responses.PreviewManga
-// @Success 200 {array} responses.ActorDetails
-// @Success 200 {array} responses.StreamingPlatform
-// @Success 200 {array} responses.AnimeNameURL
+// @Success 200 {object} AnimeResult
+// @Success 200 {object} MovieResult
+// @Success 200 {object} GameResult
+// @Success 200 {object} TVResult
 // @Router /preview [get]
 func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 	var data requests.RegionFilters
@@ -135,7 +131,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 		}()
 
 		var result MovieResult
-		for i := 0; i < 7; i++ {
+		for i := 0; i < 6; i++ {
 			data := <-movieDataCh
 			result.UpcomingMovies = append(result.UpcomingMovies, data.UpcomingMovies...)
 			result.PopularMovies = append(result.PopularMovies, data.PopularMovies...)
@@ -184,7 +180,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 		}()
 
 		var result TVResult
-		for i := 0; i < 7; i++ {
+		for i := 0; i < 6; i++ {
 			data := <-tvDataCh
 			result.UpcomingTVSeries = append(result.UpcomingTVSeries, data.UpcomingTVSeries...)
 			result.PopularTVSeries = append(result.PopularTVSeries, data.PopularTVSeries...)
@@ -228,7 +224,7 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 		}()
 
 		var result AnimeResult
-		for i := 0; i < 6; i++ {
+		for i := 0; i < 5; i++ {
 			data := <-animeDataCh
 			result.UpcomingAnimes = append(result.UpcomingAnimes, data.UpcomingAnimes...)
 			result.TopRatedAnimes = append(result.TopRatedAnimes, data.TopRatedAnimes...)

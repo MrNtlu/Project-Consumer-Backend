@@ -1,5 +1,109 @@
 basePath: /api/v1
 definitions:
+  controllers.AnimeResult:
+    properties:
+      airingAnime:
+        items:
+          $ref: '#/definitions/responses.PreviewAnime'
+        type: array
+      animePopularSP:
+        items:
+          $ref: '#/definitions/responses.AnimeNameURL'
+        type: array
+      animePopularStudios:
+        items:
+          $ref: '#/definitions/responses.AnimeNameURL'
+        type: array
+      popularAnimes:
+        items:
+          $ref: '#/definitions/responses.PreviewAnime'
+        type: array
+      topRatedAnimes:
+        items:
+          $ref: '#/definitions/responses.PreviewAnime'
+        type: array
+      upcomingAnimes:
+        items:
+          $ref: '#/definitions/responses.PreviewAnime'
+        type: array
+    type: object
+  controllers.GameResult:
+    properties:
+      popularGames:
+        items:
+          $ref: '#/definitions/responses.PreviewGame'
+        type: array
+      topRatedGames:
+        items:
+          $ref: '#/definitions/responses.PreviewGame'
+        type: array
+      upcomingGames:
+        items:
+          $ref: '#/definitions/responses.PreviewGame'
+        type: array
+    type: object
+  controllers.MovieResult:
+    properties:
+      moviePopularPC:
+        items:
+          $ref: '#/definitions/responses.StreamingPlatform'
+        type: array
+      moviePopularSP:
+        items:
+          $ref: '#/definitions/responses.StreamingPlatform'
+        type: array
+      moviesInTheater:
+        items:
+          $ref: '#/definitions/responses.PreviewMovie'
+        type: array
+      popularActors:
+        items:
+          $ref: '#/definitions/responses.ActorDetails'
+        type: array
+      popularMovies:
+        items:
+          $ref: '#/definitions/responses.PreviewMovie'
+        type: array
+      topMovies:
+        items:
+          $ref: '#/definitions/responses.PreviewMovie'
+        type: array
+      upcomingMovies:
+        items:
+          $ref: '#/definitions/responses.PreviewMovie'
+        type: array
+    type: object
+  controllers.TVResult:
+    properties:
+      airingTVSeries:
+        items:
+          $ref: '#/definitions/responses.PreviewTVSeries'
+        type: array
+      popularActors:
+        items:
+          $ref: '#/definitions/responses.ActorDetails'
+        type: array
+      popularTVSeries:
+        items:
+          $ref: '#/definitions/responses.PreviewTVSeries'
+        type: array
+      topTVSeries:
+        items:
+          $ref: '#/definitions/responses.PreviewTVSeries'
+        type: array
+      tvpopularPC:
+        items:
+          $ref: '#/definitions/responses.StreamingPlatform'
+        type: array
+      tvseriesPopularSP:
+        items:
+          $ref: '#/definitions/responses.StreamingPlatform'
+        type: array
+      upcomingTVSeries:
+        items:
+          $ref: '#/definitions/responses.PreviewTVSeries'
+        type: array
+    type: object
   models.AnimeList:
     properties:
       _id:
@@ -5223,9 +5327,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/responses.AnimeNameURL'
-            type: array
+            $ref: '#/definitions/controllers.TVResult'
       summary: Get Previews
       tags:
       - preview

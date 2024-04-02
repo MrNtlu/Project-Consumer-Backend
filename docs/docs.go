@@ -3112,10 +3112,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/responses.AnimeNameURL"
-                            }
+                            "$ref": "#/definitions/controllers.TVResult"
                         }
                     }
                 }
@@ -5406,6 +5403,164 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "controllers.AnimeResult": {
+            "type": "object",
+            "properties": {
+                "airingAnime": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.PreviewAnime"
+                    }
+                },
+                "animePopularSP": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeNameURL"
+                    }
+                },
+                "animePopularStudios": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.AnimeNameURL"
+                    }
+                },
+                "popularAnimes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.PreviewAnime"
+                    }
+                },
+                "topRatedAnimes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.PreviewAnime"
+                    }
+                },
+                "upcomingAnimes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.PreviewAnime"
+                    }
+                }
+            }
+        },
+        "controllers.GameResult": {
+            "type": "object",
+            "properties": {
+                "popularGames": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.PreviewGame"
+                    }
+                },
+                "topRatedGames": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.PreviewGame"
+                    }
+                },
+                "upcomingGames": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.PreviewGame"
+                    }
+                }
+            }
+        },
+        "controllers.MovieResult": {
+            "type": "object",
+            "properties": {
+                "moviePopularPC": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.StreamingPlatform"
+                    }
+                },
+                "moviePopularSP": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.StreamingPlatform"
+                    }
+                },
+                "moviesInTheater": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.PreviewMovie"
+                    }
+                },
+                "popularActors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.ActorDetails"
+                    }
+                },
+                "popularMovies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.PreviewMovie"
+                    }
+                },
+                "topMovies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.PreviewMovie"
+                    }
+                },
+                "upcomingMovies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.PreviewMovie"
+                    }
+                }
+            }
+        },
+        "controllers.TVResult": {
+            "type": "object",
+            "properties": {
+                "airingTVSeries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.PreviewTVSeries"
+                    }
+                },
+                "popularActors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.ActorDetails"
+                    }
+                },
+                "popularTVSeries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.PreviewTVSeries"
+                    }
+                },
+                "topTVSeries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.PreviewTVSeries"
+                    }
+                },
+                "tvpopularPC": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.StreamingPlatform"
+                    }
+                },
+                "tvseriesPopularSP": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.StreamingPlatform"
+                    }
+                },
+                "upcomingTVSeries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.PreviewTVSeries"
+                    }
+                }
+            }
+        },
         "models.AnimeList": {
             "type": "object",
             "properties": {
