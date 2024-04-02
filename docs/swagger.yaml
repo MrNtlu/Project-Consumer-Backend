@@ -5210,6 +5210,13 @@ paths:
       consumes:
       - application/json
       description: Returns previews
+      parameters:
+      - description: Region Filters
+        in: body
+        name: regionfilters
+        required: true
+        schema:
+          $ref: '#/definitions/requests.RegionFilters'
       produces:
       - application/json
       responses:
@@ -5217,12 +5224,8 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/responses.ActorDetails'
+              $ref: '#/definitions/responses.AnimeNameURL'
             type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
       summary: Get Previews
       tags:
       - preview
@@ -5230,7 +5233,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns previews
+      description: Returns previews older version
       parameters:
       - description: Region Filters
         in: body
@@ -5251,7 +5254,7 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Get Previews
+      summary: Get Previews Older Version
       tags:
       - preview
   /recommendation:

@@ -3097,20 +3097,25 @@ const docTemplate = `{
                     "preview"
                 ],
                 "summary": "Get Previews",
+                "parameters": [
+                    {
+                        "description": "Region Filters",
+                        "name": "regionfilters",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.RegionFilters"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/responses.ActorDetails"
+                                "$ref": "#/definitions/responses.AnimeNameURL"
                             }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
                         }
                     }
                 }
@@ -3118,7 +3123,7 @@ const docTemplate = `{
         },
         "/preview/v2": {
             "get": {
-                "description": "Returns previews",
+                "description": "Returns previews older version",
                 "consumes": [
                     "application/json"
                 ],
@@ -3128,7 +3133,7 @@ const docTemplate = `{
                 "tags": [
                     "preview"
                 ],
-                "summary": "Get Previews",
+                "summary": "Get Previews Older Version",
                 "parameters": [
                     {
                         "description": "Region Filters",
