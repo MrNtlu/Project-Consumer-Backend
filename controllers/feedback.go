@@ -3,9 +3,11 @@ package controllers
 import (
 	"app/db"
 	"app/helpers"
+	"app/models"
 	"app/requests"
 	"net/http"
 
+	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,9 +31,20 @@ func NewFeedbackController(mongoDB *db.MongoDB) FeedbackController {
 // @Success 200 {object} string
 // @Failure 500 {string} string
 // @Router /feedback [patch]
-func (feeedback *FeedbackController) SendFeedback(c *gin.Context) {
+func (feedback *FeedbackController) SendFeedback(c *gin.Context) {
 	var data requests.Feedback
 	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+	feedbackModel := models.NewFeedbackModel(feedback.Database)
+
+	if err := feedbackModel.CreateFeedback(uid); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+
 		return
 	}
 
