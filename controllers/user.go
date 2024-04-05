@@ -234,8 +234,30 @@ func (u *UserController) GetBasicUserInfo(c *gin.Context) {
 			streakCh <- currentStreak
 		}()
 
+		type UserCounts struct {
+			UserListCount   int64
+			WatchLaterCount int64
+		}
+		countCh := make(chan UserCounts)
+		go func() {
+			userListModel := models.NewUserListModel(u.Database)
+			userInteractionModel := models.NewUserInteractionModel(u.Database)
+
+			userListCount, _ := userListModel.GetUserListCount(uid)
+			consumeLaterCount := userInteractionModel.GetConsumeLaterCount(uid)
+
+			countCh <- UserCounts{
+				UserListCount:   userListCount,
+				WatchLaterCount: consumeLaterCount,
+			}
+		}()
+
 		userInfo := <-userCh
 		userInfo.Streak = <-streakCh
+
+		userCounts := <-countCh
+		userInfo.ConsumeLaterCount = userCounts.WatchLaterCount
+		userInfo.UserListCount = userCounts.UserListCount
 
 		resultCh <- BasicUserInfoResult{UserInfo: userInfo}
 	}()

@@ -10097,6 +10097,9 @@ const docTemplate = `{
                 "can_change_username": {
                     "type": "boolean"
                 },
+                "consume_later_count": {
+                    "type": "integer"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -10127,6 +10130,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "streak": {
+                    "type": "integer"
+                },
+                "user_list_count": {
                     "type": "integer"
                 },
                 "username": {

@@ -39,6 +39,8 @@ type User struct {
 	CanChangeUsername bool               `bson:"can_change_username" json:"can_change_username"`
 	AppNotification   Notification       `bson:"app_notification" json:"app_notification"`
 	Streak            int                `bson:"streak" json:"streak"`
+	UserListCount     int64              `bson:"user_list_count" json:"user_list_count"`
+	ConsumeLaterCount int64              `bson:"consume_later_count" json:"consume_later_count"`
 	CreatedAt         time.Time          `bson:"created_at" json:"created_at"`
 }
 
