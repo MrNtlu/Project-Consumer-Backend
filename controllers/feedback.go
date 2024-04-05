@@ -42,7 +42,7 @@ func (feedback *FeedbackController) SendFeedback(c *gin.Context) {
 
 	if err := feedbackModel.CreateFeedback(uid); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error": "We've already received your feedback. Thank you very much 🙏",
 		})
 
 		return
@@ -50,7 +50,7 @@ func (feedback *FeedbackController) SendFeedback(c *gin.Context) {
 
 	if err := helpers.SendFeedbackMail(data.Feedback); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "We've already received your feedback. Thank you very much 🙏",
+			"error": err.Error(),
 		})
 
 		return
