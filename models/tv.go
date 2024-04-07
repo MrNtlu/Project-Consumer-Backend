@@ -1063,15 +1063,29 @@ func (tvModel *TVModel) GetPopularProductionCompanies() ([]responses.StreamingPl
 func (tvModel *TVModel) SearchTVSeriesByTitle(data requests.Search) ([]responses.TVSeries, p.PaginationData, error) {
 	search := bson.M{"$search": bson.M{
 		"index": "tv_series_search",
-		"text": bson.M{
-			"query": data.Search,
-			"path": bson.A{
-				"title_en",
-				"title_original",
+		"compound": bson.M{
+			"should": bson.A{
+				bson.M{
+					"text": bson.M{
+						"query": data.Search,
+						"path":  "title_en",
+						"fuzzy": bson.M{
+							"maxEdits": 1,
+						},
+						"score": bson.M{"boost": bson.M{"value": 5}},
+					},
+				},
+				bson.M{
+					"text": bson.M{
+						"query": data.Search,
+						"path":  "title_original",
+						"fuzzy": bson.M{
+							"maxEdits": 1,
+						},
+					},
+				},
 			},
-			"fuzzy": bson.M{
-				"maxEdits": 1,
-			},
+			"minimumShouldMatch": 1,
 		},
 	}}
 
