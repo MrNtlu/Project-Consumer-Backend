@@ -6804,6 +6804,11 @@
                     "type": "integer",
                     "minimum": 1
                 },
+                "rating": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1
+                },
                 "season": {
                     "type": "string",
                     "enum": [
@@ -6898,6 +6903,11 @@
                 "publisher": {
                     "type": "string"
                 },
+                "rating": {
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
+                },
                 "sort": {
                     "type": "string",
                     "enum": [
@@ -6974,6 +6984,11 @@
                 "productionCountry": {
                     "type": "string"
                 },
+                "rating": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1
+                },
                 "region": {
                     "type": "string"
                 },
@@ -7045,6 +7060,11 @@
                 },
                 "productionCountry": {
                     "type": "string"
+                },
+                "rating": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1
                 },
                 "region": {
                     "type": "string"

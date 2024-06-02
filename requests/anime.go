@@ -9,6 +9,7 @@ type SortFilterAnime struct {
 	Demographics       *string `form:"demographics"`
 	Themes             *string `form:"themes"`
 	Studios            *string `form:"studios"`
+	Rating             *int    `form:"rating" binding:"omitempty,number,min=1,max=10"`
 	Sort               string  `form:"sort" binding:"required,oneof=top popularity new old"`
 	Page               int64   `form:"page" json:"page" binding:"required,number,min=1"`
 }

@@ -6807,6 +6807,11 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 1
                 },
+                "rating": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1
+                },
                 "season": {
                     "type": "string",
                     "enum": [
@@ -6901,6 +6906,11 @@ const docTemplate = `{
                 "publisher": {
                     "type": "string"
                 },
+                "rating": {
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
+                },
                 "sort": {
                     "type": "string",
                     "enum": [
@@ -6977,6 +6987,11 @@ const docTemplate = `{
                 "productionCountry": {
                     "type": "string"
                 },
+                "rating": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1
+                },
                 "region": {
                     "type": "string"
                 },
@@ -7048,6 +7063,11 @@ const docTemplate = `{
                 },
                 "productionCountry": {
                     "type": "string"
+                },
+                "rating": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1
                 },
                 "region": {
                     "type": "string"

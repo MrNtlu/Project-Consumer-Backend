@@ -386,7 +386,8 @@ func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterM
 	matchFields := bson.M{}
 	if data.Status != nil || data.Genres != nil || data.ProductionCompanies != nil ||
 		data.ReleaseDateFrom != nil || data.ReleaseDateTo != nil ||
-		data.ProductionCountry != nil || data.StreamingPlatforms != nil {
+		data.ProductionCountry != nil || data.StreamingPlatforms != nil ||
+		data.Rating != nil {
 
 		if data.Status != nil {
 			switch *data.Status {
@@ -432,6 +433,17 @@ func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterM
 			matchFields["$and"] = bson.A{
 				bson.M{"streaming.streaming_platforms.name": bson.M{"$in": bson.A{data.StreamingPlatforms}}},
 				bson.M{"streaming.country_code": data.Region},
+			}
+		}
+
+		if data.Rating != nil {
+			matchFields["$and"] = bson.A{
+				bson.M{
+					"tmdb_vote": bson.M{"$gte": data.Rating},
+				},
+				bson.M{
+					"tmdb_vote_count": bson.M{"$gte": 100},
+				},
 			}
 		}
 

@@ -8,6 +8,7 @@ type SortFilterMovie struct {
 	StreamingPlatforms          *string `form:"streaming_platforms"`
 	IsStreamingPlatformFiltered *bool   `form:"is_region_filtered"`
 	Region                      *string `form:"region"`
+	Rating                      *int    `form:"rating" binding:"omitempty,number,min=1,max=10"`
 	ReleaseDateFrom             *int    `form:"from" binding:"omitempty,number,min=1900,max=2050"`
 	ReleaseDateTo               *int    `form:"to" binding:"omitempty,number,min=1900,max=2050"`
 	Sort                        string  `form:"sort" binding:"required,oneof=top popularity new old"`

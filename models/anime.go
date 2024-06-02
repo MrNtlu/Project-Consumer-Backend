@@ -505,7 +505,8 @@ func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterA
 	matchFields := bson.M{}
 	if data.Status != nil || data.Genres != nil || data.Demographics != nil ||
 		data.Studios != nil || data.Themes != nil || data.Year != nil ||
-		data.Season != nil || data.StreamingPlatforms != nil {
+		data.Season != nil || data.StreamingPlatforms != nil ||
+		data.Rating != nil {
 
 		if data.Status != nil {
 
@@ -558,6 +559,17 @@ func (animeModel *AnimeModel) GetAnimesBySortAndFilter(data requests.SortFilterA
 
 		if data.Season != nil {
 			matchFields["season"] = data.Season
+		}
+
+		if data.Rating != nil {
+			matchFields["$and"] = bson.A{
+				bson.M{
+					"mal_score": bson.M{"$gte": data.Rating},
+				},
+				bson.M{
+					"mal_scored_by": bson.M{"$gte": 100},
+				},
+			}
 		}
 	}
 

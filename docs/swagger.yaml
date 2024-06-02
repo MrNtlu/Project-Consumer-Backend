@@ -968,6 +968,10 @@ definitions:
       page:
         minimum: 1
         type: integer
+      rating:
+        maximum: 10
+        minimum: 1
+        type: integer
       season:
         enum:
         - winter
@@ -1036,6 +1040,10 @@ definitions:
         type: string
       publisher:
         type: string
+      rating:
+        maximum: 5
+        minimum: 1
+        type: integer
       sort:
         enum:
         - top
@@ -1090,6 +1098,10 @@ definitions:
         type: string
       productionCountry:
         type: string
+      rating:
+        maximum: 10
+        minimum: 1
+        type: integer
       region:
         type: string
       releaseDateFrom:
@@ -1143,6 +1155,10 @@ definitions:
         type: string
       productionCountry:
         type: string
+      rating:
+        maximum: 10
+        minimum: 1
+        type: integer
       region:
         type: string
       sort:

@@ -565,7 +565,8 @@ func (tvModel *TVModel) GetTVSeriesBySortAndFilter(data requests.SortFilterTVSer
 	matchFields := bson.M{}
 	if data.Status != nil || data.Genres != nil || data.ProductionCompanies != nil ||
 		data.FirstAirDateFrom != nil || data.NumSeason != nil ||
-		data.ProductionCountry != nil || data.StreamingPlatforms != nil {
+		data.ProductionCountry != nil || data.StreamingPlatforms != nil ||
+		data.Rating != nil {
 
 		if data.Status != nil {
 			var status string
@@ -620,6 +621,17 @@ func (tvModel *TVModel) GetTVSeriesBySortAndFilter(data requests.SortFilterTVSer
 				matchFields["first_air_date"] = bson.M{
 					"$gte": strconv.Itoa(*data.FirstAirDateFrom),
 				}
+			}
+		}
+
+		if data.Rating != nil {
+			matchFields["$and"] = bson.A{
+				bson.M{
+					"tmdb_vote": bson.M{"$gte": data.Rating},
+				},
+				bson.M{
+					"tmdb_vote_count": bson.M{"$gte": 100},
+				},
 			}
 		}
 
