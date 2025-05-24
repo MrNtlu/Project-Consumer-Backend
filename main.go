@@ -49,6 +49,12 @@ func main() {
 	mongoDB, ctx, cancel := db.Connect(os.Getenv("MONGO_ATLAS_URI"))
 	defer db.Close(ctx, mongoDB.Client, cancel)
 
+	pinecone, pineconeClient, err := db.InitPinecone()
+	if err != nil {
+		log.Fatal("Error initializing Pinecone: ", err)
+	}
+	defer pinecone.Close()
+
 	utils.InitCipher()
 
 	jwtHandler := helpers.SetupJWTHandler(mongoDB)
@@ -85,7 +91,7 @@ func main() {
 	// config.AllowCredentials = true
 	// router.Use(cors.New(config))
 
-	routes.SetupRoutes(router, jwtHandler, mongoDB)
+	routes.SetupRoutes(router, jwtHandler, mongoDB, &pineconeClient, &pinecone)
 
 	port := os.Getenv("PORT")
 	if port == "" {

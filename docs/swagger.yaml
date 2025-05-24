@@ -364,21 +364,6 @@ definitions:
     - answer
     - id
     type: object
-  requests.AssistantRequest:
-    properties:
-      contentName:
-        type: string
-      contentType:
-        enum:
-        - anime
-        - game
-        - movie
-        - tv
-        type: string
-    required:
-    - contentName
-    - contentType
-    type: object
   requests.BulkDeleteCustomList:
     properties:
       content:
@@ -3592,58 +3577,6 @@ paths:
       summary: Get Upcoming Animes by Sort
       tags:
       - anime
-  /assistant/opinion:
-    get:
-      consumes:
-      - application/json
-      description: Returns content Public Opinion
-      parameters:
-      - description: Assistant Request
-        in: body
-        name: assistantrequest
-        required: true
-        schema:
-          $ref: '#/definitions/requests.AssistantRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Content Public Opinion
-      tags:
-      - openai
-  /assistant/summary:
-    get:
-      consumes:
-      - application/json
-      description: Returns content summary
-      parameters:
-      - description: Assistant Request
-        in: body
-        name: assistantrequest
-        required: true
-        schema:
-          $ref: '#/definitions/requests.AssistantRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Content Summary
-      tags:
-      - openai
   /auth/register:
     post:
       consumes:
@@ -6042,27 +5975,8 @@ paths:
       summary: Get Socials
       tags:
       - social
-  /suggestions:
+  /suggestions/:
     get:
-      consumes:
-      - application/json
-      description: Returns ai recommendations from OpenAI
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/responses.AISuggestionResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get AI Recommendations from OpenAI
-      tags:
-      - openai
-  /suggestions/generate:
-    post:
       consumes:
       - application/json
       description: Generates and returns ai recommendations from OpenAI

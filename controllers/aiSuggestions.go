@@ -3,232 +3,43 @@ package controllers
 import (
 	"app/db"
 	"app/models"
-	"app/requests"
 	"app/responses"
-	"fmt"
+	"context"
 	"net/http"
-	"strings"
 	"time"
 
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
+	"github.com/pinecone-io/go-pinecone/v3/pinecone"
+	"github.com/sirupsen/logrus"
 )
 
 type AISuggestionsController struct {
-	Database *db.MongoDB
+	Database      *db.MongoDB
+	Pinecone      *pinecone.Client
+	PineconeCtrl  *PineconeController
+	PineconeIndex *pinecone.IndexConnection
 }
 
-func NewAISuggestionsController(mongoDB *db.MongoDB) AISuggestionsController {
+func NewAISuggestionsController(
+	mongoDB *db.MongoDB,
+	pinecone *pinecone.Client,
+	pineconeIndex *pinecone.IndexConnection,
+) AISuggestionsController {
+
+	pineconeCtrl := NewPineconeController(mongoDB, pinecone, pineconeIndex)
+
 	return AISuggestionsController{
-		Database: mongoDB,
+		Database:      mongoDB,
+		Pinecone:      pinecone,
+		PineconeCtrl:  &pineconeCtrl,
+		PineconeIndex: pineconeIndex,
 	}
 }
 
 var (
 	errNotEnoughUserList = "You need to have more content in your list. Total of 5 content is required. e.g. 1 Movie, 2 TV Series, 2 Anime, 0 Game."
 )
-
-// Get Content Summary
-// @Summary Get Content Summary
-// @Description Returns content summary
-// @Tags openai
-// @Accept application/json
-// @Produce application/json
-// @Param assistantrequest body requests.AssistantRequest true "Assistant Request"
-// @Success 200 {object} string
-// @Failure 500 {string} string
-// @Router /assistant/summary [get]
-func (ai *AISuggestionsController) GetSummary(c *gin.Context) {
-	var data requests.AssistantRequest
-	if err := c.ShouldBindQuery(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": validatorErrorHandler(err),
-		})
-
-		return
-	}
-
-	userModel := models.NewUserModel(ai.Database)
-	openAIModel := models.CreateOpenAIClient()
-
-	uid := jwt.ExtractClaims(c)["id"].(string)
-	isPremium, _ := userModel.IsUserPremium(uid)
-
-	if isPremium {
-		summary, err := openAIModel.GetSummary(data.ContentName, data.ContentType)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"data": summary.Response})
-		return
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "You need to have a premium membership to do this action.",
-		})
-
-		return
-	}
-}
-
-// Get Content Public Opinion
-// @Summary Get Content Public Opinion
-// @Description Returns content Public Opinion
-// @Tags openai
-// @Accept application/json
-// @Produce application/json
-// @Param assistantrequest body requests.AssistantRequest true "Assistant Request"
-// @Success 200 {object} string
-// @Failure 500 {string} string
-// @Router /assistant/opinion [get]
-func (ai *AISuggestionsController) GetPublicOpinion(c *gin.Context) {
-	var data requests.AssistantRequest
-	if err := c.ShouldBindQuery(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": validatorErrorHandler(err),
-		})
-
-		return
-	}
-
-	userModel := models.NewUserModel(ai.Database)
-	openAIModel := models.CreateOpenAIClient()
-
-	uid := jwt.ExtractClaims(c)["id"].(string)
-	isPremium, _ := userModel.IsUserPremium(uid)
-
-	if isPremium {
-		summary, err := openAIModel.GetPublicOpinion(data.ContentName, data.ContentType)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"data": summary.Response})
-
-		return
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "You need to have a premium membership to do this action.",
-		})
-
-		return
-	}
-
-}
-
-// Get AI Recommendations
-// @Summary Get AI Recommendations from OpenAI
-// @Description Returns ai recommendations from OpenAI
-// @Tags openai
-// @Accept application/json
-// @Produce application/json
-// @Success 200 {object} responses.AISuggestionResponse
-// @Failure 500 {string} string
-// @Router /suggestions [get]
-func (ai *AISuggestionsController) GetAISuggestions(c *gin.Context) {
-	uid := jwt.ExtractClaims(c)["id"].(string)
-	aiSuggestionsModel := models.NewAISuggestionsModel(ai.Database)
-	userModel := models.NewUserModel(ai.Database)
-	movieModel := models.NewMovieModel(ai.Database)
-	tvModel := models.NewTVModel(ai.Database)
-	animeModel := models.NewAnimeModel(ai.Database)
-	gameModel := models.NewGameModel(ai.Database)
-
-	aiSuggestion, _ := aiSuggestionsModel.GetAISuggestions(uid)
-
-	isPremium, _ := userModel.IsUserPremium(uid)
-	currentDate := time.Now().UTC()
-
-	var (
-		movieList []string
-		tvList    []string
-		animeList []string
-		gameList  []string
-		createdAt time.Time
-	)
-	if aiSuggestion.UserID == "" || (aiSuggestion.UserID != "" &&
-		((isPremium && (currentDate.Sub(aiSuggestion.CreatedAt).Hours()/24) >= 7) ||
-			(!isPremium && (currentDate.Sub(aiSuggestion.CreatedAt).Hours()/24) >= 30))) {
-
-		c.JSON(http.StatusOK, gin.H{"data": nil, "message": "You can generate your recommendations now!"})
-
-		return
-	} else {
-		movieList = aiSuggestion.Movies
-		tvList = aiSuggestion.TVSeries
-		animeList = aiSuggestion.Anime
-		gameList = aiSuggestion.Games
-		createdAt = aiSuggestion.CreatedAt
-	}
-
-	var (
-		movies []responses.AISuggestion
-		err    error
-	)
-	if len(gameList) > 0 {
-		movies, err = movieModel.GetMoviesFromOpenAI(uid, movieList)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-	}
-
-	var tvSeries []responses.AISuggestion
-	if len(gameList) > 0 {
-		tvSeries, err = tvModel.GetTVSeriesFromOpenAI(uid, tvList)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-	}
-
-	var anime []responses.AISuggestion
-	if len(gameList) > 0 {
-		anime, err = animeModel.GetAnimeFromOpenAI(uid, animeList)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-	}
-
-	var games []responses.AISuggestion
-	if len(gameList) > 0 {
-		games, err = gameModel.GetGamesFromOpenAI(uid, gameList)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-	}
-
-	suggestions := append(movies, tvSeries...)
-	suggestions = append(suggestions, anime...)
-	suggestions = append(suggestions, games...)
-
-	c.JSON(http.StatusOK, gin.H{"data": responses.AISuggestionResponse{
-		Suggestions: suggestions,
-		CreatedAt:   createdAt,
-	}, "message": "Successfully returned."})
-}
 
 // Generate AI Recommendations
 // @Summary Generate AI Recommendations from OpenAI
@@ -238,13 +49,12 @@ func (ai *AISuggestionsController) GetAISuggestions(c *gin.Context) {
 // @Produce application/json
 // @Success 200 {object} responses.AISuggestionResponse
 // @Failure 500 {string} string
-// @Router /suggestions/generate [post]
+// @Router /suggestions/ [get]
 func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 	uid := jwt.ExtractClaims(c)["id"].(string)
 	aiSuggestionsModel := models.NewAISuggestionsModel(ai.Database)
 	userModel := models.NewUserModel(ai.Database)
 	userListModel := models.NewUserListModel(ai.Database)
-	openAIModel := models.CreateOpenAIClient()
 	movieModel := models.NewMovieModel(ai.Database)
 	tvModel := models.NewTVModel(ai.Database)
 	animeModel := models.NewAnimeModel(ai.Database)
@@ -256,11 +66,8 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 	currentDate := time.Now().UTC()
 
 	var (
-		movieList []string
-		tvList    []string
-		animeList []string
-		gameList  []string
-		createdAt time.Time
+		recommendations []responses.AISuggestion
+		createdAt       time.Time
 	)
 	if aiSuggestion.UserID == "" || (aiSuggestion.UserID != "" &&
 		((isPremium && (currentDate.Sub(aiSuggestion.CreatedAt).Hours()/24) >= 7) ||
@@ -283,7 +90,22 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 			return
 		}
 
-		inputString, err := getUserListAsString(userListModel, uid)
+		rawRecs, err := ai.PineconeCtrl.GetRecommendationsByType(uid, 10)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+		}
+
+		allSuggestions, movieList, tvList, animeList, gameList, err := ai.ApplyRecommendations(
+			c.Request.Context(),
+			uid,
+			rawRecs,
+			movieModel,
+			tvModel,
+			animeModel,
+			gameModel,
+		)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -292,32 +114,7 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 			return
 		}
 
-		resp, err := openAIModel.GetRecommendation(inputString)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-
-		movieList, tvList, animeList, gameList = parseResponseString(resp.Recommendation)
-		createdAt = time.Now().UTC()
-
-		if len(movieList) == 0 && len(tvList) == 0 && len(animeList) == 0 && len(gameList) == 0 {
-			resp, err = openAIModel.GetRecommendation(inputString)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": err.Error(),
-				})
-
-				return
-			}
-
-			movieList, tvList, animeList, gameList = parseResponseString(resp.Recommendation)
-		}
-
-		if len(movieList) == 0 && len(tvList) == 0 && len(animeList) == 0 && len(gameList) == 0 {
+		if len(allSuggestions) == 0 {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Couldn't generate new, sorry.",
 			})
@@ -338,20 +135,20 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 				go aiSuggestionsModel.CreateAISuggestions(uid, movieList, tvList, animeList, gameList)
 			}
 		}
+
+		recommendations = allSuggestions
 	} else {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Couldn't generate new, sorry.",
-		})
-
-		return
-	}
-
-	var (
-		movies []responses.AISuggestion
-		err    error
-	)
-	if len(gameList) > 0 {
-		movies, err = movieModel.GetMoviesFromOpenAI(uid, movieList)
+		allSuggestions, err := ai.FetchRecommendations(
+			uid,
+			aiSuggestion.Movies,
+			aiSuggestion.TVSeries,
+			aiSuggestion.Anime,
+			aiSuggestion.Games,
+			movieModel,
+			tvModel,
+			animeModel,
+			gameModel,
+		)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -359,159 +156,121 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 
 			return
 		}
+
+		recommendations = allSuggestions
 	}
-
-	var tvSeries []responses.AISuggestion
-	if len(gameList) > 0 {
-		tvSeries, err = tvModel.GetTVSeriesFromOpenAI(uid, tvList)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-	}
-
-	var anime []responses.AISuggestion
-	if len(gameList) > 0 {
-		anime, err = animeModel.GetAnimeFromOpenAI(uid, animeList)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-	}
-
-	var games []responses.AISuggestion
-	if len(gameList) > 0 {
-		games, err = gameModel.GetGamesFromOpenAI(uid, gameList)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-	}
-
-	suggestions := append(movies, tvSeries...)
-	suggestions = append(suggestions, anime...)
-	suggestions = append(suggestions, games...)
 
 	c.JSON(http.StatusOK, gin.H{"data": responses.AISuggestionResponse{
-		Suggestions: suggestions,
+		Suggestions: recommendations,
 		CreatedAt:   createdAt,
 	}})
 }
 
-func getUserListAsString(userListModel *models.UserListModel, uid string) (string, error) {
-	movieWatchList, err := userListModel.GetMovieListByUserID(uid)
-	if err != nil {
-		return "", err
-	}
-
-	tvWatchList, err := userListModel.GetTVSeriesListByUserID(uid)
-	if err != nil {
-		return "", err
-	}
-
-	animeWatchList, err := userListModel.GetAnimeListByUserID(uid)
-	if err != nil {
-		return "", err
-	}
-
-	gamePlayList, err := userListModel.GetGameListByUserID(uid)
-	if err != nil {
-		return "", err
-	}
-
-	movieWatchListAsStringList := make([]string, len(movieWatchList))
-	for i, movieWatchList := range movieWatchList {
-		var score string
-		if movieWatchList.Score != nil {
-			score = fmt.Sprintf("%.0f", *movieWatchList.Score)
-		} else {
-			score = "*"
+// ApplyRecommendations takes the raw Pinecone rec map and fetches detailed AISuggestions
+// by delegating to the OpenAI-backed model fetchers (or DB fetchers).
+func (ai *AISuggestionsController) ApplyRecommendations(ctx context.Context, uid string,
+	rawRecs map[string]interface{},
+	movieModel *models.MovieModel,
+	tvModel *models.TVModel,
+	animeModel *models.AnimeModel,
+	gameModel *models.GameModel,
+) (
+	[]responses.AISuggestion,
+	[]string,
+	[]string,
+	[]string,
+	[]string,
+	error,
+) {
+	// Extract each ID slice from the raw map
+	getIDs := func(key string) []string {
+		if arr, ok := rawRecs[key].([]map[string]interface{}); ok {
+			ids := make([]string, len(arr))
+			for i, item := range arr {
+				ids[i] = item["id"].(string)
+			}
+			return ids
 		}
-		movieWatchListAsStringList[i] = fmt.Sprintf("%s, %s.", movieWatchList.TitleOriginal, score)
+		return nil
 	}
 
-	tvWatchListAsStringList := make([]string, len(tvWatchList))
-	for i, tvWatchList := range tvWatchList {
-		var score string
-		if tvWatchList.Score != nil {
-			score = fmt.Sprintf("%.0f", *tvWatchList.Score)
-		} else {
-			score = "*"
-		}
-		tvWatchListAsStringList[i] = fmt.Sprintf("%s, %s.", tvWatchList.TitleOriginal, score)
+	movieList := getIDs("movies")
+	tvList := getIDs("tvSeries")
+	animeList := getIDs("animes")
+	gameList := getIDs("games")
+
+	logrus.Println("movieList", movieList)
+	logrus.Println("tvList", tvList)
+	logrus.Println("animeList", animeList)
+	logrus.Println("gameList", gameList)
+
+	allSuggestions, err := ai.FetchRecommendations(
+		uid,
+		movieList,
+		tvList,
+		animeList,
+		gameList,
+		movieModel,
+		tvModel,
+		animeModel,
+		gameModel,
+	)
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
 	}
 
-	animeWatchListAsStringList := make([]string, len(animeWatchList))
-	for i, animeWatchList := range animeWatchList {
-		var score string
-		if animeWatchList.Score != nil {
-			score = fmt.Sprintf("%.0f", *animeWatchList.Score)
-		} else {
-			score = "*"
-		}
-		animeWatchListAsStringList[i] = fmt.Sprintf("%s, %s.", animeWatchList.TitleOriginal, score)
-	}
-
-	gamePlayListAsStringList := make([]string, len(animeWatchList))
-	for i, gamePlayList := range gamePlayList {
-		var score string
-		if gamePlayList.Score != nil {
-			score = fmt.Sprintf("%.0f", *gamePlayList.Score)
-		} else {
-			score = "*"
-		}
-		gamePlayListAsStringList[i] = fmt.Sprintf("%s, %s.", gamePlayList.TitleOriginal, score)
-	}
-
-	movieWatchListAsString := strings.Join(movieWatchListAsStringList, "\n")
-	tvWatchListAsString := strings.Join(tvWatchListAsStringList, "\n")
-	animeWatchListAsString := strings.Join(animeWatchListAsStringList, "\n")
-	gamePlayListAsString := strings.Join(gamePlayListAsStringList, "\n")
-
-	inputString := fmt.Sprintf("Movies:\n%s\nTV Series:\n%s\nAnime:\n%s\nGames:\n%s", movieWatchListAsString, tvWatchListAsString, animeWatchListAsString, gamePlayListAsString)
-
-	return inputString, nil
+	logrus.Infof("Applied detailed fetch for %d recommendations", len(allSuggestions))
+	return allSuggestions, movieList, tvList, animeList, gameList, nil
 }
 
-func parseResponseString(response []string) ([]string, []string, []string, []string) {
-	var (
-		movieList []string
-		tvList    []string
-		animeList []string
-		gameList  []string
-	)
-	for _, str := range response {
-		if strings.HasPrefix(str, "Movie:") {
-			_, movieName, _ := strings.Cut(str, "Movie:")
-			movieName = strings.TrimPrefix(movieName, " ")
+func (ai *AISuggestionsController) FetchRecommendations(
+	uid string,
+	movieList []string,
+	tvList []string,
+	animeList []string,
+	gameList []string,
+	movieModel *models.MovieModel,
+	tvModel *models.TVModel,
+	animeModel *models.AnimeModel,
+	gameModel *models.GameModel,
+) (
+	[]responses.AISuggestion,
+	error,
+) {
+	var allSuggestions []responses.AISuggestion
 
-			movieList = append(movieList, movieName)
-		} else if strings.HasPrefix(str, "TV Series:") {
-			_, tvName, _ := strings.Cut(str, "TV Series:")
-			tvName = strings.TrimPrefix(tvName, " ")
-
-			tvList = append(tvList, tvName)
-		} else if strings.HasPrefix(str, "Anime:") {
-			_, animeName, _ := strings.Cut(str, "Anime:")
-			animeName = strings.TrimPrefix(animeName, " ")
-
-			animeList = append(animeList, animeName)
-		} else if strings.HasPrefix(str, "Game:") {
-			_, gameName, _ := strings.Cut(str, "Game:")
-			gameName = strings.TrimPrefix(gameName, " ")
-
-			gameList = append(gameList, gameName)
+	// For each type, fetch details via the respective model
+	if len(movieList) > 0 {
+		movies, err := movieModel.GetMoviesFromOpenAI(uid, movieList, 10)
+		if err != nil {
+			return nil, err
 		}
+		allSuggestions = append(allSuggestions, movies...)
 	}
 
-	return movieList, tvList, animeList, gameList
+	if len(tvList) > 0 {
+		tvSeries, err := tvModel.GetTVSeriesFromOpenAI(uid, tvList, 10)
+		if err != nil {
+			return nil, err
+		}
+		allSuggestions = append(allSuggestions, tvSeries...)
+	}
+
+	if len(animeList) > 0 {
+		anime, err := animeModel.GetAnimeFromOpenAI(uid, animeList, 10)
+		if err != nil {
+			return nil, err
+		}
+		allSuggestions = append(allSuggestions, anime...)
+	}
+
+	if len(gameList) > 0 {
+		games, err := gameModel.GetGamesFromOpenAI(uid, gameList, 10)
+		if err != nil {
+			return nil, err
+		}
+		allSuggestions = append(allSuggestions, games...)
+	}
+
+	return allSuggestions, nil
 }

@@ -106,3 +106,14 @@ type TVSeriesList struct {
 	TotalSeasons    *int64             `bson:"total_seasons" json:"total_seasons"`
 	CreatedAt       time.Time          `bson:"created_at" json:"created_at"`
 }
+
+type UserListAISuggestion struct {
+	MovieIDList []UserListAISuggestionID `bson:"movie_id_list" json:"movie_id_list"`
+	TVIDList    []UserListAISuggestionID `bson:"tv_id_list" json:"tv_id_list"`
+	AnimeIDList []UserListAISuggestionID `bson:"anime_id_list" json:"anime_id_list"`
+	GameIDList  []UserListAISuggestionID `bson:"game_id_list" json:"game_id_list"`
+}
+
+type UserListAISuggestionID struct {
+	ID string `bson:"id" json:"id"`
+}

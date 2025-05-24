@@ -6,9 +6,16 @@ import (
 
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
+	"github.com/pinecone-io/go-pinecone/v3/pinecone"
 )
 
-func SetupRoutes(router *gin.Engine, jwtToken *jwt.GinJWTMiddleware, mongoDB *db.MongoDB) {
+func SetupRoutes(
+	router *gin.Engine,
+	jwtToken *jwt.GinJWTMiddleware,
+	mongoDB *db.MongoDB,
+	pinecone *pinecone.Client,
+	pineconeIndex *pinecone.IndexConnection,
+) {
 	apiRouter := router.Group("/api/v1")
 
 	previewRouter(apiRouter, mongoDB)
@@ -22,7 +29,7 @@ func SetupRoutes(router *gin.Engine, jwtToken *jwt.GinJWTMiddleware, mongoDB *db
 	oauth2Router(apiRouter, jwtToken, mongoDB)
 	userListRouter(apiRouter, jwtToken, mongoDB)
 	userInteractionRouter(apiRouter, jwtToken, mongoDB)
-	aiSuggestionsRouter(apiRouter, jwtToken, mongoDB)
+	aiSuggestionsRouter(apiRouter, jwtToken, mongoDB, pinecone, pineconeIndex)
 	reviewRouter(apiRouter, jwtToken, mongoDB)
 	recommendationRouter(apiRouter, jwtToken, mongoDB)
 	customListRouter(apiRouter, jwtToken, mongoDB)

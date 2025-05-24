@@ -388,86 +388,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/assistant/opinion": {
-            "get": {
-                "description": "Returns content Public Opinion",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "openai"
-                ],
-                "summary": "Get Content Public Opinion",
-                "parameters": [
-                    {
-                        "description": "Assistant Request",
-                        "name": "assistantrequest",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.AssistantRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/assistant/summary": {
-            "get": {
-                "description": "Returns content summary",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "openai"
-                ],
-                "summary": "Get Content Summary",
-                "parameters": [
-                    {
-                        "description": "Assistant Request",
-                        "name": "assistantrequest",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.AssistantRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/auth/register": {
             "post": {
                 "description": "Allows users to register",
@@ -4196,37 +4116,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/suggestions": {
+        "/suggestions/": {
             "get": {
-                "description": "Returns ai recommendations from OpenAI",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "openai"
-                ],
-                "summary": "Get AI Recommendations from OpenAI",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/responses.AISuggestionResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/suggestions/generate": {
-            "post": {
                 "description": "Generates and returns ai recommendations from OpenAI",
                 "consumes": [
                     "application/json"
@@ -5948,27 +5839,6 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
-                }
-            }
-        },
-        "requests.AssistantRequest": {
-            "type": "object",
-            "required": [
-                "contentName",
-                "contentType"
-            ],
-            "properties": {
-                "contentName": {
-                    "type": "string"
-                },
-                "contentType": {
-                    "type": "string",
-                    "enum": [
-                        "anime",
-                        "game",
-                        "movie",
-                        "tv"
-                    ]
                 }
             }
         },

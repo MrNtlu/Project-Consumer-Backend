@@ -150,10 +150,10 @@ func (animeModel *AnimeModel) GetPreviewTopAnimes() ([]responses.PreviewAnime, e
 	return results, nil
 }
 
-func (animeModel *AnimeModel) GetAnimeFromOpenAI(uid string, anime []string) ([]responses.AISuggestion, error) {
+func (animeModel *AnimeModel) GetAnimeFromOpenAI(uid string, animeIDs []string, limitValue int) ([]responses.AISuggestion, error) {
 	match := bson.M{"$match": bson.M{
-		"title_original": bson.M{
-			"$in": anime,
+		"$expr": bson.M{
+			"$in": bson.A{bson.M{"$toString": "$_id"}, animeIDs},
 		},
 	}}
 
@@ -161,7 +161,7 @@ func (animeModel *AnimeModel) GetAnimeFromOpenAI(uid string, anime []string) ([]
 		"mal_score": -1,
 	}}
 
-	limit := bson.M{"$limit": 3}
+	limit := bson.M{"$limit": limitValue}
 
 	set := bson.M{"$set": bson.M{
 		"anime_id": bson.M{
@@ -221,7 +221,7 @@ func (animeModel *AnimeModel) GetAnimeFromOpenAI(uid string, anime []string) ([]
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"anime": anime,
+			"animeIDs": animeIDs,
 		}).Error("failed to aggregate anime: ", err)
 
 		return nil, fmt.Errorf("Failed to get anime from recommendation.")
@@ -230,7 +230,7 @@ func (animeModel *AnimeModel) GetAnimeFromOpenAI(uid string, anime []string) ([]
 	var animeList []responses.AISuggestion
 	if err := cursor.All(context.TODO(), &animeList); err != nil {
 		logrus.WithFields(logrus.Fields{
-			"anime": anime,
+			"animeIDs": animeIDs,
 		}).Error("failed to decode animes: ", err)
 
 		return nil, fmt.Errorf("Failed to decode get anime from recommendation.")

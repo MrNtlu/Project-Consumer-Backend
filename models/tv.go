@@ -184,10 +184,10 @@ func (tvModel *TVModel) GetTopPreviewTVSeries() ([]responses.PreviewTVSeries, er
 	return results, nil
 }
 
-func (tvModel *TVModel) GetTVSeriesFromOpenAI(uid string, tvSeries []string) ([]responses.AISuggestion, error) {
+func (tvModel *TVModel) GetTVSeriesFromOpenAI(uid string, tvSeriesIDs []string, limitValue int) ([]responses.AISuggestion, error) {
 	match := bson.M{"$match": bson.M{
-		"title_original": bson.M{
-			"$in": tvSeries,
+		"$expr": bson.M{
+			"$in": bson.A{bson.M{"$toString": "$_id"}, tvSeriesIDs},
 		},
 	}}
 
@@ -195,7 +195,7 @@ func (tvModel *TVModel) GetTVSeriesFromOpenAI(uid string, tvSeries []string) ([]
 		"tmdb_popularity": -1,
 	}}
 
-	limit := bson.M{"$limit": 3}
+	limit := bson.M{"$limit": limitValue}
 
 	set := bson.M{"$set": bson.M{
 		"tv_id": bson.M{
@@ -255,7 +255,7 @@ func (tvModel *TVModel) GetTVSeriesFromOpenAI(uid string, tvSeries []string) ([]
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"tv": tvSeries,
+			"tvIDs": tvSeriesIDs,
 		}).Error("failed to aggregate tv series: ", err)
 
 		return nil, fmt.Errorf("Failed to get tv series from recommendation.")
@@ -264,7 +264,7 @@ func (tvModel *TVModel) GetTVSeriesFromOpenAI(uid string, tvSeries []string) ([]
 	var tvList []responses.AISuggestion
 	if err := cursor.All(context.TODO(), &tvList); err != nil {
 		logrus.WithFields(logrus.Fields{
-			"tv": tvSeries,
+			"tvIDs": tvSeriesIDs,
 		}).Error("failed to decode tv series: ", err)
 
 		return nil, fmt.Errorf("Failed to decode get tv series from recommendation.")

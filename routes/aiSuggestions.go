@@ -6,20 +6,20 @@ import (
 
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
+	"github.com/pinecone-io/go-pinecone/v3/pinecone"
 )
 
-func aiSuggestionsRouter(router *gin.RouterGroup, jwtToken *jwt.GinJWTMiddleware, mongoDB *db.MongoDB) {
-	aiSuggestionsController := controllers.NewAISuggestionsController(mongoDB)
+func aiSuggestionsRouter(
+	router *gin.RouterGroup,
+	jwtToken *jwt.GinJWTMiddleware,
+	mongoDB *db.MongoDB,
+	pinecone *pinecone.Client,
+	pineconeIndex *pinecone.IndexConnection,
+) {
+	aiSuggestionsController := controllers.NewAISuggestionsController(mongoDB, pinecone, pineconeIndex)
 
 	suggestions := router.Group("/suggestions").Use(jwtToken.MiddlewareFunc())
 	{
-		suggestions.GET("", aiSuggestionsController.GetAISuggestions)
-		suggestions.POST("/generate", aiSuggestionsController.GenerateAISuggestions)
-	}
-
-	assistant := router.Group("/assistant").Use(jwtToken.MiddlewareFunc())
-	{
-		assistant.GET("/summary", aiSuggestionsController.GetSummary)
-		assistant.GET("/opinion", aiSuggestionsController.GetPublicOpinion)
+		suggestions.GET("", aiSuggestionsController.GenerateAISuggestions)
 	}
 }

@@ -145,10 +145,10 @@ func (gameModel *GameModel) GetPreviewPopularGames() ([]responses.PreviewGame, e
 	return results, nil
 }
 
-func (gameModel *GameModel) GetGamesFromOpenAI(uid string, games []string) ([]responses.AISuggestion, error) {
+func (gameModel *GameModel) GetGamesFromOpenAI(uid string, gameIDs []string, limitValue int) ([]responses.AISuggestion, error) {
 	match := bson.M{"$match": bson.M{
-		"title_original": bson.M{
-			"$in": games,
+		"$expr": bson.M{
+			"$in": bson.A{bson.M{"$toString": "$_id"}, gameIDs},
 		},
 	}}
 
@@ -156,7 +156,7 @@ func (gameModel *GameModel) GetGamesFromOpenAI(uid string, games []string) ([]re
 		"rawg_rating": -1,
 	}}
 
-	limit := bson.M{"$limit": 3}
+	limit := bson.M{"$limit": limitValue}
 
 	set := bson.M{"$set": bson.M{
 		"game_id": bson.M{
@@ -216,7 +216,7 @@ func (gameModel *GameModel) GetGamesFromOpenAI(uid string, games []string) ([]re
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"games": games,
+			"gameIDs": gameIDs,
 		}).Error("failed to aggregate games: ", err)
 
 		return nil, fmt.Errorf("Failed to get game from recommendation.")
@@ -225,7 +225,7 @@ func (gameModel *GameModel) GetGamesFromOpenAI(uid string, games []string) ([]re
 	var gameList []responses.AISuggestion
 	if err := cursor.All(context.TODO(), &gameList); err != nil {
 		logrus.WithFields(logrus.Fields{
-			"games": games,
+			"gameIDs": gameIDs,
 		}).Error("failed to decode games: ", err)
 
 		return nil, fmt.Errorf("Failed to decode get game from recommendation.")

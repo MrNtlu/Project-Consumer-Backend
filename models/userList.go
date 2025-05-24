@@ -205,7 +205,7 @@ func handleTimesFinished(status string, timesFinished *int) int {
 	return *timesFinished
 }
 
-//! Create
+// ! Create
 func (userListModel *UserListModel) CreateUserList(uid, slug string) error {
 	userListObject := createUserListObject(uid, slug)
 
@@ -374,7 +374,7 @@ func (userListModel *UserListModel) CreateTVSeriesWatchList(
 	return *tvSeriesWatchList, nil
 }
 
-//! Update
+// ! Update
 func (userListModel *UserListModel) UpdateUserListPublicVisibility(userList UserList, data requests.UpdateUserList) error {
 	if data.IsPublic != userList.IsPublic {
 		if _, err := userListModel.UserListCollection.UpdateOne(context.TODO(), bson.M{
@@ -751,7 +751,7 @@ func (userListModel *UserListModel) UpdateTVSeriesListByID(tvList TVSeriesWatchL
 	return tvList, nil
 }
 
-//! Get
+// ! Get
 func (userListModel *UserListModel) GetUserListCount(uid string) (int64, error) {
 	movieCount, err := userListModel.MovieWatchListCollection.CountDocuments(context.TODO(), bson.M{"user_id": uid})
 	if err != nil {
@@ -2762,7 +2762,7 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 	return responses.UserList{}, nil
 }
 
-//! Delete
+// ! Delete
 func (userListModel *UserListModel) DeleteListByUserIDAndType(uid string, data requests.DeleteList) (bool, error) {
 	objectListID, _ := primitive.ObjectIDFromHex(data.ID)
 
@@ -2818,4 +2818,148 @@ func (userListModel *UserListModel) DeleteUserListByUserID(uid string) {
 			"user_id": uid,
 		})
 	}
+}
+
+func (userListModel *UserListModel) GetUserListIDForSuggestion(userId string) (responses.UserListAISuggestion, error) {
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"user_id": userId,
+			},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "anime-lists",
+				"localField":   "user_id",
+				"foreignField": "user_id",
+				"as":           "anime_list",
+			},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "game-lists",
+				"localField":   "user_id",
+				"foreignField": "user_id",
+				"as":           "game_list",
+			},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "movie-watch-lists",
+				"localField":   "user_id",
+				"foreignField": "user_id",
+				"as":           "movie_watch_list",
+			},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "tvseries-watch-lists",
+				"localField":   "user_id",
+				"foreignField": "user_id",
+				"as":           "tv_watch_list",
+			},
+		},
+		{
+			"$project": bson.M{
+				"_id": 0,
+				"tv_id_list": bson.M{
+					"$map": bson.M{
+						"input": "$tv_watch_list",
+						"as":    "item",
+						"in":    "$$item.tv_id",
+					},
+				},
+				"movie_id_list": bson.M{
+					"$map": bson.M{
+						"input": "$movie_watch_list",
+						"as":    "item",
+						"in":    "$$item.movie_id",
+					},
+				},
+				"anime_id_list": bson.M{
+					"$map": bson.M{
+						"input": "$anime_list",
+						"as":    "item",
+						"in":    "$$item.anime_id",
+					},
+				},
+				"game_id_list": bson.M{
+					"$map": bson.M{
+						"input": "$game_list",
+						"as":    "item",
+						"in":    "$$item.game_id",
+					},
+				},
+			},
+		},
+	}
+
+	cursor, err := userListModel.UserListCollection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"userId": userId,
+		}).Error("failed to aggregate user list: ", err)
+
+		return responses.UserListAISuggestion{}, fmt.Errorf("Failed to aggregate user list.")
+	}
+
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"userId": userId,
+		}).Error("failed to decode aggregation result: ", err)
+
+		return responses.UserListAISuggestion{}, fmt.Errorf("Failed to decode aggregation result.")
+	}
+
+	if len(results) == 0 {
+		return responses.UserListAISuggestion{}, nil
+	}
+
+	// Convert the raw bson.M result into UserListAISuggestion structure
+	result := results[0]
+	suggestion := responses.UserListAISuggestion{
+		TVIDList:    []responses.UserListAISuggestionID{},
+		MovieIDList: []responses.UserListAISuggestionID{},
+		AnimeIDList: []responses.UserListAISuggestionID{},
+		GameIDList:  []responses.UserListAISuggestionID{},
+	}
+
+	// Convert TV IDs
+	if tvIDs, ok := result["tv_id_list"].(primitive.A); ok {
+		for _, id := range tvIDs {
+			if strID, ok := id.(string); ok {
+				suggestion.TVIDList = append(suggestion.TVIDList, responses.UserListAISuggestionID{ID: strID})
+			}
+		}
+	}
+
+	// Convert Movie IDs
+	if movieIDs, ok := result["movie_id_list"].(primitive.A); ok {
+		for _, id := range movieIDs {
+			if strID, ok := id.(string); ok {
+				suggestion.MovieIDList = append(suggestion.MovieIDList, responses.UserListAISuggestionID{ID: strID})
+			}
+		}
+	}
+
+	// Convert Anime IDs
+	if animeIDs, ok := result["anime_id_list"].(primitive.A); ok {
+		for _, id := range animeIDs {
+			if strID, ok := id.(string); ok {
+				suggestion.AnimeIDList = append(suggestion.AnimeIDList, responses.UserListAISuggestionID{ID: strID})
+			}
+		}
+	}
+
+	// Convert Game IDs
+	if gameIDs, ok := result["game_id_list"].(primitive.A); ok {
+		for _, id := range gameIDs {
+			if strID, ok := id.(string); ok {
+				suggestion.GameIDList = append(suggestion.GameIDList, responses.UserListAISuggestionID{ID: strID})
+			}
+		}
+	}
+
+	return suggestion, nil
 }

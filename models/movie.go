@@ -165,10 +165,10 @@ func (movieModel *MovieModel) GetInTheaterPreviewMovies() ([]responses.PreviewMo
 	return results, nil
 }
 
-func (movieModel *MovieModel) GetMoviesFromOpenAI(uid string, movies []string) ([]responses.AISuggestion, error) {
+func (movieModel *MovieModel) GetMoviesFromOpenAI(uid string, movieIDs []string, limitValue int) ([]responses.AISuggestion, error) {
 	match := bson.M{"$match": bson.M{
-		"title_original": bson.M{
-			"$in": movies,
+		"$expr": bson.M{
+			"$in": bson.A{bson.M{"$toString": "$_id"}, movieIDs},
 		},
 	}}
 
@@ -176,7 +176,7 @@ func (movieModel *MovieModel) GetMoviesFromOpenAI(uid string, movies []string) (
 		"tmdb_popularity": -1,
 	}}
 
-	limit := bson.M{"$limit": 3}
+	limit := bson.M{"$limit": limitValue}
 
 	set := bson.M{"$set": bson.M{
 		"movie_id": bson.M{
@@ -236,7 +236,7 @@ func (movieModel *MovieModel) GetMoviesFromOpenAI(uid string, movies []string) (
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"movies": movies,
+			"movieIDs": movieIDs,
 		}).Error("failed to aggregate movies: ", err)
 
 		return nil, fmt.Errorf("Failed to get movie from recommendation.")
@@ -245,7 +245,7 @@ func (movieModel *MovieModel) GetMoviesFromOpenAI(uid string, movies []string) (
 	var movieList []responses.AISuggestion
 	if err := cursor.All(context.TODO(), &movieList); err != nil {
 		logrus.WithFields(logrus.Fields{
-			"movies": movies,
+			"movieIDs": movieIDs,
 		}).Error("failed to decode movies: ", err)
 
 		return nil, fmt.Errorf("Failed to decode get movie from recommendation.")
