@@ -137,6 +137,7 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 		}
 
 		recommendations = allSuggestions
+		createdAt = currentDate
 	} else {
 		allSuggestions, err := ai.FetchRecommendations(
 			uid,
@@ -158,6 +159,7 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 		}
 
 		recommendations = allSuggestions
+		createdAt = aiSuggestion.CreatedAt
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": responses.AISuggestionResponse{
@@ -198,11 +200,6 @@ func (ai *AISuggestionsController) ApplyRecommendations(ctx context.Context, uid
 	tvList := getIDs("tvSeries")
 	animeList := getIDs("animes")
 	gameList := getIDs("games")
-
-	logrus.Println("movieList", movieList)
-	logrus.Println("tvList", tvList)
-	logrus.Println("animeList", animeList)
-	logrus.Println("gameList", gameList)
 
 	allSuggestions, err := ai.FetchRecommendations(
 		uid,
