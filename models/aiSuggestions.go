@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 //lint:file-ignore ST1005 Ignore all
@@ -60,9 +61,10 @@ func (aiSuggestionsModel *AISuggestionsModel) CreateAISuggestions(uid string, mo
 }
 
 func (aiSuggestionsModel *AISuggestionsModel) GetAISuggestions(uid string) (AISuggestions, error) {
+	opts := options.FindOne().SetSort(bson.M{"created_at": -1})
 	result := aiSuggestionsModel.Collection.FindOne(context.TODO(), bson.M{
 		"user_id": uid,
-	})
+	}, opts)
 
 	var suggestions AISuggestions
 	if err := result.Decode(&suggestions); err != nil {

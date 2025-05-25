@@ -9,6 +9,7 @@ import (
 	"math"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/pinecone-io/go-pinecone/v3/pinecone"
 	"github.com/sirupsen/logrus"
@@ -41,59 +42,71 @@ func NewPineconeController(
 
 // GetRecommendationsByType gets recommendations for a user based on their content lists
 func (pc *PineconeController) GetRecommendationsByType(userID string, topK int) (map[string]interface{}, error) {
-	// Get user content lists using the new aggregation function
+	// 1. Fetch user content lists
 	userLists, err := pc.UserListModel.GetUserListIDForSuggestion(userID)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"userID": userID,
-			"error":  err,
-		}).Error("failed to get user list for recommendation")
+		logrus.WithFields(logrus.Fields{"userID": userID, "error": err}).Error("failed to get user list for recommendation")
 		return nil, fmt.Errorf("failed to get user list for recommendation: %w", err)
 	}
 
-	// Create content ID sets for checking if user already has content
-	movieIDSet := make(map[string]bool)
-	for _, movie := range userLists.MovieIDList {
-		movieIDSet[movie.ID] = true
+	// 2. Build ID sets
+	makeSet := func(ids []responses.UserListAISuggestionID) map[string]bool {
+		set := make(map[string]bool, len(ids))
+		for _, c := range ids {
+			set[c.ID] = true
+		}
+		return set
 	}
+	movieSet := makeSet(userLists.MovieIDList)
+	tvSet := makeSet(userLists.TVIDList)
+	animeSet := makeSet(userLists.AnimeIDList)
+	gameSet := makeSet(userLists.GameIDList)
 
-	tvIDSet := make(map[string]bool)
-	for _, tv := range userLists.TVIDList {
-		tvIDSet[tv.ID] = true
-	}
+	// 3. Fetch content details concurrently
+	var (
+		movieDetails []bson.M
+		tvDetails    []bson.M
+		animeDetails []bson.M
+		gameDetails  []bson.M
+		errMovie     error
+		errTV        error
+		errAnime     error
+		errGame      error
+	)
+	var wg sync.WaitGroup
+	wg.Add(4)
 
-	animeIDSet := make(map[string]bool)
-	for _, anime := range userLists.AnimeIDList {
-		animeIDSet[anime.ID] = true
-	}
+	go func() {
+		defer wg.Done()
+		movieDetails, errMovie = pc.fetchContentDetails(userLists.MovieIDList, "movies")
+		if errMovie != nil {
+			logrus.WithError(errMovie).Error("failed to fetch movie details")
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		tvDetails, errTV = pc.fetchContentDetails(userLists.TVIDList, "tv-series")
+		if errTV != nil {
+			logrus.WithError(errTV).Error("failed to fetch TV series details")
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		animeDetails, errAnime = pc.fetchContentDetails(userLists.AnimeIDList, "animes")
+		if errAnime != nil {
+			logrus.WithError(errAnime).Error("failed to fetch anime details")
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		gameDetails, errGame = pc.fetchContentDetails(userLists.GameIDList, "games")
+		if errGame != nil {
+			logrus.WithError(errGame).Error("failed to fetch game details")
+		}
+	}()
+	wg.Wait()
 
-	gameIDSet := make(map[string]bool)
-	for _, game := range userLists.GameIDList {
-		gameIDSet[game.ID] = true
-	}
-
-	// Fetch content details for recommendations
-	movieDetails, err := pc.fetchContentDetails(userLists.MovieIDList, "movies")
-	if err != nil {
-		logrus.WithField("error", err).Error("failed to fetch movie details")
-	}
-
-	tvDetails, err := pc.fetchContentDetails(userLists.TVIDList, "tv-series")
-	if err != nil {
-		logrus.WithField("error", err).Error("failed to fetch TV series details")
-	}
-
-	animeDetails, err := pc.fetchContentDetails(userLists.AnimeIDList, "animes")
-	if err != nil {
-		logrus.WithField("error", err).Error("failed to fetch anime details")
-	}
-
-	gameDetails, err := pc.fetchContentDetails(userLists.GameIDList, "games")
-	if err != nil {
-		logrus.WithField("error", err).Error("failed to fetch game details")
-	}
-
-	// Log content counts for debugging
+	// 4. Log content counts
 	logrus.WithFields(logrus.Fields{
 		"movieCount": len(movieDetails),
 		"tvCount":    len(tvDetails),
@@ -102,21 +115,42 @@ func (pc *PineconeController) GetRecommendationsByType(userID string, topK int) 
 		"totalItems": len(movieDetails) + len(tvDetails) + len(animeDetails) + len(gameDetails),
 	}).Info("content details retrieved for recommendations")
 
-	// Get recommendations for each content type
-	movieRecs := pc.getRecommendationsForContentType(movieDetails, "movie", topK, movieIDSet)
-	tvRecs := pc.getRecommendationsForContentType(tvDetails, "tvseries", topK, tvIDSet)
-	animeRecs := pc.getRecommendationsForContentType(animeDetails, "anime", topK, animeIDSet)
-	gameRecs := pc.getRecommendationsForContentType(gameDetails, "game", topK, gameIDSet)
+	// 5. Generate recommendations concurrently
+	recs := make(map[string][]map[string]interface{})
+	wg.Add(4)
 
-	// Combine all recommendations
-	allRecs := append(append(append(movieRecs, tvRecs...), animeRecs...), gameRecs...)
+	go func() {
+		defer wg.Done()
+		recs["movies"] = pc.getRecommendationsForContentType(movieDetails, "movie", topK, movieSet)
+	}()
+	go func() {
+		defer wg.Done()
+		recs["tvSeries"] = pc.getRecommendationsForContentType(tvDetails, "tvseries", topK, tvSet)
+	}()
+	go func() {
+		defer wg.Done()
+		recs["animes"] = pc.getRecommendationsForContentType(animeDetails, "anime", topK, animeSet)
+	}()
+	go func() {
+		defer wg.Done()
+		recs["games"] = pc.getRecommendationsForContentType(gameDetails, "game", topK, gameSet)
+	}()
+	wg.Wait()
 
+	// 6. Combine all recommendations
+	all := make([]map[string]interface{}, 0,
+		len(recs["movies"])+len(recs["tvSeries"])+len(recs["animes"])+len(recs["games"]))
+	for _, key := range []string{"movies", "tvSeries", "animes", "games"} {
+		all = append(all, recs[key]...)
+	}
+
+	// 7. Return structured results
 	return map[string]interface{}{
-		"movies":   movieRecs,
-		"tvSeries": tvRecs,
-		"animes":   animeRecs,
-		"games":    gameRecs,
-		"all":      allRecs,
+		"movies":   recs["movies"],
+		"tvSeries": recs["tvSeries"],
+		"animes":   recs["animes"],
+		"games":    recs["games"],
+		"all":      all,
 	}, nil
 }
 
@@ -173,7 +207,7 @@ func (pc *PineconeController) fetchContentDetails(contentIDs []responses.UserLis
 // getRecommendationsForContentType gets recommendations for a specific content type
 func (pc *PineconeController) getRecommendationsForContentType(contentData []bson.M, contentType string, limit int, userContentSet map[string]bool) []map[string]interface{} {
 	if len(contentData) == 0 {
-		return []map[string]interface{}{}
+		return nil
 	}
 
 	// Get a sample of the user's content (up to 3 items) for generating recommendations
@@ -182,69 +216,75 @@ func (pc *PineconeController) getRecommendationsForContentType(contentData []bso
 		sampleSize = len(contentData)
 	}
 
-	recommendations := []map[string]interface{}{}
+	// Channels and sync for concurrent fetch
+	itemCh := make(chan map[string]interface{}, sampleSize*limit)
+	done := make(chan struct{})
+	var wg sync.WaitGroup
+	wg.Add(sampleSize)
 
-	// For each sample item, get recommendations
+	// Concurrently fetch similar items for each sample
 	for i := 0; i < sampleSize; i++ {
-		contentID := ""
-
-		// Extract the ID from the content item
-		if id, ok := contentData[i]["_id"].(primitive.ObjectID); ok {
-			contentID = id.Hex()
-		} else if id, ok := contentData[i]["_id"].(string); ok {
-			contentID = id
-		}
-
-		if contentID == "" {
-			continue
-		}
-
-		// Get similar items from Pinecone
-		similarItems, err := pc.GetSimilarItemsFromPinecone(contentID, contentType, limit/sampleSize*2)
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"contentID": contentID,
-				"error":     err,
-			}).Error("failed to get similar items from Pinecone")
-			continue
-		}
-
-		// Filter out items the user already has
-		for _, item := range similarItems {
-			itemID, ok := item["id"].(string)
-			if !ok || itemID == "" || userContentSet[itemID] {
-				continue
+		go func(idx int) {
+			defer wg.Done()
+			// Extract contentID
+			var contentID string
+			if id, ok := contentData[idx]["_id"].(primitive.ObjectID); ok {
+				contentID = id.Hex()
+			} else if id, ok := contentData[idx]["_id"].(string); ok {
+				contentID = id
+			}
+			if contentID == "" {
+				return
 			}
 
-			// Check if this item is already in our recommendations
-			isDuplicate := false
-			for _, rec := range recommendations {
-				if recID, ok := rec["id"].(string); ok && recID == itemID {
-					isDuplicate = true
-					break
+			// Fetch similar items
+			sims, err := pc.GetSimilarItemsFromPinecone(contentID, contentType, (limit/sampleSize)*2)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{"contentID": contentID, "error": err}).Error("failed to get similar from Pinecone")
+				return
+			}
+			// Send items to channel or exit if done
+			for _, item := range sims {
+				select {
+				case itemCh <- item:
+				case <-done:
+					return
 				}
 			}
-
-			if !isDuplicate {
-				recommendations = append(recommendations, item)
-
-				// Break if we have enough recommendations
-				if len(recommendations) >= limit {
-					break
-				}
-			}
-		}
-
-		// Break if we have enough recommendations
-		if len(recommendations) >= limit {
-			break
-		}
+		}(i)
 	}
+	// Close channel when fetchers finish
+	go func() {
+		wg.Wait()
+		close(itemCh)
+	}()
 
-	// Return the recommendations with the right content type
-	for i := range recommendations {
-		if recommendations[i]["type"] == nil {
-			recommendations[i]["type"] = contentType
+	// Collect and filter recommendations
+	var (
+		recommendations []map[string]interface{}
+		seen            = make(map[string]struct{}, limit)
+	)
+Loop:
+	for item := range itemCh {
+		// Extract ID
+		idVal, ok := item["id"].(string)
+		if !ok || idVal == "" || userContentSet[idVal] {
+			continue
+		}
+		// Dedupe
+		if _, exists := seen[idVal]; exists {
+			continue
+		}
+		seen[idVal] = struct{}{}
+		// Assign type if missing
+		if item["type"] == nil {
+			item["type"] = contentType
+		}
+		recommendations = append(recommendations, item)
+		// Stop when limit reached
+		if len(recommendations) >= limit {
+			close(done)
+			break Loop
 		}
 	}
 
@@ -381,7 +421,7 @@ func (pc *PineconeController) FindSequelsAndSeries(contentData []bson.M, content
 			},
 		}
 
-		opts := options.Find().SetLimit(5)
+		opts := options.Find().SetLimit(3)
 		cursor, err := collection.Find(context.TODO(), query, opts)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
@@ -507,56 +547,53 @@ func (pc *PineconeController) ExtractSeriesInfo(title string) map[string]string 
 }
 
 // CalculateMetadataSimilarity calculates similarity score between content items based on metadata
-func (pc *PineconeController) CalculateMetadataSimilarity(content1, content2 bson.M, contentType string) float64 {
-	score := 0.5 // Base similarity score
+func (pc *PineconeController) CalculateMetadataSimilarity(
+	content1, content2 bson.M,
+	contentType string,
+) float64 {
+	score := 0.5 // base similarity
 
 	switch contentType {
 	case "anime":
-		// Compare genres
 		genres1 := pc.GetFieldArrayValues(content1, "genres", "name")
 		genres2 := pc.GetFieldArrayValues(content2, "genres", "name")
-		score += pc.CompareArrays(genres1, genres2) * 0.15
+		score += pc.CompareArrays(genres1, genres2) * 0.2
 
-		// Compare demographics
 		demo1 := pc.GetFieldArrayValues(content1, "demographics", "name")
 		demo2 := pc.GetFieldArrayValues(content2, "demographics", "name")
-		score += pc.CompareArrays(demo1, demo2) * 0.15
+		score += pc.CompareArrays(demo1, demo2) * 0.2
 
-		// Compare themes
 		themes1 := pc.GetFieldArrayValues(content1, "themes", "name")
 		themes2 := pc.GetFieldArrayValues(content2, "themes", "name")
-		score += pc.CompareArrays(themes1, themes2) * 0.10
+		score += pc.CompareArrays(themes1, themes2) * 0.05
 
-		// Compare studios
 		studios1 := pc.GetFieldArrayValues(content1, "studios", "name")
 		studios2 := pc.GetFieldArrayValues(content2, "studios", "name")
-		score += pc.CompareArrays(studios1, studios2) * 0.10
+		score += pc.CompareArrays(studios1, studios2) * 0.05
 
 	case "movie":
-		// Compare genres
-		var genres1, genres2 []string
-		if g, ok := content1["genres"].(primitive.A); ok {
-			for _, genre := range g {
-				if genreStr, ok := genre.(string); ok {
-					genres1 = append(genres1, genreStr)
+		// genres
+		var g1, g2 []string
+		if arr, ok := content1["genres"].(primitive.A); ok {
+			for _, v := range arr {
+				if s, ok2 := v.(string); ok2 {
+					g1 = append(g1, s)
 				}
 			}
 		}
-		if g, ok := content2["genres"].(primitive.A); ok {
-			for _, genre := range g {
-				if genreStr, ok := genre.(string); ok {
-					genres2 = append(genres2, genreStr)
+		if arr, ok := content2["genres"].(primitive.A); ok {
+			for _, v := range arr {
+				if s, ok2 := v.(string); ok2 {
+					g2 = append(g2, s)
 				}
 			}
 		}
-		score += pc.CompareArrays(genres1, genres2) * 0.20
+		score += pc.CompareArrays(g1, g2) * 0.25
 
-		// Compare production companies
-		prodComp1 := pc.GetFieldArrayValues(content1, "production_companies", "name")
-		prodComp2 := pc.GetFieldArrayValues(content2, "production_companies", "name")
-		score += pc.CompareArrays(prodComp1, prodComp2) * 0.10
+		pcList1 := pc.GetFieldArrayValues(content1, "production_companies", "name")
+		pcList2 := pc.GetFieldArrayValues(content2, "production_companies", "name")
+		score += pc.CompareArrays(pcList1, pcList2) * 0.1
 
-		// Compare actors
 		actors1 := pc.GetFieldArrayValues(content1, "actors", "name")
 		actors2 := pc.GetFieldArrayValues(content2, "actors", "name")
 		if len(actors1) > 3 {
@@ -565,62 +602,62 @@ func (pc *PineconeController) CalculateMetadataSimilarity(content1, content2 bso
 		if len(actors2) > 3 {
 			actors2 = actors2[:3]
 		}
-		score += pc.CompareArrays(actors1, actors2) * 0.20
+		score += pc.CompareArrays(actors1, actors2) * 0.15
 
 	case "tvseries":
-		// Similar to movie case but with TV-specific fields
-		var genres1, genres2 []string
-		if g, ok := content1["genres"].(primitive.A); ok {
-			for _, genre := range g {
-				if genreStr, ok := genre.(string); ok {
-					genres1 = append(genres1, genreStr)
+		var tg1, tg2 []string
+		if arr, ok := content1["genres"].(primitive.A); ok {
+			for _, v := range arr {
+				if s, ok2 := v.(string); ok2 {
+					tg1 = append(tg1, s)
 				}
 			}
 		}
-		if g, ok := content2["genres"].(primitive.A); ok {
-			for _, genre := range g {
-				if genreStr, ok := genre.(string); ok {
-					genres2 = append(genres2, genreStr)
+		if arr, ok := content2["genres"].(primitive.A); ok {
+			for _, v := range arr {
+				if s, ok2 := v.(string); ok2 {
+					tg2 = append(tg2, s)
 				}
 			}
 		}
-		score += pc.CompareArrays(genres1, genres2) * 0.20
+		score += pc.CompareArrays(tg1, tg2) * 0.25
 
-		// Compare networks
-		networks1 := pc.GetFieldArrayValues(content1, "networks", "name")
-		networks2 := pc.GetFieldArrayValues(content2, "networks", "name")
-		score += pc.CompareArrays(networks1, networks2) * 0.15
+		nets1 := pc.GetFieldArrayValues(content1, "networks", "name")
+		nets2 := pc.GetFieldArrayValues(content2, "networks", "name")
+		score += pc.CompareArrays(nets1, nets2) * 0.1
 
 	case "game":
-		// Compare genres
-		var genres1, genres2 []string
-		if g, ok := content1["genres"].(primitive.A); ok {
-			for _, genre := range g {
-				if genreStr, ok := genre.(string); ok {
-					genres1 = append(genres1, genreStr)
+		var gg1, gg2 []string
+		if arr, ok := content1["genres"].(primitive.A); ok {
+			for _, v := range arr {
+				if s, ok2 := v.(string); ok2 {
+					gg1 = append(gg1, s)
 				}
 			}
 		}
-		if g, ok := content2["genres"].(primitive.A); ok {
-			for _, genre := range g {
-				if genreStr, ok := genre.(string); ok {
-					genres2 = append(genres2, genreStr)
+		if arr, ok := content2["genres"].(primitive.A); ok {
+			for _, v := range arr {
+				if s, ok2 := v.(string); ok2 {
+					gg2 = append(gg2, s)
 				}
 			}
 		}
-		score += pc.CompareArrays(genres1, genres2) * 0.20
+		score += pc.CompareArrays(gg1, gg2) * 0.25
 
-		// Compare platforms, developers, publishers
-		platforms1 := pc.GetFieldArrayValues(content1, "platforms", "")
-		platforms2 := pc.GetFieldArrayValues(content2, "platforms", "")
-		score += pc.CompareArrays(platforms1, platforms2) * 0.15
+		pls1 := pc.GetFieldArrayValues(content1, "platforms", "")
+		pls2 := pc.GetFieldArrayValues(content2, "platforms", "")
+		score += pc.CompareArrays(pls1, pls2) * 0.2
 
-		developers1 := pc.GetFieldArrayValues(content1, "developers", "")
-		developers2 := pc.GetFieldArrayValues(content2, "developers", "")
-		score += pc.CompareArrays(developers1, developers2) * 0.10
+		dev1 := pc.GetFieldArrayValues(content1, "developers", "")
+		dev2 := pc.GetFieldArrayValues(content2, "developers", "")
+		score += pc.CompareArrays(dev1, dev2) * 0.10
 	}
 
-	// Cap at 0.99 to avoid exact match confusion
+	// incorporate popularity if present in metadata
+	if pop, ok := content2["score"].(float64); ok {
+		score += pop * 0.1
+	}
+
 	if score > 0.99 {
 		return 0.99
 	}

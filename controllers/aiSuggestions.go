@@ -6,6 +6,7 @@ import (
 	"app/responses"
 	"context"
 	"net/http"
+	"sync"
 	"time"
 
 	jwt "github.com/appleboy/gin-jwt/v2"
@@ -52,7 +53,7 @@ var (
 // @Router /suggestions/ [get]
 func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 	uid := jwt.ExtractClaims(c)["id"].(string)
-	aiSuggestionsModel := models.NewAISuggestionsModel(ai.Database)
+	suggestModel := models.NewAISuggestionsModel(ai.Database)
 	userModel := models.NewUserModel(ai.Database)
 	userListModel := models.NewUserListModel(ai.Database)
 	movieModel := models.NewMovieModel(ai.Database)
@@ -60,19 +61,32 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 	animeModel := models.NewAnimeModel(ai.Database)
 	gameModel := models.NewGameModel(ai.Database)
 
-	aiSuggestion, _ := aiSuggestionsModel.GetAISuggestions(uid)
+	var (
+		aiRec     models.AISuggestions
+		isPremium bool
+		wgInit    sync.WaitGroup
+	)
+	wgInit.Add(2)
+	go func() {
+		defer wgInit.Done()
+		aiRec, _ = suggestModel.GetAISuggestions(uid)
+	}()
+	go func() {
+		defer wgInit.Done()
+		isPremium, _ = userModel.IsUserPremium(uid)
+	}()
+	wgInit.Wait()
 
-	isPremium, _ := userModel.IsUserPremium(uid)
 	currentDate := time.Now().UTC()
+	ageDays := currentDate.Sub(aiRec.CreatedAt).Hours() / 24
 
 	var (
 		recommendations []responses.AISuggestion
 		createdAt       time.Time
 	)
-	if aiSuggestion.UserID == "" || (aiSuggestion.UserID != "" &&
-		((isPremium && (currentDate.Sub(aiSuggestion.CreatedAt).Hours()/24) >= 7) ||
-			(!isPremium && (currentDate.Sub(aiSuggestion.CreatedAt).Hours()/24) >= 30))) {
+	needRefresh := aiRec.UserID == "" || (isPremium && ageDays >= 7) || (!isPremium && ageDays >= 30)
 
+	if needRefresh {
 		count, err := userListModel.GetUserListCount(uid)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -115,36 +129,26 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 		}
 
 		if len(allSuggestions) == 0 {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Couldn't generate new, sorry.",
-			})
-
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Couldn't generate new, sorry."})
 			return
-		} else {
-			if aiSuggestion.UserID == "" {
-				go aiSuggestionsModel.CreateAISuggestions(uid, movieList, tvList, animeList, gameList)
-			} else {
-				if _, err := aiSuggestionsModel.DeleteAISuggestionsByUserID(uid); err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{
-						"error": err.Error(),
-					})
-
-					return
-				}
-
-				go aiSuggestionsModel.CreateAISuggestions(uid, movieList, tvList, animeList, gameList)
-			}
 		}
+
+		go func() {
+			if aiRec.UserID != "" {
+				suggestModel.DeleteAISuggestionsByUserID(uid)
+			}
+			suggestModel.CreateAISuggestions(uid, movieList, tvList, animeList, gameList)
+		}()
 
 		recommendations = allSuggestions
 		createdAt = currentDate
 	} else {
 		allSuggestions, err := ai.FetchRecommendations(
 			uid,
-			aiSuggestion.Movies,
-			aiSuggestion.TVSeries,
-			aiSuggestion.Anime,
-			aiSuggestion.Games,
+			aiRec.Movies,
+			aiRec.TVSeries,
+			aiRec.Anime,
+			aiRec.Games,
 			movieModel,
 			tvModel,
 			animeModel,
@@ -159,7 +163,7 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 		}
 
 		recommendations = allSuggestions
-		createdAt = aiSuggestion.CreatedAt
+		createdAt = aiRec.CreatedAt
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": responses.AISuggestionResponse{
@@ -184,22 +188,73 @@ func (ai *AISuggestionsController) ApplyRecommendations(ctx context.Context, uid
 	[]string,
 	error,
 ) {
-	// Extract each ID slice from the raw map
-	getIDs := func(key string) []string {
-		if arr, ok := rawRecs[key].([]map[string]interface{}); ok {
+	var (
+		movieList []string
+		tvList    []string
+		animeList []string
+		gameList  []string
+		mu        sync.Mutex
+		wg        sync.WaitGroup
+	)
+	wg.Add(4)
+
+	go func() {
+		defer wg.Done()
+		if arr, ok := rawRecs["movies"].([]map[string]interface{}); ok {
 			ids := make([]string, len(arr))
 			for i, item := range arr {
-				ids[i] = item["id"].(string)
+				if id, ok2 := item["id"].(string); ok2 {
+					ids[i] = id
+				}
 			}
-			return ids
+			mu.Lock()
+			movieList = ids
+			mu.Unlock()
 		}
-		return nil
-	}
-
-	movieList := getIDs("movies")
-	tvList := getIDs("tvSeries")
-	animeList := getIDs("animes")
-	gameList := getIDs("games")
+	}()
+	go func() {
+		defer wg.Done()
+		if arr, ok := rawRecs["tvSeries"].([]map[string]interface{}); ok {
+			ids := make([]string, len(arr))
+			for i, item := range arr {
+				if id, ok2 := item["id"].(string); ok2 {
+					ids[i] = id
+				}
+			}
+			mu.Lock()
+			tvList = ids
+			mu.Unlock()
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		if arr, ok := rawRecs["animes"].([]map[string]interface{}); ok {
+			ids := make([]string, len(arr))
+			for i, item := range arr {
+				if id, ok2 := item["id"].(string); ok2 {
+					ids[i] = id
+				}
+			}
+			mu.Lock()
+			animeList = ids
+			mu.Unlock()
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		if arr, ok := rawRecs["games"].([]map[string]interface{}); ok {
+			ids := make([]string, len(arr))
+			for i, item := range arr {
+				if id, ok2 := item["id"].(string); ok2 {
+					ids[i] = id
+				}
+			}
+			mu.Lock()
+			gameList = ids
+			mu.Unlock()
+		}
+	}()
+	wg.Wait()
 
 	allSuggestions, err := ai.FetchRecommendations(
 		uid,
@@ -230,43 +285,42 @@ func (ai *AISuggestionsController) FetchRecommendations(
 	tvModel *models.TVModel,
 	animeModel *models.AnimeModel,
 	gameModel *models.GameModel,
-) (
-	[]responses.AISuggestion,
-	error,
-) {
-	var allSuggestions []responses.AISuggestion
+) ([]responses.AISuggestion, error) {
+	var (
+		allSuggestions []responses.AISuggestion
+		mu             sync.Mutex
+		wg             sync.WaitGroup
+		errs           = make(chan error, 4)
+	)
 
-	// For each type, fetch details via the respective model
-	if len(movieList) > 0 {
-		movies, err := movieModel.GetMoviesFromOpenAI(uid, movieList, 10)
-		if err != nil {
-			return nil, err
+	// Helper to fetch and append suggestions
+	fetch := func(list []string, fetchFunc func(string, []string, int) ([]responses.AISuggestion, error)) {
+		defer wg.Done()
+		if len(list) == 0 {
+			return
 		}
-		allSuggestions = append(allSuggestions, movies...)
+		suggestions, err := fetchFunc(uid, list, 10)
+		if err != nil {
+			errs <- err
+			return
+		}
+		mu.Lock()
+		allSuggestions = append(allSuggestions, suggestions...)
+		mu.Unlock()
 	}
 
-	if len(tvList) > 0 {
-		tvSeries, err := tvModel.GetTVSeriesFromOpenAI(uid, tvList, 10)
-		if err != nil {
-			return nil, err
-		}
-		allSuggestions = append(allSuggestions, tvSeries...)
-	}
+	// Launch concurrent fetches
+	wg.Add(4)
+	go fetch(movieList, movieModel.GetMoviesFromOpenAI)
+	go fetch(tvList, tvModel.GetTVSeriesFromOpenAI)
+	go fetch(animeList, animeModel.GetAnimeFromOpenAI)
+	go fetch(gameList, gameModel.GetGamesFromOpenAI)
+	wg.Wait()
 
-	if len(animeList) > 0 {
-		anime, err := animeModel.GetAnimeFromOpenAI(uid, animeList, 10)
-		if err != nil {
-			return nil, err
-		}
-		allSuggestions = append(allSuggestions, anime...)
-	}
-
-	if len(gameList) > 0 {
-		games, err := gameModel.GetGamesFromOpenAI(uid, gameList, 10)
-		if err != nil {
-			return nil, err
-		}
-		allSuggestions = append(allSuggestions, games...)
+	// Check errors
+	close(errs)
+	if err, ok := <-errs; ok {
+		return nil, err
 	}
 
 	return allSuggestions, nil
