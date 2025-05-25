@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 
@@ -115,25 +116,25 @@ func (pc *PineconeController) GetRecommendationsByType(userID string, topK int) 
 		"totalItems": len(movieDetails) + len(tvDetails) + len(animeDetails) + len(gameDetails),
 	}).Info("content details retrieved for recommendations")
 
-	// 5. Generate recommendations concurrently
+	// 5. Generate recommendations concurrently with hybrid scoring
 	recs := make(map[string][]map[string]interface{})
 	wg.Add(4)
 
 	go func() {
 		defer wg.Done()
-		recs["movies"] = pc.getRecommendationsForContentType(movieDetails, "movie", topK, movieSet)
+		recs["movies"] = pc.getRecommendationsForContentTypeWithHybrid(movieDetails, "movie", topK, movieSet)
 	}()
 	go func() {
 		defer wg.Done()
-		recs["tvSeries"] = pc.getRecommendationsForContentType(tvDetails, "tvseries", topK, tvSet)
+		recs["tvSeries"] = pc.getRecommendationsForContentTypeWithHybrid(tvDetails, "tvseries", topK, tvSet)
 	}()
 	go func() {
 		defer wg.Done()
-		recs["animes"] = pc.getRecommendationsForContentType(animeDetails, "anime", topK, animeSet)
+		recs["animes"] = pc.getRecommendationsForContentTypeWithHybrid(animeDetails, "anime", topK, animeSet)
 	}()
 	go func() {
 		defer wg.Done()
-		recs["games"] = pc.getRecommendationsForContentType(gameDetails, "game", topK, gameSet)
+		recs["games"] = pc.getRecommendationsForContentTypeWithHybrid(gameDetails, "game", topK, gameSet)
 	}()
 	wg.Wait()
 
@@ -152,6 +153,196 @@ func (pc *PineconeController) GetRecommendationsByType(userID string, topK int) 
 		"games":    recs["games"],
 		"all":      all,
 	}, nil
+}
+
+// getRecommendationsForContentTypeWithHybrid gets recommendations with hybrid scoring
+func (pc *PineconeController) getRecommendationsForContentTypeWithHybrid(contentData []bson.M, contentType string, limit int, userContentSet map[string]bool) []map[string]interface{} {
+	if len(contentData) == 0 {
+		return nil
+	}
+
+	// Get a sample of the user's content (up to 3 items) for generating recommendations
+	sampleSize := 3
+	if len(contentData) < sampleSize {
+		sampleSize = len(contentData)
+	}
+
+	// Channels and sync for concurrent fetch
+	itemCh := make(chan map[string]interface{}, sampleSize*limit*2) // Request more for hybrid filtering
+	done := make(chan struct{})
+	var wg sync.WaitGroup
+	wg.Add(sampleSize)
+
+	// Concurrently fetch similar items for each sample with hybrid scoring
+	for i := 0; i < sampleSize; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			// Extract contentID
+			var contentID string
+			if id, ok := contentData[idx]["_id"].(primitive.ObjectID); ok {
+				contentID = id.Hex()
+			} else if id, ok := contentData[idx]["_id"].(string); ok {
+				contentID = id
+			}
+			if contentID == "" {
+				return
+			}
+
+			// Fetch similar items with hybrid scoring
+			sims, err := pc.GetSimilarItemsWithHybridScoring(contentID, contentType, contentData[idx], (limit/sampleSize)*3)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{"contentID": contentID, "error": err}).Error("failed to get hybrid similar from Pinecone")
+				return
+			}
+			// Send items to channel or exit if done
+			for _, item := range sims {
+				select {
+				case itemCh <- item:
+				case <-done:
+					return
+				}
+			}
+		}(i)
+	}
+	// Close channel when fetchers finish
+	go func() {
+		wg.Wait()
+		close(itemCh)
+	}()
+
+	// Collect and filter recommendations
+	var (
+		recommendations []map[string]interface{}
+		seen            = make(map[string]struct{}, limit)
+	)
+Loop:
+	for item := range itemCh {
+		// Extract ID
+		idVal, ok := item["id"].(string)
+		if !ok || idVal == "" || userContentSet[idVal] {
+			continue
+		}
+		// Dedupe
+		if _, exists := seen[idVal]; exists {
+			continue
+		}
+		seen[idVal] = struct{}{}
+		// Assign type if missing
+		if item["type"] == nil {
+			item["type"] = contentType
+		}
+		recommendations = append(recommendations, item)
+		// Stop when limit reached
+		if len(recommendations) >= limit {
+			close(done)
+			break Loop
+		}
+	}
+
+	// Sort by hybrid score (highest first)
+	sort.Slice(recommendations, func(i, j int) bool {
+		scoreI, okI := recommendations[i]["hybrid_score"].(float64)
+		scoreJ, okJ := recommendations[j]["hybrid_score"].(float64)
+		if !okI {
+			scoreI = 0
+		}
+		if !okJ {
+			scoreJ = 0
+		}
+		return scoreI > scoreJ
+	})
+
+	return recommendations
+}
+
+// GetSimilarItemsWithHybridScoring combines vector similarity with metadata similarity
+func (pc *PineconeController) GetSimilarItemsWithHybridScoring(contentID, contentType string, sourceContent bson.M, limit int) ([]map[string]interface{}, error) {
+	// Get vector similarity results from Pinecone (request more than needed for hybrid filtering)
+	vectorResults, err := pc.getContentSimilarityRecommendations(contentID, contentType, limit*2)
+	if err != nil {
+		return nil, err
+	}
+
+	// Process results with hybrid scoring
+	var enhancedResults []map[string]interface{}
+	for _, result := range vectorResults {
+		resultID, ok := result["id"].(string)
+		if !ok || resultID == "" {
+			continue
+		}
+
+		// Fetch full content data for metadata comparison
+		resultContent, err := pc.getContentByID(resultID, contentType)
+		if err != nil {
+			logrus.WithError(err).Warnf("failed to fetch content for ID: %s", resultID)
+			// Skip this result but continue with others
+			continue
+		}
+
+		// Calculate metadata similarity
+		metadataSimilarity := pc.CalculateMetadataSimilarity(sourceContent, resultContent, contentType)
+
+		// Combine vector similarity with metadata similarity
+		vectorScore, ok := result["score"].(float32)
+		if !ok {
+			vectorScore = 0
+		}
+
+		// Hybrid scoring: 70% vector similarity + 30% metadata similarity
+		hybridScore := (float64(vectorScore) * 0.7) + (metadataSimilarity * 0.3)
+
+		enhancedResult := map[string]interface{}{
+			"id":             resultID,
+			"vector_score":   vectorScore,
+			"metadata_score": metadataSimilarity,
+			"hybrid_score":   hybridScore,
+			"type":           contentType,
+			"data":           resultContent,
+		}
+		enhancedResults = append(enhancedResults, enhancedResult)
+	}
+
+	// Sort by hybrid score (highest first)
+	sort.Slice(enhancedResults, func(i, j int) bool {
+		return enhancedResults[i]["hybrid_score"].(float64) > enhancedResults[j]["hybrid_score"].(float64)
+	})
+
+	// Return top results
+	if len(enhancedResults) > limit {
+		enhancedResults = enhancedResults[:limit]
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"contentID":     contentID,
+		"contentType":   contentType,
+		"vectorResults": len(vectorResults),
+		"hybridResults": len(enhancedResults),
+	}).Info("hybrid scoring complete")
+
+	return enhancedResults, nil
+}
+
+// Helper function to get content by ID
+func (pc *PineconeController) getContentByID(contentID, contentType string) (bson.M, error) {
+	collection := pc.GetCollectionForContentType(contentType)
+	if collection == nil {
+		return nil, fmt.Errorf("invalid content type: %s", contentType)
+	}
+
+	var query bson.M
+	if objectID, err := primitive.ObjectIDFromHex(contentID); err == nil {
+		query = bson.M{"_id": objectID}
+	} else {
+		query = bson.M{"_id": contentID}
+	}
+
+	var result bson.M
+	err := collection.FindOne(context.TODO(), query).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find content with ID %s: %w", contentID, err)
+	}
+
+	return result, nil
 }
 
 // fetchContentDetails fetches content details from MongoDB for the given IDs
@@ -204,7 +395,7 @@ func (pc *PineconeController) fetchContentDetails(contentIDs []responses.UserLis
 	return results, nil
 }
 
-// getRecommendationsForContentType gets recommendations for a specific content type
+// getRecommendationsForContentType gets recommendations for a specific content type (original method kept for fallback)
 func (pc *PineconeController) getRecommendationsForContentType(contentData []bson.M, contentType string, limit int, userContentSet map[string]bool) []map[string]interface{} {
 	if len(contentData) == 0 {
 		return nil
