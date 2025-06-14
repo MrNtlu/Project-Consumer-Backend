@@ -3,6 +3,7 @@ package controllers
 import (
 	"app/db"
 	"app/models"
+	"app/requests"
 	"app/responses"
 	"context"
 	"net/http"
@@ -41,6 +42,43 @@ func NewAISuggestionsController(
 var (
 	errNotEnoughUserList = "You need to have more content in your list. Total of 5 content is required. e.g. 1 Movie, 2 TV Series, 2 Anime, 0 Game."
 )
+
+// Mark Content as Not Interested
+// @Summary Mark Content as Not Interested
+// @Description Marks a content as not interested
+// @Tags openai
+// @Accept application/json
+// @Produce application/json
+// @Success 200 {string} string
+// @Failure 500 {string} string
+// @Router /suggestions/not-interested [post]
+func (ai *AISuggestionsController) NotInterested(c *gin.Context) {
+	var data requests.NotInterestedRequest
+	if shouldReturn := bindJSONData(&data, c); shouldReturn {
+		return
+	}
+
+	uid := jwt.ExtractClaims(c)["id"].(string)
+
+	aiSuggestionsModel := models.NewAISuggestionsModel(ai.Database)
+	if data.IsDelete {
+		err := aiSuggestionsModel.DeleteNotInterested(uid, data.ContentID, data.ContentType)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Content removed from not interested"})
+		return
+	}
+
+	err := aiSuggestionsModel.CreateNotInterested(uid, data.ContentID, data.ContentType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Content marked as not interested"})
+}
 
 // Generate AI Recommendations
 // @Summary Generate AI Recommendations from OpenAI
@@ -84,7 +122,7 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 		recommendations []responses.AISuggestion
 		createdAt       time.Time
 	)
-	needRefresh := aiRec.UserID == "" || (isPremium && ageDays >= 7) || (!isPremium && ageDays >= 30)
+	needRefresh := aiRec.UserID == "" || (isPremium && ageDays >= 3) || (!isPremium && ageDays >= 10)
 
 	if needRefresh {
 		count, err := userListModel.GetUserListCount(uid)

@@ -43,14 +43,48 @@ func NewPineconeController(
 
 // GetRecommendationsByType gets recommendations for a user based on their content lists
 func (pc *PineconeController) GetRecommendationsByType(userID string, topK int) (map[string]interface{}, error) {
-	// 1. Fetch user content lists
-	userLists, err := pc.UserListModel.GetUserListIDForSuggestion(userID)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{"userID": userID, "error": err}).Error("failed to get user list for recommendation")
-		return nil, fmt.Errorf("failed to get user list for recommendation: %w", err)
+	// 1. Fetch user content lists and not interested list concurrently
+	var (
+		userLists         responses.UserListAISuggestion
+		notInterestedList []models.NotInterested
+		errUserLists      error
+		errNotInterested  error
+	)
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		userLists, errUserLists = pc.UserListModel.GetUserListIDForSuggestion(userID)
+		if errUserLists != nil {
+			logrus.WithFields(logrus.Fields{"userID": userID, "error": errUserLists}).Error("failed to get user list for recommendation")
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		aiSuggestionsModel := models.NewAISuggestionsModel(pc.Database)
+		notInterestedList, errNotInterested = aiSuggestionsModel.GetAllNotInterestedByUserID(userID)
+		if errNotInterested != nil {
+			logrus.WithFields(logrus.Fields{"userID": userID, "error": errNotInterested}).Error("failed to get not interested content")
+		}
+	}()
+	wg.Wait()
+
+	if errUserLists != nil {
+		return nil, fmt.Errorf("failed to get user list for recommendation: %w", errUserLists)
+	}
+	if errNotInterested != nil {
+		return nil, fmt.Errorf("failed to get not interested content: %w", errNotInterested)
 	}
 
-	// 2. Build ID sets
+	// 2. Create not interested content IDs list for Pinecone filtering
+	notInterestedIDs := make([]string, len(notInterestedList))
+	for i, notInterested := range notInterestedList {
+		notInterestedIDs[i] = notInterested.ContentID
+	}
+
+	// 3. Build user content ID sets for duplicate avoidance
 	makeSet := func(ids []responses.UserListAISuggestionID) map[string]bool {
 		set := make(map[string]bool, len(ids))
 		for _, c := range ids {
@@ -63,7 +97,7 @@ func (pc *PineconeController) GetRecommendationsByType(userID string, topK int) 
 	animeSet := makeSet(userLists.AnimeIDList)
 	gameSet := makeSet(userLists.GameIDList)
 
-	// 3. Fetch content details concurrently
+	// 4. Fetch ALL content details concurrently (no sampling)
 	var (
 		movieDetails []bson.M
 		tvDetails    []bson.M
@@ -74,78 +108,80 @@ func (pc *PineconeController) GetRecommendationsByType(userID string, topK int) 
 		errAnime     error
 		errGame      error
 	)
-	var wg sync.WaitGroup
-	wg.Add(4)
+	var wgFetch sync.WaitGroup
+	wgFetch.Add(4)
 
 	go func() {
-		defer wg.Done()
+		defer wgFetch.Done()
 		movieDetails, errMovie = pc.fetchContentDetails(userLists.MovieIDList, "movies")
 		if errMovie != nil {
 			logrus.WithError(errMovie).Error("failed to fetch movie details")
 		}
 	}()
 	go func() {
-		defer wg.Done()
+		defer wgFetch.Done()
 		tvDetails, errTV = pc.fetchContentDetails(userLists.TVIDList, "tv-series")
 		if errTV != nil {
 			logrus.WithError(errTV).Error("failed to fetch TV series details")
 		}
 	}()
 	go func() {
-		defer wg.Done()
+		defer wgFetch.Done()
 		animeDetails, errAnime = pc.fetchContentDetails(userLists.AnimeIDList, "animes")
 		if errAnime != nil {
 			logrus.WithError(errAnime).Error("failed to fetch anime details")
 		}
 	}()
 	go func() {
-		defer wg.Done()
+		defer wgFetch.Done()
 		gameDetails, errGame = pc.fetchContentDetails(userLists.GameIDList, "games")
 		if errGame != nil {
 			logrus.WithError(errGame).Error("failed to fetch game details")
 		}
 	}()
-	wg.Wait()
+	wgFetch.Wait()
 
-	// 4. Log content counts
+	// 5. Log content counts
 	logrus.WithFields(logrus.Fields{
-		"movieCount": len(movieDetails),
-		"tvCount":    len(tvDetails),
-		"animeCount": len(animeDetails),
-		"gameCount":  len(gameDetails),
-		"totalItems": len(movieDetails) + len(tvDetails) + len(animeDetails) + len(gameDetails),
-	}).Info("content details retrieved for recommendations")
+		"movieCount":         len(movieDetails),
+		"tvCount":            len(tvDetails),
+		"animeCount":         len(animeDetails),
+		"gameCount":          len(gameDetails),
+		"totalItems":         len(movieDetails) + len(tvDetails) + len(animeDetails) + len(gameDetails),
+		"notInterestedCount": len(notInterestedIDs),
+	}).Info("content details and not interested list retrieved for recommendations")
 
-	// 5. Generate recommendations concurrently with hybrid scoring
+	// 6. Generate recommendations concurrently using ALL content and Pinecone-level filtering
 	recs := make(map[string][]map[string]interface{})
-	wg.Add(4)
+	var wgRecs sync.WaitGroup
+	wgRecs.Add(4)
 
 	go func() {
-		defer wg.Done()
-		recs["movies"] = pc.getRecommendationsForContentTypeWithHybrid(movieDetails, "movie", topK, movieSet)
+		defer wgRecs.Done()
+		recs["movies"] = pc.getAccurateRecommendationsWithPineconeFiltering(movieDetails, "movie", 10, movieSet, notInterestedIDs)
 	}()
 	go func() {
-		defer wg.Done()
-		recs["tvSeries"] = pc.getRecommendationsForContentTypeWithHybrid(tvDetails, "tvseries", topK, tvSet)
+		defer wgRecs.Done()
+		recs["tvSeries"] = pc.getAccurateRecommendationsWithPineconeFiltering(tvDetails, "tvseries", 10, tvSet, notInterestedIDs)
 	}()
 	go func() {
-		defer wg.Done()
-		recs["animes"] = pc.getRecommendationsForContentTypeWithHybrid(animeDetails, "anime", topK, animeSet)
+		defer wgRecs.Done()
+		recs["animes"] = pc.getAccurateRecommendationsWithPineconeFiltering(animeDetails, "anime", 10, animeSet, notInterestedIDs)
 	}()
 	go func() {
-		defer wg.Done()
-		recs["games"] = pc.getRecommendationsForContentTypeWithHybrid(gameDetails, "game", topK, gameSet)
+		defer wgRecs.Done()
+		recs["games"] = pc.getAccurateRecommendationsWithPineconeFiltering(gameDetails, "game", 10, gameSet, notInterestedIDs)
 	}()
-	wg.Wait()
+	wgRecs.Wait()
 
-	// 6. Combine all recommendations
+	// 7. Combine all recommendations
 	all := make([]map[string]interface{}, 0,
 		len(recs["movies"])+len(recs["tvSeries"])+len(recs["animes"])+len(recs["games"]))
 	for _, key := range []string{"movies", "tvSeries", "animes", "games"} {
 		all = append(all, recs[key]...)
 	}
 
-	// 7. Return structured results
+	// 8. Return structured results
 	return map[string]interface{}{
 		"movies":   recs["movies"],
 		"tvSeries": recs["tvSeries"],
@@ -156,7 +192,13 @@ func (pc *PineconeController) GetRecommendationsByType(userID string, topK int) 
 }
 
 // getRecommendationsForContentTypeWithHybrid gets recommendations with hybrid scoring
-func (pc *PineconeController) getRecommendationsForContentTypeWithHybrid(contentData []bson.M, contentType string, limit int, userContentSet map[string]bool) []map[string]interface{} {
+func (pc *PineconeController) getRecommendationsForContentTypeWithHybrid(
+	contentData []bson.M,
+	contentType string,
+	limit int,
+	userContentSet map[string]bool,
+	notInterestedSet map[string]bool,
+) []map[string]interface{} {
 	if len(contentData) == 0 {
 		return nil
 	}
@@ -219,7 +261,7 @@ Loop:
 	for item := range itemCh {
 		// Extract ID
 		idVal, ok := item["id"].(string)
-		if !ok || idVal == "" || userContentSet[idVal] {
+		if !ok || idVal == "" || userContentSet[idVal] || notInterestedSet[idVal] {
 			continue
 		}
 		// Dedupe
@@ -396,7 +438,7 @@ func (pc *PineconeController) fetchContentDetails(contentIDs []responses.UserLis
 }
 
 // getRecommendationsForContentType gets recommendations for a specific content type (original method kept for fallback)
-func (pc *PineconeController) getRecommendationsForContentType(contentData []bson.M, contentType string, limit int, userContentSet map[string]bool) []map[string]interface{} {
+func (pc *PineconeController) getRecommendationsForContentType(contentData []bson.M, contentType string, limit int, userContentSet map[string]bool, notInterestedSet map[string]bool) []map[string]interface{} {
 	if len(contentData) == 0 {
 		return nil
 	}
@@ -459,7 +501,7 @@ Loop:
 	for item := range itemCh {
 		// Extract ID
 		idVal, ok := item["id"].(string)
-		if !ok || idVal == "" || userContentSet[idVal] {
+		if !ok || idVal == "" || userContentSet[idVal] || notInterestedSet[idVal] {
 			continue
 		}
 		// Dedupe
@@ -483,13 +525,13 @@ Loop:
 }
 
 // GetRecommendationsForType gets recommendations for a specific content type
-func (pc *PineconeController) GetRecommendationsForType(contentData []bson.M, contentType string, perTypeCount int, userContentSet map[string]bool) ([]map[string]interface{}, error) {
+func (pc *PineconeController) GetRecommendationsForType(contentData []bson.M, contentType string, perTypeCount int, userContentSet map[string]bool, notInterestedSet map[string]bool) ([]map[string]interface{}, error) {
 	if len(contentData) == 0 {
 		return []map[string]interface{}{}, nil
 	}
 
 	// Step 1: Find sequels and series first
-	sequelRecs, err := pc.FindSequelsAndSeries(contentData, contentType, userContentSet)
+	sequelRecs, err := pc.FindSequelsAndSeries(contentData, contentType, userContentSet, notInterestedSet)
 	if err != nil {
 		logrus.WithField("error", err).Error("error finding sequels and series")
 	}
@@ -519,7 +561,6 @@ func (pc *PineconeController) GetRecommendationsForType(contentData []bson.M, co
 		}
 
 		// Get vector similarity recommendations from Pinecone
-		// This would need to be implemented based on your Pinecone setup
 		similarItems, err := pc.getContentSimilarityRecommendations(contentID, contentType, int(math.Ceil(float64(remainingCount)/float64(sampleSize))*2))
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
@@ -537,7 +578,7 @@ func (pc *PineconeController) GetRecommendationsForType(contentData []bson.M, co
 				itemID = id
 			}
 
-			if itemID == "" || userContentSet[itemID] {
+			if itemID == "" || userContentSet[itemID] || notInterestedSet[itemID] {
 				continue
 			}
 
@@ -564,7 +605,7 @@ func (pc *PineconeController) GetRecommendationsForType(contentData []bson.M, co
 }
 
 // FindSequelsAndSeries finds sequels and series content not yet consumed by user
-func (pc *PineconeController) FindSequelsAndSeries(contentData []bson.M, contentType string, userContentSet map[string]bool) ([]map[string]interface{}, error) {
+func (pc *PineconeController) FindSequelsAndSeries(contentData []bson.M, contentType string, userContentSet map[string]bool, notInterestedSet map[string]bool) ([]map[string]interface{}, error) {
 	if len(contentData) == 0 {
 		return []map[string]interface{}{}, nil
 	}
@@ -640,7 +681,7 @@ func (pc *PineconeController) FindSequelsAndSeries(contentData []bson.M, content
 				contentIDStr = contentID
 			}
 
-			if contentIDStr != "" && !userContentSet[contentIDStr] {
+			if contentIDStr != "" && !userContentSet[contentIDStr] && !notInterestedSet[contentIDStr] {
 				filteredSeriesContent = append(filteredSeriesContent, item)
 			}
 		}
@@ -982,4 +1023,224 @@ func (pc *PineconeController) getContentSimilarityRecommendations(contentID, con
 // GetSimilarItemsFromPinecone delegates to getContentSimilarityRecommendations
 func (pc *PineconeController) GetSimilarItemsFromPinecone(contentID, contentType string, limit int) ([]map[string]interface{}, error) {
 	return pc.getContentSimilarityRecommendations(contentID, contentType, limit)
+}
+
+// getAccurateRecommendationsWithPineconeFiltering gets recommendations using ALL user content with aggressive parallel processing
+func (pc *PineconeController) getAccurateRecommendationsWithPineconeFiltering(
+	contentData []bson.M,
+	contentType string,
+	limit int,
+	userContentSet map[string]bool,
+	notInterestedIDs []string,
+) []map[string]interface{} {
+	if len(contentData) == 0 {
+		return []map[string]interface{}{}
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"contentType":        contentType,
+		"userContentCount":   len(contentData),
+		"notInterestedCount": len(notInterestedIDs),
+		"limit":              limit,
+	}).Info("starting aggressive parallel processing with ALL user content")
+
+	// Use ALL user content for maximum accuracy - no sampling!
+	// Aggressive concurrency settings based on Pinecone best practices
+	maxConcurrency := 25 // Pinecone supports up to 30+ concurrent requests
+	if len(contentData) < maxConcurrency {
+		maxConcurrency = len(contentData)
+	}
+
+	// Channels for parallel processing with larger buffer
+	type recommendationResult struct {
+		recommendations []map[string]interface{}
+		err             error
+	}
+
+	resultChan := make(chan recommendationResult, len(contentData))
+	semaphore := make(chan struct{}, maxConcurrency) // Semaphore to control concurrency
+	var wg sync.WaitGroup
+
+	// Launch parallel Pinecone queries for ALL content with controlled concurrency
+	for _, content := range contentData {
+		wg.Add(1)
+		go func(content bson.M) {
+			defer wg.Done()
+
+			// Acquire semaphore - this controls max concurrent API calls
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+
+			// Extract contentID
+			var contentID string
+			if id, ok := content["_id"].(primitive.ObjectID); ok {
+				contentID = id.Hex()
+			} else if id, ok := content["_id"].(string); ok {
+				contentID = id
+			}
+
+			if contentID == "" {
+				resultChan <- recommendationResult{recommendations: nil, err: nil}
+				return
+			}
+
+			// Request more recommendations per query to ensure we have enough candidates
+			// This compensates for the filtering that happens later
+			queryLimit := limit * 2 // Request 2x more per query for better results
+			if queryLimit > 100 {   // Don't go crazy with API limits
+				queryLimit = 100
+			}
+
+			recommendations, err := pc.getContentSimilarityRecommendationsWithFilter(
+				contentID,
+				contentType,
+				queryLimit,
+				notInterestedIDs,
+			)
+
+			resultChan <- recommendationResult{recommendations: recommendations, err: err}
+		}(content)
+	}
+
+	// Close result channel when all goroutines complete
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	// Collect all recommendations from parallel queries with smart deduplication
+	allRecommendations := make([]map[string]interface{}, 0, len(contentData)*limit)
+	seen := make(map[string]struct{})
+	successfulQueries := 0
+	failedQueries := 0
+
+	for result := range resultChan {
+		if result.err != nil {
+			failedQueries++
+			logrus.WithError(result.err).Error("failed to get filtered recommendations from Pinecone")
+			continue
+		}
+		successfulQueries++
+
+		// Add recommendations, avoiding duplicates and user's existing content
+		for _, rec := range result.recommendations {
+			itemID, ok := rec["id"].(string)
+			if !ok || itemID == "" {
+				continue
+			}
+
+			// Skip if user already has this content
+			if userContentSet[itemID] {
+				continue
+			}
+
+			// Skip if already added (deduplication)
+			if _, exists := seen[itemID]; exists {
+				continue
+			}
+
+			seen[itemID] = struct{}{}
+			rec["type"] = contentType
+			allRecommendations = append(allRecommendations, rec)
+		}
+	}
+
+	// Sort by score (highest first) - this ensures we return the best recommendations
+	sort.Slice(allRecommendations, func(i, j int) bool {
+		scoreI, okI := allRecommendations[i]["score"].(float32)
+		scoreJ, okJ := allRecommendations[j]["score"].(float32)
+		if !okI {
+			scoreI = 0
+		}
+		if !okJ {
+			scoreJ = 0
+		}
+		return scoreI > scoreJ
+	})
+
+	// Return top results
+	if len(allRecommendations) > limit {
+		allRecommendations = allRecommendations[:limit]
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"contentType":       contentType,
+		"userContentUsed":   len(contentData),
+		"concurrentQueries": maxConcurrency,
+		"successfulQueries": successfulQueries,
+		"failedQueries":     failedQueries,
+		"totalCandidates":   len(allRecommendations),
+		"requestedLimit":    limit,
+		"actualReturned":    len(allRecommendations),
+		"deduplicatedItems": len(seen),
+	}).Info("aggressive parallel processing with ALL content complete")
+
+	return allRecommendations
+}
+
+// getContentSimilarityRecommendationsWithFilter gets similar content with not interested filtering at Pinecone level
+func (pc *PineconeController) getContentSimilarityRecommendationsWithFilter(contentID, contentType string, limit int, notInterestedIDs []string) ([]map[string]interface{}, error) {
+	ctx := context.Background()
+
+	// Build metadata filter to exclude not interested content and match content type
+	filterMap := map[string]interface{}{
+		"type": contentType,
+	}
+
+	// Add not interested content exclusion if we have any
+	if len(notInterestedIDs) > 0 {
+		// Use $nin (not in) operator to exclude not interested content IDs
+		filterMap["content_id"] = map[string]interface{}{
+			"$nin": notInterestedIDs,
+		}
+	}
+
+	mf, err := structpb.NewStruct(filterMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build metadata filter: %w", err)
+	}
+
+	req := &pinecone.QueryByVectorIdRequest{
+		VectorId:        contentID,
+		TopK:            uint32(limit),
+		MetadataFilter:  mf,
+		IncludeValues:   false,
+		IncludeMetadata: true,
+	}
+
+	res, err := pc.PineconeIndex.QueryByVectorId(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("pinecone query-by-vector-id error: %w", err)
+	}
+
+	// Format the results
+	results := make([]map[string]interface{}, 0, len(res.Matches))
+	for _, m := range res.Matches {
+		var id string
+		if m.Vector != nil {
+			id = m.Vector.Id
+		}
+		rec := map[string]interface{}{
+			"id":    id,
+			"score": m.Score,
+			"type":  contentType,
+		}
+		// override type if metadata contains it
+		if m.Vector != nil && m.Vector.Metadata != nil {
+			if val, ok := m.Vector.Metadata.Fields["type"]; ok {
+				rec["type"] = val.GetStringValue()
+			}
+		}
+		results = append(results, rec)
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"contentID":          contentID,
+		"contentType":        contentType,
+		"notInterestedCount": len(notInterestedIDs),
+		"returned":           len(results),
+		"filterApplied":      len(notInterestedIDs) > 0,
+	}).Info("Pinecone similarity query with filtering complete")
+
+	return results, nil
 }

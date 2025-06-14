@@ -21,5 +21,6 @@ func aiSuggestionsRouter(
 	suggestions := router.Group("/suggestions").Use(jwtToken.MiddlewareFunc())
 	{
 		suggestions.GET("", aiSuggestionsController.GenerateAISuggestions)
+		suggestions.POST("/not-interested", aiSuggestionsController.NotInterested)
 	}
 }

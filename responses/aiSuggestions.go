@@ -18,6 +18,7 @@ type AISuggestion struct {
 	ImageURL             string             `bson:"image_url" json:"image_url"`
 	Score                *float64           `bson:"score" json:"score"`
 	WatchLater           *ConsumeLater      `bson:"watch_later" json:"watch_later"`
+	NotInterested        *bool              `bson:"not_interested" json:"not_interested"`
 }
 
 type AISuggestionResponse struct {

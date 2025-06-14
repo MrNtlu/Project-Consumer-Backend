@@ -1475,6 +1475,8 @@ definitions:
         type: string
       image_url:
         type: string
+      not_interested:
+        type: boolean
       score:
         type: number
       title_en:
@@ -5992,6 +5994,25 @@ paths:
           schema:
             type: string
       summary: Generate AI Recommendations from OpenAI
+      tags:
+      - openai
+  /suggestions/not-interested:
+    post:
+      consumes:
+      - application/json
+      description: Marks a content as not interested
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Mark Content as Not Interested
       tags:
       - openai
   /tv:

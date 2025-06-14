@@ -252,10 +252,8 @@ func (o *OAuth2Controller) OAuth2AppleLogin(jwt *jwt.GinJWTMiddleware) gin.Handl
 
 			user.RefreshToken = &resp.RefreshToken
 			if err := userModel.UpdateUser(user); err != nil {
-				if err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-					return
-				}
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
 			}
 
 			token, _, err := jwt.TokenGenerator(user)

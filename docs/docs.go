@@ -4145,6 +4145,35 @@ const docTemplate = `{
                 }
             }
         },
+        "/suggestions/not-interested": {
+            "post": {
+                "description": "Marks a content as not interested",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openai"
+                ],
+                "summary": "Mark Content as Not Interested",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/tv": {
             "get": {
                 "description": "Returns tv series by sort and filter with pagination",
@@ -7394,6 +7423,9 @@ const docTemplate = `{
                 },
                 "image_url": {
                     "type": "string"
+                },
+                "not_interested": {
+                    "type": "boolean"
                 },
                 "score": {
                     "type": "number"

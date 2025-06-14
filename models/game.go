@@ -193,8 +193,28 @@ func (gameModel *GameModel) GetGamesFromOpenAI(uid string, gameIDs []string, lim
 
 	unwindWatchLater := bson.M{"$unwind": bson.M{
 		"path":                       "$watch_later",
-		"includeArrayIndex":          "index",
 		"preserveNullAndEmptyArrays": true,
+	}}
+
+	lookupNotInterested := bson.M{"$lookup": bson.M{
+		"from": "ai-suggestions-not-interested",
+		"let": bson.M{
+			"uid":     uid,
+			"game_id": "$game_id",
+		},
+		"pipeline": bson.A{
+			bson.M{
+				"$match": bson.M{
+					"$expr": bson.M{
+						"$and": bson.A{
+							bson.M{"$eq": bson.A{"$content_id", "$$game_id"}},
+							bson.M{"$eq": bson.A{"$user_id", "$$uid"}},
+						},
+					},
+				},
+			},
+		},
+		"as": "not_interested",
 	}}
 
 	project := bson.M{"$project": bson.M{
@@ -209,10 +229,18 @@ func (gameModel *GameModel) GetGamesFromOpenAI(uid string, gameIDs []string, lim
 		"image_url":               1,
 		"score":                   "$rawg_rating",
 		"watch_later":             1,
+		"not_interested": bson.M{
+			"$cond": bson.M{
+				"if":   bson.M{"$gt": bson.A{bson.M{"$size": "$not_interested"}, 0}},
+				"then": true,
+				"else": false,
+			},
+		},
 	}}
 
 	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, sort, limit, set, lookupWatchLater, unwindWatchLater, project,
+		match, sort, limit, set, lookupWatchLater, unwindWatchLater,
+		lookupNotInterested, project,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
