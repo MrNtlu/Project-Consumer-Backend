@@ -1211,13 +1211,19 @@ func (logsModel *LogsModel) LogStatisticsChart(uid string, data requests.LogStat
 	return chartLogs, nil
 }
 
+type ActivityDate struct {
+	Date time.Time `bson:"date"`
+}
+
 func (logsModel *LogsModel) GetLogStreak(uid string) (int, int) {
+	// Get all distinct dates when user had activity
 	match := bson.M{"$match": bson.M{
 		"user_id": uid,
 	}}
 
-	set := bson.M{"$set": bson.M{
-		"created_at": bson.M{
+	// Group by date (not datetime) to get unique activity dates
+	group := bson.M{"$group": bson.M{
+		"_id": bson.M{
 			"$dateToString": bson.M{
 				"format": "%Y-%m-%d",
 				"date":   "$created_at",
@@ -1225,53 +1231,94 @@ func (logsModel *LogsModel) GetLogStreak(uid string) (int, int) {
 		},
 	}}
 
-	setToDate := bson.M{"$set": bson.M{
-		"created_at": bson.M{
-			"$toDate": "$created_at",
+	// Convert date strings back to dates for easier processing
+	set := bson.M{"$set": bson.M{
+		"date": bson.M{
+			"$toDate": "$_id",
 		},
 	}}
 
-	group := bson.M{"$group": bson.M{
-		"_id": "$user_id",
-		"dates": bson.M{
-			"$addToSet": "$created_at",
-		},
-	}}
-
-	setSort := bson.M{"$set": bson.M{
-		"dates": bson.M{
-			"$sortArray": bson.M{
-				"input":  "$dates",
-				"sortBy": 1,
-			},
-		},
+	// Sort by date ascending
+	sort := bson.M{"$sort": bson.M{
+		"date": 1,
 	}}
 
 	cursor, err := logsModel.LogsCollection.Aggregate(context.TODO(), bson.A{
-		match, set, setToDate, group, setSort,
+		match, group, set, sort,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid": uid,
-		}).Error("failed to aggregate logs: ", err)
-
+		}).Error("failed to aggregate logs for streak: ", err)
 		return 0, 0
 	}
 
-	var logs []responses.LogDates
-	if err = cursor.All(context.TODO(), &logs); err != nil {
+	var results []ActivityDate
+	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid": uid,
-		}).Error("failed to decode logs: ", err)
-
+		}).Error("failed to decode logs for streak: ", err)
 		return 0, 0
 	}
 
-	if len(logs) > 0 {
-		return calculateStreak(logs[0])
+	if len(results) == 0 {
+		return 0, 0
 	}
 
-	return 0, 0
+	// Calculate streaks
+	return calculateStreakFromDates(results)
+}
+
+func calculateStreakFromDates(results []ActivityDate) (int, int) {
+	if len(results) == 0 {
+		return 0, 0
+	}
+
+	var maxStreak, currentStreak int
+	today := time.Now().UTC().Truncate(24 * time.Hour)
+
+	// Start with first date
+	for i := 0; i < len(results); i++ {
+		currentDate := results[i].Date.UTC().Truncate(24 * time.Hour)
+
+		if i == 0 {
+			currentStreak = 1
+		} else {
+			prevDate := results[i-1].Date.UTC().Truncate(24 * time.Hour)
+			daysDiff := int(currentDate.Sub(prevDate).Hours() / 24)
+
+			if daysDiff == 1 {
+				// Consecutive day - extend streak
+				currentStreak++
+			} else {
+				// Gap in days - reset streak
+				currentStreak = 1
+			}
+		}
+
+		// Update max streak
+		if currentStreak > maxStreak {
+			maxStreak = currentStreak
+		}
+	}
+
+	// Check if current streak is still active (last activity was today or yesterday)
+	lastActivityDate := results[len(results)-1].Date.UTC().Truncate(24 * time.Hour)
+	daysSinceLastActivity := int(today.Sub(lastActivityDate).Hours() / 24)
+
+	// If last activity was more than 1 day ago, current streak is broken
+	if daysSinceLastActivity > 1 {
+		currentStreak = 0
+	} else if daysSinceLastActivity == 1 {
+		// If last activity was yesterday, current streak doesn't include today
+		// but we still maintain the streak count
+		// Keep currentStreak as is
+	} else if daysSinceLastActivity == 0 {
+		// Last activity was today - streak is active and includes today
+		// Keep currentStreak as is
+	}
+
+	return maxStreak, currentStreak
 }
 
 func (logsModel *LogsModel) GetLogsByDateRange(uid string, data requests.LogsByDateRange) ([]responses.LogsByRange, error) {
@@ -1352,46 +1399,4 @@ func (logsModel *LogsModel) DeleteLogsByUserID(uid string) {
 			"uid": uid,
 		}).Error("failed to delete logs by user id: ", err)
 	}
-}
-
-func calculateStreak(logs responses.LogDates) (int, int) {
-	var (
-		logDates      []time.Time
-		maxStreak     int
-		currentStreak int
-	)
-
-	logDates = logs.Dates
-	maxStreak = 0
-	currentStreak = 0
-
-	for i := 1; i < len(logDates); i++ {
-		prevDate := logDates[i-1]
-		currentDate := logDates[i]
-
-		currentTime := time.Now()
-		today, _ := time.Parse("2006-01-02", currentTime.Format("2006-01-02"))
-
-		if currentDate.Sub(prevDate).Hours() == 24 {
-			currentStreak = currentStreak + 1
-		}
-
-		if maxStreak < currentStreak {
-			maxStreak = currentStreak
-		}
-
-		if currentDate.Sub(prevDate).Hours() != 24 {
-			currentStreak = 0
-		}
-
-		if i == len(logDates) && today.Sub(currentDate).Hours() > 47 {
-			currentStreak = 0
-		}
-
-		if i == (len(logDates)-1) && today.Sub(currentDate).Hours() == 24 {
-			currentStreak = currentStreak + 1
-		}
-	}
-
-	return maxStreak, currentStreak
 }

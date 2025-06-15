@@ -2963,3 +2963,152 @@ func (userListModel *UserListModel) GetUserListIDForSuggestion(userId string) (r
 
 	return suggestion, nil
 }
+
+func (userListModel *UserListModel) GetContentTypeDistribution(uid string) ([]responses.ContentTypeDistribution, error) {
+	var distribution []responses.ContentTypeDistribution
+
+	contentTypes := []struct {
+		collection *mongo.Collection
+		name       string
+	}{
+		{userListModel.AnimeListCollection, "anime"},
+		{userListModel.GameListCollection, "game"},
+		{userListModel.MovieWatchListCollection, "movie"},
+		{userListModel.TVSeriesWatchListCollection, "tv"},
+	}
+
+	var totalCount int64
+	counts := make(map[string]int64)
+
+	for _, ct := range contentTypes {
+		count, err := ct.collection.CountDocuments(context.TODO(), bson.M{"user_id": uid})
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"user_id":      uid,
+				"content_type": ct.name,
+			}).Error("failed to count documents for content type distribution: ", err)
+			continue
+		}
+		counts[ct.name] = count
+		totalCount += count
+	}
+
+	for contentType, count := range counts {
+		percentage := 0.0
+		if totalCount > 0 {
+			percentage = float64(count) / float64(totalCount) * 100
+		}
+
+		distribution = append(distribution, responses.ContentTypeDistribution{
+			ContentType: contentType,
+			Count:       count,
+			Percentage:  percentage,
+		})
+	}
+
+	return distribution, nil
+}
+
+func (userListModel *UserListModel) GetCompletionRate(uid string) (responses.CompletionRate, error) {
+	var totalContent, finishedContent, activeContent, droppedContent int64
+
+	contentTypes := []struct {
+		collection *mongo.Collection
+		name       string
+	}{
+		{userListModel.AnimeListCollection, "anime"},
+		{userListModel.GameListCollection, "game"},
+		{userListModel.MovieWatchListCollection, "movie"},
+		{userListModel.TVSeriesWatchListCollection, "tv"},
+	}
+
+	for _, ct := range contentTypes {
+		total, _ := ct.collection.CountDocuments(context.TODO(), bson.M{"user_id": uid})
+		finished, _ := ct.collection.CountDocuments(context.TODO(), bson.M{"user_id": uid, "status": "finished"})
+		active, _ := ct.collection.CountDocuments(context.TODO(), bson.M{"user_id": uid, "status": "active"})
+		dropped, _ := ct.collection.CountDocuments(context.TODO(), bson.M{"user_id": uid, "status": "dropped"})
+
+		totalContent += total
+		finishedContent += finished
+		activeContent += active
+		droppedContent += dropped
+	}
+
+	completionRate := 0.0
+	dropRate := 0.0
+
+	if totalContent > 0 {
+		completionRate = float64(finishedContent) / float64(totalContent) * 100
+		dropRate = float64(droppedContent) / float64(totalContent) * 100
+	}
+
+	return responses.CompletionRate{
+		TotalContent:    totalContent,
+		FinishedContent: finishedContent,
+		ActiveContent:   activeContent,
+		DroppedContent:  droppedContent,
+		CompletionRate:  completionRate,
+		DropRate:        dropRate,
+	}, nil
+}
+
+func (userListModel *UserListModel) GetAverageRatingByType(uid string) ([]responses.AverageRatingByType, error) {
+	var ratings []responses.AverageRatingByType
+
+	contentTypes := []struct {
+		collection *mongo.Collection
+		name       string
+	}{
+		{userListModel.AnimeListCollection, "anime"},
+		{userListModel.GameListCollection, "game"},
+		{userListModel.MovieWatchListCollection, "movie"},
+		{userListModel.TVSeriesWatchListCollection, "tv"},
+	}
+
+	for _, ct := range contentTypes {
+		pipeline := mongo.Pipeline{
+			{{"$match", bson.D{{"user_id", uid}, {"score", bson.D{{"$ne", nil}, {"$gt", 0}}}}}},
+			{{"$group", bson.D{
+				{"_id", nil},
+				{"average_rating", bson.D{{"$avg", "$score"}}},
+				{"total_rated", bson.D{{"$sum", 1}}},
+			}}},
+		}
+
+		cursor, err := ct.collection.Aggregate(context.TODO(), pipeline)
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"user_id":      uid,
+				"content_type": ct.name,
+			}).Error("failed to calculate average rating: ", err)
+			continue
+		}
+
+		var result []struct {
+			AverageRating float64 `bson:"average_rating"`
+			TotalRated    int64   `bson:"total_rated"`
+		}
+
+		if err := cursor.All(context.TODO(), &result); err != nil {
+			cursor.Close(context.TODO())
+			continue
+		}
+		cursor.Close(context.TODO())
+
+		if len(result) > 0 {
+			ratings = append(ratings, responses.AverageRatingByType{
+				ContentType:   ct.name,
+				AverageRating: result[0].AverageRating,
+				TotalRated:    result[0].TotalRated,
+			})
+		} else {
+			ratings = append(ratings, responses.AverageRatingByType{
+				ContentType:   ct.name,
+				AverageRating: 0,
+				TotalRated:    0,
+			})
+		}
+	}
+
+	return ratings, nil
+}

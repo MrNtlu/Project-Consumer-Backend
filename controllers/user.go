@@ -165,11 +165,35 @@ func (u *UserController) GetExtraStatistics(c *gin.Context) {
 			chartLogsCh <- chartLogs
 		}()
 
+		contentTypeDistributionCh := make(chan []responses.ContentTypeDistribution)
+		go func() {
+			userListModel := models.NewUserListModel(u.Database)
+			contentTypeDistribution, _ := userListModel.GetContentTypeDistribution(uid)
+			contentTypeDistributionCh <- contentTypeDistribution
+		}()
+
+		completionRateCh := make(chan responses.CompletionRate)
+		go func() {
+			userListModel := models.NewUserListModel(u.Database)
+			completionRate, _ := userListModel.GetCompletionRate(uid)
+			completionRateCh <- completionRate
+		}()
+
+		averageRatingByTypeCh := make(chan []responses.AverageRatingByType)
+		go func() {
+			userListModel := models.NewUserListModel(u.Database)
+			averageRatingByType, _ := userListModel.GetAverageRatingByType(uid)
+			averageRatingByTypeCh <- averageRatingByType
+		}()
+
 		statistics := responses.ExtraStatistics{}
 		statistics.MostLikedGenres = <-mostLikedGenresCh
 		statistics.MostLikedCountry = <-mostLikedCountryCh
 		statistics.FinishedLogStats = <-finishedLogStatsCh
 		statistics.ChartLogs = <-chartLogsCh
+		statistics.ContentTypeDistribution = <-contentTypeDistributionCh
+		statistics.CompletionRate = <-completionRateCh
+		statistics.AverageRatingByType = <-averageRatingByTypeCh
 
 		if isPremium {
 			mostWatchedActorsCh := make(chan []responses.MostWatchedActors)
@@ -1290,6 +1314,7 @@ func (u *UserController) DeleteUser(c *gin.Context) {
 	reviewsModel := models.NewReviewModel(u.Database)
 	logsModel := models.NewLogsModel(u.Database)
 	recommendationModel := models.NewRecommendationModel(u.Database)
+	achievementModel := models.NewAchievementModel(u.Database)
 
 	go userListModel.DeleteUserListByUserID(uid)
 	go userInteractionModel.DeleteAllConsumeLaterByUserID(uid)
@@ -1299,6 +1324,7 @@ func (u *UserController) DeleteUser(c *gin.Context) {
 	go suggestionModel.DeleteAllAISuggestionsByUserID(uid)
 	go logsModel.DeleteLogsByUserID(uid)
 	go recommendationModel.DeleteAllRecommendationByUserID(uid)
+	go achievementModel.DeleteUserAchievementsByUserID(uid)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully deleted user."})
 }

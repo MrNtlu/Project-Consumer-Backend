@@ -64,11 +64,35 @@ type ChartLogs struct {
 	DayOfWeek int64     `bson:"day_of_week" json:"day_of_week"`
 }
 
+type ContentTypeDistribution struct {
+	ContentType string  `bson:"content_type" json:"content_type"`
+	Count       int64   `bson:"count" json:"count"`
+	Percentage  float64 `bson:"percentage" json:"percentage"`
+}
+
+type CompletionRate struct {
+	TotalContent    int64   `bson:"total_content" json:"total_content"`
+	FinishedContent int64   `bson:"finished_content" json:"finished_content"`
+	ActiveContent   int64   `bson:"active_content" json:"active_content"`
+	DroppedContent  int64   `bson:"dropped_content" json:"dropped_content"`
+	CompletionRate  float64 `bson:"completion_rate" json:"completion_rate"`
+	DropRate        float64 `bson:"drop_rate" json:"drop_rate"`
+}
+
+type AverageRatingByType struct {
+	ContentType   string  `bson:"content_type" json:"content_type"`
+	AverageRating float64 `bson:"average_rating" json:"average_rating"`
+	TotalRated    int64   `bson:"total_rated" json:"total_rated"`
+}
+
 type ExtraStatistics struct {
-	FinishedLogStats  []FinishedLogStats  `bson:"stats" json:"stats"`
-	MostWatchedActors []MostWatchedActors `bson:"actors" json:"actors"`
-	MostLikedStudios  []MostLikedStudios  `bson:"studios" json:"studios"`
-	MostLikedGenres   []MostLikedGenres   `bson:"genres" json:"genres"`
-	MostLikedCountry  []MostLikedCountry  `bson:"country" json:"country"`
-	ChartLogs         []ChartLogs         `bson:"logs" json:"logs"`
+	FinishedLogStats        []FinishedLogStats        `bson:"stats" json:"stats"`
+	MostWatchedActors       []MostWatchedActors       `bson:"actors" json:"actors"`
+	MostLikedStudios        []MostLikedStudios        `bson:"studios" json:"studios"`
+	MostLikedGenres         []MostLikedGenres         `bson:"genres" json:"genres"`
+	MostLikedCountry        []MostLikedCountry        `bson:"country" json:"country"`
+	ChartLogs               []ChartLogs               `bson:"logs" json:"logs"`
+	ContentTypeDistribution []ContentTypeDistribution `bson:"content_type_distribution" json:"content_type_distribution"`
+	CompletionRate          CompletionRate            `bson:"completion_rate" json:"completion_rate"`
+	AverageRatingByType     []AverageRatingByType     `bson:"average_rating_by_type" json:"average_rating_by_type"`
 }
