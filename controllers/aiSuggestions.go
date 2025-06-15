@@ -7,6 +7,7 @@ import (
 	"app/responses"
 	"context"
 	"net/http"
+	"sort"
 	"sync"
 	"time"
 
@@ -203,6 +204,21 @@ func (ai *AISuggestionsController) GenerateAISuggestions(c *gin.Context) {
 		recommendations = allSuggestions
 		createdAt = aiRec.CreatedAt
 	}
+
+	// Sort recommendations by content type: movies, tvSeries, anime, games
+	sort.Slice(recommendations, func(i, j int) bool {
+		contentTypeOrder := map[string]int{
+			"movie": 1,
+			"tv":    2,
+			"anime": 3,
+			"game":  4,
+		}
+
+		orderI := contentTypeOrder[recommendations[i].ContentType]
+		orderJ := contentTypeOrder[recommendations[j].ContentType]
+
+		return orderI < orderJ
+	})
 
 	c.JSON(http.StatusOK, gin.H{"data": responses.AISuggestionResponse{
 		Suggestions: recommendations,
