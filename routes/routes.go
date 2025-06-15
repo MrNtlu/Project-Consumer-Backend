@@ -34,6 +34,7 @@ func SetupRoutes(
 	recommendationRouter(apiRouter, jwtToken, mongoDB)
 	customListRouter(apiRouter, jwtToken, mongoDB)
 	achievementRouter(apiRouter, jwtToken, mongoDB)
+	malImportRouter(apiRouter, jwtToken, mongoDB)
 
 	router.NoRoute(func(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "All routes lead to Rome 🏛️"})
