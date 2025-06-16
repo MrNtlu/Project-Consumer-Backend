@@ -412,7 +412,7 @@ func (u *UserController) GetUserInfo(c *gin.Context) {
 		userStats := <-userStatsCh
 
 		userInfo.MaxStreak = logStreak.MaxStreak
-		userInfo.Streak = logStreak.MaxStreak
+		userInfo.Streak = logStreak.CurrentStreak
 		userInfo.IsFriendRequestSent = false
 		userInfo.IsFriendRequestReceived = false
 		userInfo.IsFriendsWith = false

@@ -53,13 +53,6 @@ type MALAPIResponse struct {
 }
 
 func (m *MALImportModel) ImportUserAnimeList(userID, malUsername string) (responses.MALImportResponse, error) {
-	// Check if user is premium
-	userModel := NewUserModel(&db.MongoDB{Database: m.AnimeCollection.Database()})
-	isPremium, _ := userModel.IsUserPremium(userID)
-	if !isPremium {
-		return responses.MALImportResponse{}, fmt.Errorf("MAL import is a premium feature. Please upgrade to premium to use this feature")
-	}
-
 	// Fetch anime list from MAL
 	animeEntries, err := m.fetchMALAnimeList(malUsername)
 	if err != nil {
