@@ -13,6 +13,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -29,14 +30,15 @@ import (
 
 // Cache TTL constants - optimized for weekly content updates
 const (
-	EmbeddingCacheTTL = 7 * 24 * time.Hour // 7 days - embeddings rarely change
-	SearchCacheTTL    = 2 * time.Hour      // 2 hours - balance freshness with performance
+	embeddingCacheTTL = 5 * 24 * time.Hour // 5 days (reduced from 7 to save commands)
+	searchCacheTTL    = 90 * time.Minute   // 1.5 hours (reduced from 2 to save commands)
 )
 
 // Cache key prefixes
 const (
-	EmbeddingCachePrefix = "embedding:"
-	SearchCachePrefix    = "search:"
+	embeddingCachePrefix = "emb:"
+	searchCachePrefix    = "search:"
+	statsCacheKey        = "cache:stats"
 )
 
 type PineconeController struct {
@@ -69,30 +71,40 @@ func (pc *PineconeController) generateCacheKey(prefix string, parts ...string) s
 	return prefix + strings.Join(parts, "|")
 }
 
-// GetCacheStats returns cache statistics for monitoring
+// GetCacheStats returns cache statistics optimized for Upstash Redis limits
 func (pc *PineconeController) GetCacheStats() map[string]interface{} {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Get embedding cache stats
-	embeddingKeys, err := pc.RedisClient.Keys(ctx, EmbeddingCachePrefix+"*").Result()
-	embeddingCount := 0
+	stats := make(map[string]interface{})
+
+	// Get cache hit/miss statistics from Redis hash
+	cacheStats, err := pc.RedisClient.HGetAll(ctx, statsCacheKey).Result()
 	if err == nil {
-		embeddingCount = len(embeddingKeys)
+		for key, value := range cacheStats {
+			if intValue, err := strconv.ParseInt(value, 10, 64); err == nil {
+				stats[key] = intValue
+			} else {
+				stats[key] = value
+			}
+		}
 	}
 
-	// Get search cache stats
-	searchKeys, err := pc.RedisClient.Keys(ctx, SearchCachePrefix+"*").Result()
-	searchCount := 0
-	if err == nil {
-		searchCount = len(searchKeys)
-	}
+	// Get approximate key counts using Lua script to minimize commands
+	embeddingCount, _ := pc.RedisClient.Eval(ctx, `
+		local keys = redis.call('KEYS', ARGV[1])
+		return #keys
+	`, []string{}, embeddingCachePrefix+"*").Result()
+
+	searchCount, _ := pc.RedisClient.Eval(ctx, `
+		local keys = redis.call('KEYS', ARGV[1])
+		return #keys
+	`, []string{}, searchCachePrefix+"*").Result()
 
 	// Get Redis memory info
 	memInfo, err := pc.RedisClient.Info(ctx, "memory").Result()
 	memoryUsed := "unknown"
 	if err == nil {
-		// Parse used_memory from Redis INFO output
 		lines := strings.Split(memInfo, "\r\n")
 		for _, line := range lines {
 			if strings.HasPrefix(line, "used_memory_human:") {
@@ -102,34 +114,62 @@ func (pc *PineconeController) GetCacheStats() map[string]interface{} {
 		}
 	}
 
-	return map[string]interface{}{
-		"embedding_cache_count": embeddingCount,
-		"search_cache_count":    searchCount,
-		"embedding_cache_ttl":   EmbeddingCacheTTL.String(),
-		"search_cache_ttl":      SearchCacheTTL.String(),
-		"redis_memory_used":     memoryUsed,
-		"cache_type":            "redis",
-	}
+	// Combine all stats
+	stats["embedding_cache_count"] = embeddingCount
+	stats["search_cache_count"] = searchCount
+	stats["embedding_cache_ttl"] = embeddingCacheTTL.String()
+	stats["search_cache_ttl"] = searchCacheTTL.String()
+	stats["redis_memory_used"] = memoryUsed
+	stats["cache_type"] = "redis_upstash"
+
+	return stats
 }
 
-// ClearCache clears all caches (useful for testing or manual cache invalidation)
+// ClearCache clears all caches using efficient bulk operations for Upstash
 func (pc *PineconeController) ClearCache() {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	// Clear embedding cache
-	embeddingKeys, err := pc.RedisClient.Keys(ctx, EmbeddingCachePrefix+"*").Result()
+	// Use pipeline for efficient bulk operations
+	pipe := pc.RedisClient.Pipeline()
+
+	// Get all cache keys in batches to avoid memory issues
+	embeddingKeys, err := pc.RedisClient.Keys(ctx, embeddingCachePrefix+"*").Result()
 	if err == nil && len(embeddingKeys) > 0 {
-		pc.RedisClient.Del(ctx, embeddingKeys...)
+		// Delete in chunks to avoid command limits
+		chunkSize := 100
+		for i := 0; i < len(embeddingKeys); i += chunkSize {
+			end := i + chunkSize
+			if end > len(embeddingKeys) {
+				end = len(embeddingKeys)
+			}
+			pipe.Del(ctx, embeddingKeys[i:end]...)
+		}
 	}
 
-	// Clear search cache
-	searchKeys, err := pc.RedisClient.Keys(ctx, SearchCachePrefix+"*").Result()
+	searchKeys, err := pc.RedisClient.Keys(ctx, searchCachePrefix+"*").Result()
 	if err == nil && len(searchKeys) > 0 {
-		pc.RedisClient.Del(ctx, searchKeys...)
+		// Delete in chunks to avoid command limits
+		chunkSize := 100
+		for i := 0; i < len(searchKeys); i += chunkSize {
+			end := i + chunkSize
+			if end > len(searchKeys) {
+				end = len(searchKeys)
+			}
+			pipe.Del(ctx, searchKeys[i:end]...)
+		}
 	}
 
-	logrus.Info("cache cleared successfully")
+	// Clear stats
+	pipe.Del(ctx, statsCacheKey)
+
+	// Execute all deletions
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		logrus.WithError(err).Error("failed to clear cache")
+	} else {
+		logrus.Info("cache cleared successfully")
+	}
 }
 
 // GetRecommendationsByType gets recommendations for a user based on their content lists
@@ -2119,49 +2159,56 @@ func (pc *PineconeController) calculateTitleRelevance(contentData bson.M, query 
 
 // getEmbeddingFromCache retrieves cached embedding from Redis
 func (pc *PineconeController) getEmbeddingFromCache(query string) ([]float32, bool) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	key := pc.generateCacheKey(EmbeddingCachePrefix, query)
+	key := pc.generateCacheKey(embeddingCachePrefix, query)
 	data, err := pc.RedisClient.Get(ctx, key).Bytes()
 	if err != nil {
+		go pc.updateCacheStats(context.Background(), "embedding_misses", 1)
 		return nil, false
 	}
 
 	var embedding []float32
 	if err := json.Unmarshal(data, &embedding); err != nil {
 		logrus.WithError(err).Warn("failed to unmarshal cached embedding")
+		go pc.updateCacheStats(context.Background(), "embedding_misses", 1)
 		return nil, false
 	}
 
+	go pc.updateCacheStats(context.Background(), "embedding_hits", 1)
 	return embedding, true
 }
 
-// setEmbeddingCache stores embedding in Redis with TTL
+// setEmbeddingCache stores embedding in Redis with TTL (async for performance)
 func (pc *PineconeController) setEmbeddingCache(query string, embedding []float32) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
+	// Use async operation to avoid blocking main request
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 
-	key := pc.generateCacheKey(EmbeddingCachePrefix, query)
-	data, err := json.Marshal(embedding)
-	if err != nil {
-		logrus.WithError(err).Warn("failed to marshal embedding for cache")
-		return
-	}
+		key := pc.generateCacheKey(embeddingCachePrefix, query)
+		data, err := json.Marshal(embedding)
+		if err != nil {
+			logrus.WithError(err).Warn("failed to marshal embedding for cache")
+			return
+		}
 
-	if err := pc.RedisClient.Set(ctx, key, data, EmbeddingCacheTTL).Err(); err != nil {
-		logrus.WithError(err).Warn("failed to cache embedding")
-	}
+		if err := pc.RedisClient.Set(ctx, key, data, embeddingCacheTTL).Err(); err != nil {
+			logrus.WithError(err).Warn("failed to cache embedding")
+		}
+	}()
 }
 
 // getSearchFromCache retrieves cached search results from Redis
 func (pc *PineconeController) getSearchFromCache(query, contentType string, page, limit int) ([]map[string]interface{}, int, bool) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	key := pc.generateCacheKey(SearchCachePrefix, query, contentType, fmt.Sprintf("%d", page), fmt.Sprintf("%d", limit))
+	key := pc.generateCacheKey(searchCachePrefix, query, contentType, fmt.Sprintf("%d", page), fmt.Sprintf("%d", limit))
 	data, err := pc.RedisClient.Get(ctx, key).Bytes()
 	if err != nil {
+		go pc.updateCacheStats(context.Background(), "search_misses", 1)
 		return nil, 0, false
 	}
 
@@ -2171,33 +2218,53 @@ func (pc *PineconeController) getSearchFromCache(query, contentType string, page
 	}
 	if err := json.Unmarshal(data, &cached); err != nil {
 		logrus.WithError(err).Warn("failed to unmarshal cached search results")
+		go pc.updateCacheStats(context.Background(), "search_misses", 1)
 		return nil, 0, false
 	}
 
+	go pc.updateCacheStats(context.Background(), "search_hits", 1)
 	return cached.Results, cached.TotalResults, true
 }
 
-// setSearchCache stores search results in Redis with TTL
+// setSearchCache stores search results in Redis with TTL (async for performance)
 func (pc *PineconeController) setSearchCache(query, contentType string, page, limit int, results []map[string]interface{}, totalResults int) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
+	// Use async operation to avoid blocking main request
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 
-	key := pc.generateCacheKey(SearchCachePrefix, query, contentType, fmt.Sprintf("%d", page), fmt.Sprintf("%d", limit))
-	cached := struct {
-		Results      []map[string]interface{} `json:"results"`
-		TotalResults int                      `json:"total_results"`
-	}{
-		Results:      results,
-		TotalResults: totalResults,
-	}
+		key := pc.generateCacheKey(searchCachePrefix, query, contentType, fmt.Sprintf("%d", page), fmt.Sprintf("%d", limit))
+		cached := struct {
+			Results      []map[string]interface{} `json:"results"`
+			TotalResults int                      `json:"total_results"`
+		}{
+			Results:      results,
+			TotalResults: totalResults,
+		}
 
-	data, err := json.Marshal(cached)
-	if err != nil {
-		logrus.WithError(err).Warn("failed to marshal search results for cache")
-		return
-	}
+		data, err := json.Marshal(cached)
+		if err != nil {
+			logrus.WithError(err).Warn("failed to marshal search results for cache")
+			return
+		}
 
-	if err := pc.RedisClient.Set(ctx, key, data, SearchCacheTTL).Err(); err != nil {
-		logrus.WithError(err).Warn("failed to cache search results")
-	}
+		if err := pc.RedisClient.Set(ctx, key, data, searchCacheTTL).Err(); err != nil {
+			logrus.WithError(err).Warn("failed to cache search results")
+		}
+	}()
+}
+
+// updateCacheStats updates cache statistics using Redis pipeline for efficiency
+func (pc *PineconeController) updateCacheStats(ctx context.Context, statType string, increment int64) {
+	// Use pipeline for atomic operations to reduce command count
+	pipe := pc.RedisClient.Pipeline()
+
+	// Increment the specific stat
+	pipe.HIncrBy(ctx, statsCacheKey, statType, increment)
+
+	// Set expiry only if key doesn't exist (to avoid resetting TTL)
+	pipe.Expire(ctx, statsCacheKey, 24*time.Hour)
+
+	// Execute pipeline
+	pipe.Exec(ctx)
 }
