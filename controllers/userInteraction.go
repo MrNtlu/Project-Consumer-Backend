@@ -173,6 +173,11 @@ func (ui *UserInteractionController) CreateConsumeLater(c *gin.Context) {
 		ContentID:        data.ContentID,
 	})
 
+	// Check watch later achievements in background
+	achievementModel := models.NewAchievementModel(ui.Database)
+	achievementModel.CheckAndUnlockAchievements(uid, "watch_later")
+	achievementModel.CheckAndUnlockAchievements(uid, "first_activity")
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdConsumeLater})
 }
 
@@ -329,6 +334,10 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 			ContentID:        consumeLater.ContentID,
 		})
 
+		// Check achievements for finished anime
+		achievementModel := models.NewAchievementModel(ui.Database)
+		achievementModel.CheckAndUnlockAchievements(uid, "anime_finished")
+
 		c.JSON(http.StatusCreated, gin.H{"message": "Successfully moved to user list."})
 		return
 	case "game":
@@ -414,6 +423,10 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 			ContentID:        consumeLater.ContentID,
 		})
 
+		// Check achievements for finished game
+		achievementModel := models.NewAchievementModel(ui.Database)
+		achievementModel.CheckAndUnlockAchievements(uid, "game_finished")
+
 		c.JSON(http.StatusCreated, gin.H{"message": "Successfully moved to user list."})
 		return
 	case "movie":
@@ -498,6 +511,10 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 			ContentType:      consumeLater.ContentType,
 			ContentID:        consumeLater.ContentID,
 		})
+
+		// Check achievements for finished movie
+		achievementModel := models.NewAchievementModel(ui.Database)
+		achievementModel.CheckAndUnlockAchievements(uid, "movie_finished")
 
 		c.JSON(http.StatusCreated, gin.H{"message": "Successfully moved to user list."})
 		return
@@ -590,6 +607,10 @@ func (ui *UserInteractionController) MarkConsumeLaterAsUserList(c *gin.Context) 
 			ContentType:      consumeLater.ContentType,
 			ContentID:        consumeLater.ContentID,
 		})
+
+		// Check achievements for finished TV series
+		achievementModel := models.NewAchievementModel(ui.Database)
+		achievementModel.CheckAndUnlockAchievements(uid, "tv_finished")
 
 		c.JSON(http.StatusCreated, gin.H{"message": "Successfully moved to user list."})
 		return

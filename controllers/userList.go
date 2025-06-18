@@ -98,6 +98,13 @@ func (u *UserListController) CreateAnimeList(c *gin.Context) {
 		ContentID:        createdAnimeList.AnimeID,
 	})
 
+	// Check achievements in background
+	achievementModel := models.NewAchievementModel(u.Database)
+	if createdAnimeList.Status == "finished" {
+		achievementModel.CheckAndUnlockAchievements(uid, "anime_finished")
+	}
+	achievementModel.CheckAndUnlockAchievements(uid, "first_activity")
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdAnimeList})
 }
 
@@ -176,6 +183,10 @@ func (u *UserListController) CreateMangaList(c *gin.Context) {
 		ContentType:      "manga",
 		ContentID:        createdMangaList.MangaID,
 	})
+
+	// Check achievements in background
+	achievementModel := models.NewAchievementModel(u.Database)
+	achievementModel.CheckAndUnlockAchievements(uid, "first_activity")
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdMangaList})
 }
@@ -256,6 +267,13 @@ func (u *UserListController) CreateGameList(c *gin.Context) {
 		ContentID:        createdGameList.GameID,
 	})
 
+	// Check achievements in background
+	achievementModel := models.NewAchievementModel(u.Database)
+	if createdGameList.Status == "finished" {
+		achievementModel.CheckAndUnlockAchievements(uid, "game_finished")
+	}
+	achievementModel.CheckAndUnlockAchievements(uid, "first_activity")
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdGameList})
 }
 
@@ -335,6 +353,13 @@ func (u *UserListController) CreateMovieWatchList(c *gin.Context) {
 		ContentID:        createdWatchList.MovieID,
 	})
 
+	// Check achievements in background
+	achievementModel := models.NewAchievementModel(u.Database)
+	if createdWatchList.Status == "finished" {
+		achievementModel.CheckAndUnlockAchievements(uid, "movie_finished")
+	}
+	achievementModel.CheckAndUnlockAchievements(uid, "first_activity")
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdWatchList})
 }
 
@@ -413,6 +438,13 @@ func (u *UserListController) CreateTVSeriesWatchList(c *gin.Context) {
 		ContentType:      "tv",
 		ContentID:        createdTVSeriesWatchList.TvID,
 	})
+
+	// Check achievements in background
+	achievementModel := models.NewAchievementModel(u.Database)
+	if createdTVSeriesWatchList.Status == "finished" {
+		achievementModel.CheckAndUnlockAchievements(uid, "tv_finished")
+	}
+	achievementModel.CheckAndUnlockAchievements(uid, "first_activity")
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdTVSeriesWatchList})
 }
@@ -605,6 +637,12 @@ func (u *UserListController) UpdateAnimeListByID(c *gin.Context) {
 		ContentID:        updatedAnimeList.AnimeID,
 	})
 
+	// Check achievements if status changed to finished
+	if data.Status != nil && *data.Status == "finished" {
+		achievementModel := models.NewAchievementModel(u.Database)
+		achievementModel.CheckAndUnlockAchievements(uid, "anime_finished")
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Anime list updated.", "data": updatedAnimeList})
 }
 
@@ -747,6 +785,12 @@ func (u *UserListController) UpdateGameListByID(c *gin.Context) {
 		ContentID:        updatedGameList.GameID,
 	})
 
+	// Check achievements if status changed to finished
+	if data.Status != nil && *data.Status == "finished" {
+		achievementModel := models.NewAchievementModel(u.Database)
+		achievementModel.CheckAndUnlockAchievements(uid, "game_finished")
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Game list updated.", "data": updatedGameList})
 }
 
@@ -817,6 +861,12 @@ func (u *UserListController) UpdateMovieListByID(c *gin.Context) {
 		ContentType:      "movie",
 		ContentID:        updatedWatchList.MovieID,
 	})
+
+	// Check achievements if status changed to finished
+	if data.Status != nil && *data.Status == "finished" {
+		achievementModel := models.NewAchievementModel(u.Database)
+		achievementModel.CheckAndUnlockAchievements(uid, "movie_finished")
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Movie list updated.", "data": updatedWatchList})
 }
@@ -963,6 +1013,12 @@ func (u *UserListController) UpdateTVSeriesListByID(c *gin.Context) {
 		ContentType:      "tv",
 		ContentID:        updatedTVList.TvID,
 	})
+
+	// Check achievements if status changed to finished
+	if data.Status != nil && *data.Status == "finished" {
+		achievementModel := models.NewAchievementModel(u.Database)
+		achievementModel.CheckAndUnlockAchievements(uid, "tv_finished")
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "TV series watch list updated.", "data": updatedTVList})
 }

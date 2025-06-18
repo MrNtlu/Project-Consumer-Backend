@@ -177,6 +177,11 @@ func (r *ReviewController) CreateReview(c *gin.Context) {
 		ContentID:        data.ContentID,
 	})
 
+	// Check review achievements in background
+	achievementModel := models.NewAchievementModel(r.Database)
+	achievementModel.CheckAndUnlockAchievements(uid, "review")
+	achievementModel.CheckAndUnlockAchievements(uid, "first_activity")
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully created.", "data": createdReview})
 }
 

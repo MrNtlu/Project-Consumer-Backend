@@ -11,6 +11,7 @@ type Achievement struct {
 	Title       string             `bson:"title" json:"title"`
 	ImageURL    string             `bson:"image_url" json:"image_url"`
 	Description string             `bson:"description" json:"description"`
+	Order       int                `bson:"order" json:"order"`
 	CreatedAt   time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt   time.Time          `bson:"updated_at" json:"updated_at"`
 }
@@ -20,6 +21,7 @@ type UserAchievementResponse struct {
 	Title       string             `bson:"title" json:"title"`
 	ImageURL    string             `bson:"image_url" json:"image_url"`
 	Description string             `bson:"description" json:"description"`
+	Order       int                `bson:"order" json:"order"`
 	Unlocked    bool               `bson:"unlocked" json:"unlocked"`
 	UnlockedAt  *time.Time         `bson:"unlocked_at,omitempty" json:"unlocked_at,omitempty"`
 }
