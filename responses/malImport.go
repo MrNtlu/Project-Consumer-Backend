@@ -1,10 +1,12 @@
 package responses
 
 type MALImportResponse struct {
-	ImportedCount int    `json:"imported_count"`
-	SkippedCount  int    `json:"skipped_count"`
-	ErrorCount    int    `json:"error_count"`
-	Message       string `json:"message"`
+	ImportedCount  int      `json:"imported_count"`
+	SkippedCount   int      `json:"skipped_count"`
+	ErrorCount     int      `json:"error_count"`
+	Message        string   `json:"message"`
+	ImportedTitles []string `json:"imported_titles"`
+	SkippedTitles  []string `json:"skipped_titles"`
 }
 
 type MALAnimeEntry struct {

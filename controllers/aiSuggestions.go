@@ -14,6 +14,7 @@ import (
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/pinecone-io/go-pinecone/v3/pinecone"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,9 +29,10 @@ func NewAISuggestionsController(
 	mongoDB *db.MongoDB,
 	pinecone *pinecone.Client,
 	pineconeIndex *pinecone.IndexConnection,
+	redisClient *redis.Client,
 ) AISuggestionsController {
 
-	pineconeCtrl := NewPineconeController(mongoDB, pinecone, pineconeIndex)
+	pineconeCtrl := NewPineconeController(mongoDB, pinecone, pineconeIndex, redisClient)
 
 	return AISuggestionsController{
 		Database:      mongoDB,

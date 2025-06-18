@@ -79,6 +79,7 @@ func (m *MALImportModel) ImportUserAnimeList(userID, malUsername string) (respon
 
 	var importedCount, skippedCount, errorCount int
 	var entriesToInsert []interface{}
+	var importedTitles, skippedTitles []string
 
 	// Process entries in batches
 	for _, entry := range animeEntries {
@@ -96,6 +97,7 @@ func (m *MALImportModel) ImportUserAnimeList(userID, malUsername string) (respon
 		// Check if already exists in user's list
 		if _, exists := existingEntries[int64(entry.ID)]; exists {
 			skippedCount++
+			skippedTitles = append(skippedTitles, entry.Title)
 			continue
 		}
 
@@ -121,6 +123,7 @@ func (m *MALImportModel) ImportUserAnimeList(userID, malUsername string) (respon
 
 		entriesToInsert = append(entriesToInsert, animeListEntry)
 		importedCount++
+		importedTitles = append(importedTitles, entry.Title)
 	}
 
 	// Bulk insert all entries at once
@@ -146,10 +149,12 @@ func (m *MALImportModel) ImportUserAnimeList(userID, malUsername string) (respon
 	}).Info("MAL import completed")
 
 	return responses.MALImportResponse{
-		ImportedCount: importedCount,
-		SkippedCount:  skippedCount,
-		ErrorCount:    errorCount,
-		Message:       message,
+		ImportedCount:  importedCount,
+		SkippedCount:   skippedCount,
+		ErrorCount:     errorCount,
+		Message:        message,
+		ImportedTitles: importedTitles,
+		SkippedTitles:  skippedTitles,
 	}, nil
 }
 

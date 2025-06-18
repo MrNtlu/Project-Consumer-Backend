@@ -5,14 +5,20 @@ import (
 	"app/models"
 	"app/responses"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"math"
+	"net/http"
+	"os"
 	"regexp"
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/pinecone-io/go-pinecone/v3/pinecone"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -21,10 +27,23 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+// Cache TTL constants - optimized for weekly content updates
+const (
+	EmbeddingCacheTTL = 7 * 24 * time.Hour // 7 days - embeddings rarely change
+	SearchCacheTTL    = 2 * time.Hour      // 2 hours - balance freshness with performance
+)
+
+// Cache key prefixes
+const (
+	EmbeddingCachePrefix = "embedding:"
+	SearchCachePrefix    = "search:"
+)
+
 type PineconeController struct {
 	Database      *db.MongoDB
 	Pinecone      *pinecone.Client
 	PineconeIndex *pinecone.IndexConnection
+	RedisClient   *redis.Client
 	UserListModel *models.UserListModel
 }
 
@@ -32,13 +51,85 @@ func NewPineconeController(
 	mongoDB *db.MongoDB,
 	pinecone *pinecone.Client,
 	pineconeIndex *pinecone.IndexConnection,
+	redisClient *redis.Client,
 ) PineconeController {
 	return PineconeController{
 		Database:      mongoDB,
 		Pinecone:      pinecone,
 		PineconeIndex: pineconeIndex,
+		RedisClient:   redisClient,
 		UserListModel: models.NewUserListModel(mongoDB),
 	}
+}
+
+// startCacheCleanup runs a background goroutine to clean expired cache entries
+
+// generateCacheKey creates a consistent cache key from components
+func (pc *PineconeController) generateCacheKey(prefix string, parts ...string) string {
+	return prefix + strings.Join(parts, "|")
+}
+
+// GetCacheStats returns cache statistics for monitoring
+func (pc *PineconeController) GetCacheStats() map[string]interface{} {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Get embedding cache stats
+	embeddingKeys, err := pc.RedisClient.Keys(ctx, EmbeddingCachePrefix+"*").Result()
+	embeddingCount := 0
+	if err == nil {
+		embeddingCount = len(embeddingKeys)
+	}
+
+	// Get search cache stats
+	searchKeys, err := pc.RedisClient.Keys(ctx, SearchCachePrefix+"*").Result()
+	searchCount := 0
+	if err == nil {
+		searchCount = len(searchKeys)
+	}
+
+	// Get Redis memory info
+	memInfo, err := pc.RedisClient.Info(ctx, "memory").Result()
+	memoryUsed := "unknown"
+	if err == nil {
+		// Parse used_memory from Redis INFO output
+		lines := strings.Split(memInfo, "\r\n")
+		for _, line := range lines {
+			if strings.HasPrefix(line, "used_memory_human:") {
+				memoryUsed = strings.TrimPrefix(line, "used_memory_human:")
+				break
+			}
+		}
+	}
+
+	return map[string]interface{}{
+		"embedding_cache_count": embeddingCount,
+		"search_cache_count":    searchCount,
+		"embedding_cache_ttl":   EmbeddingCacheTTL.String(),
+		"search_cache_ttl":      SearchCacheTTL.String(),
+		"redis_memory_used":     memoryUsed,
+		"cache_type":            "redis",
+	}
+}
+
+// ClearCache clears all caches (useful for testing or manual cache invalidation)
+func (pc *PineconeController) ClearCache() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Clear embedding cache
+	embeddingKeys, err := pc.RedisClient.Keys(ctx, EmbeddingCachePrefix+"*").Result()
+	if err == nil && len(embeddingKeys) > 0 {
+		pc.RedisClient.Del(ctx, embeddingKeys...)
+	}
+
+	// Clear search cache
+	searchKeys, err := pc.RedisClient.Keys(ctx, SearchCachePrefix+"*").Result()
+	if err == nil && len(searchKeys) > 0 {
+		pc.RedisClient.Del(ctx, searchKeys...)
+	}
+
+	logrus.Info("cache cleared successfully")
 }
 
 // GetRecommendationsByType gets recommendations for a user based on their content lists
@@ -1182,17 +1273,11 @@ func (pc *PineconeController) getAccurateRecommendationsWithPineconeFiltering(
 func (pc *PineconeController) getContentSimilarityRecommendationsWithFilter(contentID, contentType string, limit int, notInterestedIDs []string) ([]map[string]interface{}, error) {
 	ctx := context.Background()
 
-	// Build metadata filter to exclude not interested content and match content type
+	// Build metadata filter for content type only
+	// Note: Pinecone doesn't support complex operators like $nin in metadata filters
+	// We'll filter out not interested content after getting results from Pinecone
 	filterMap := map[string]interface{}{
 		"type": contentType,
-	}
-
-	// Add not interested content exclusion if we have any
-	if len(notInterestedIDs) > 0 {
-		// Use $nin (not in) operator to exclude not interested content IDs
-		filterMap["content_id"] = map[string]interface{}{
-			"$nin": notInterestedIDs,
-		}
 	}
 
 	mf, err := structpb.NewStruct(filterMap)
@@ -1213,13 +1298,27 @@ func (pc *PineconeController) getContentSimilarityRecommendationsWithFilter(cont
 		return nil, fmt.Errorf("pinecone query-by-vector-id error: %w", err)
 	}
 
-	// Format the results
+	// Create a set for fast lookup of not interested IDs
+	notInterestedSet := make(map[string]bool)
+	for _, id := range notInterestedIDs {
+		notInterestedSet[id] = true
+	}
+
+	// Format the results and filter out not interested content
 	results := make([]map[string]interface{}, 0, len(res.Matches))
+	filteredCount := 0
 	for _, m := range res.Matches {
 		var id string
 		if m.Vector != nil {
 			id = m.Vector.Id
 		}
+
+		// Skip if this content is in the not interested list
+		if len(notInterestedIDs) > 0 && notInterestedSet[id] {
+			filteredCount++
+			continue
+		}
+
 		rec := map[string]interface{}{
 			"id":    id,
 			"score": m.Score,
@@ -1238,9 +1337,867 @@ func (pc *PineconeController) getContentSimilarityRecommendationsWithFilter(cont
 		"contentID":          contentID,
 		"contentType":        contentType,
 		"notInterestedCount": len(notInterestedIDs),
+		"filteredOut":        filteredCount,
 		"returned":           len(results),
 		"filterApplied":      len(notInterestedIDs) > 0,
 	}).Info("Pinecone similarity query with filtering complete")
 
 	return results, nil
+}
+
+// SearchContentByQuery performs semantic search using Pinecone and returns paginated results
+func (pc *PineconeController) SearchContentByQuery(query string, contentType string, page int, limit int) ([]map[string]interface{}, int, error) {
+	// Check search cache first
+	if results, totalResults, found := pc.getSearchFromCache(query, contentType, page, limit); found {
+		logrus.WithFields(logrus.Fields{
+			"query":       query,
+			"contentType": contentType,
+			"page":        page,
+			"limit":       limit,
+		}).Debug("search cache hit")
+		return results, totalResults, nil
+	}
+
+	// Cache miss - perform search
+	logrus.WithFields(logrus.Fields{
+		"query":       query,
+		"contentType": contentType,
+		"page":        page,
+		"limit":       limit,
+	}).Debug("search cache miss - performing full search")
+
+	// 1. Preprocess query to handle common typos and variations
+	processedQuery := pc.preprocessSearchQuery(query)
+
+	// 2. Get embedding for the search query (with caching)
+	embedding, err := pc.getQueryEmbedding(processedQuery)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"query": query,
+			"error": err,
+		}).Error("failed to get query embedding")
+		return nil, 0, fmt.Errorf("failed to generate embedding for query: %w", err)
+	}
+
+	// 3. Calculate pagination parameters
+	offset := (page - 1) * limit
+	searchLimit := limit + 10 // Get slightly more results for better ranking
+
+	// 4. Search Pinecone with the embedding
+	pineconeResults, err := pc.searchPineconeByVector(embedding, contentType, searchLimit)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"query":       query,
+			"contentType": contentType,
+			"error":       err,
+		}).Error("failed to search Pinecone")
+		return nil, 0, fmt.Errorf("failed to search Pinecone: %w", err)
+	}
+
+	// 5. Apply hybrid scoring and get MongoDB data
+	enrichedResults, err := pc.enrichWithMongoDBData(pineconeResults, query, contentType)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"query":       query,
+			"contentType": contentType,
+			"error":       err,
+		}).Error("failed to enrich with MongoDB data")
+		return nil, 0, fmt.Errorf("failed to enrich results: %w", err)
+	}
+
+	// 6. Sort by hybrid score
+	sort.Slice(enrichedResults, func(i, j int) bool {
+		scoreI, okI := enrichedResults[i]["hybrid_score"].(float64)
+		scoreJ, okJ := enrichedResults[j]["hybrid_score"].(float64)
+		if !okI {
+			scoreI = 0
+		}
+		if !okJ {
+			scoreJ = 0
+		}
+		return scoreI > scoreJ
+	})
+
+	// 7. Apply pagination
+	totalResults := len(enrichedResults)
+	start := offset
+	end := offset + limit
+
+	if start >= totalResults {
+		return []map[string]interface{}{}, totalResults, nil
+	}
+
+	if end > totalResults {
+		end = totalResults
+	}
+
+	paginatedResults := enrichedResults[start:end]
+
+	// Cache the search results
+	go pc.setSearchCache(query, contentType, page, limit, paginatedResults, totalResults)
+
+	logrus.WithFields(logrus.Fields{
+		"query":           query,
+		"contentType":     contentType,
+		"page":            page,
+		"limit":           limit,
+		"totalResults":    totalResults,
+		"returnedResults": len(paginatedResults),
+		"cached":          true,
+	}).Info("search completed successfully and cached")
+
+	return paginatedResults, totalResults, nil
+}
+
+// preprocessSearchQuery handles common typos and query variations with optimized lookup
+func (pc *PineconeController) preprocessSearchQuery(query string) string {
+	// Early return for empty queries
+	if query == "" {
+		return query
+	}
+
+	// Comprehensive typo corrections for entertainment content (optimized map)
+	typoMap := map[string]string{
+		// Pirates of the Caribbean variations
+		"carribiean": "caribbean",
+		"carribbean": "caribbean",
+		"carribean":  "caribbean",
+		"caribean":   "caribbean",
+		"caribian":   "caribbean",
+		"caribbian":  "caribbean",
+
+		// Popular franchises
+		"batman":               "dark knight batman",
+		"spiderman":            "spider-man",
+		"superman":             "man of steel superman",
+		"xmen":                 "x-men",
+		"starwars":             "star wars",
+		"star wars":            "star wars jedi sith force",
+		"lordoftherings":       "lord of the rings",
+		"harrypotter":          "harry potter",
+		"breakingbad":          "breaking bad",
+		"walkingdead":          "walking dead",
+		"fastfurious":          "fast and furious",
+		"jurassicpark":         "jurassic park",
+		"transformers":         "transformers autobots",
+		"missionimpossible":    "mission impossible",
+		"johnwick":             "john wick",
+		"avengers":             "avengers marvel",
+		"ironman":              "iron man",
+		"captainamerica":       "captain america",
+		"wonderwoman":          "wonder woman",
+		"blackpanther":         "black panther",
+		"guardiansofthegalaxy": "guardians of the galaxy",
+		"sherlockholmes":       "sherlock holmes",
+
+		// Anime specific
+		"dragonball":         "dragon ball",
+		"dragonballz":        "dragon ball z",
+		"onepiece":           "one piece",
+		"naruto":             "naruto",
+		"bleach":             "bleach",
+		"attackontitan":      "attack on titan",
+		"deathnote":          "death note",
+		"fullmetalalchemist": "fullmetal alchemist",
+		"onepunchman":        "one punch man",
+		"myheroacademia":     "my hero academia",
+		"demonslayer":        "demon slayer",
+		"jujutsukaisen":      "jujutsu kaisen",
+		"tokyoghoul":         "tokyo ghoul",
+		"mobpsycho":          "mob psycho",
+		"hunterxhunter":      "hunter x hunter",
+		"cowboybebop":        "cowboy bebop",
+		"evangelion":         "evangelion",
+		"studioghibli":       "studio ghibli",
+		"pokemon":            "pokemon",
+		"sailormoon":         "sailor moon",
+
+		// Gaming
+		"callofduty":        "call of duty",
+		"grandtheftauto":    "grand theft auto",
+		"assassinscreed":    "assassins creed",
+		"finalfantasy":      "final fantasy",
+		"worldofwarcraft":   "world of warcraft",
+		"elderscrolls":      "elder scrolls",
+		"godofwar":          "god of war",
+		"lastofus":          "last of us",
+		"uncharted":         "uncharted",
+		"residentevil":      "resident evil",
+		"silenthill":        "silent hill",
+		"metalgear":         "metal gear",
+		"streetfighter":     "street fighter",
+		"mortalkombat":      "mortal kombat",
+		"supersmashbros":    "super smash bros",
+		"legendofzelda":     "legend of zelda",
+		"supermario":        "super mario",
+		"minecraft":         "minecraft",
+		"fortnite":          "fortnite",
+		"amongus":           "among us",
+		"fallout":           "fallout",
+		"skyrim":            "skyrim",
+		"witcher":           "witcher",
+		"cyberpunk":         "cyberpunk",
+		"reddeadredemption": "red dead redemption",
+		"gtav":              "grand theft auto v",
+		"gta5":              "grand theft auto v",
+		"cod":               "call of duty",
+		"wow":               "world of warcraft",
+		"lol":               "league of legends",
+		"dota":              "dota",
+		"csgo":              "counter strike",
+		"valorant":          "valorant",
+		"overwatch":         "overwatch",
+		"apex":              "apex legends",
+		"pubg":              "pubg",
+
+		// TV Shows
+		"friendstv":           "friends",
+		"theofficeus":         "the office",
+		"gameofthrones":       "game of thrones westeros",
+		"strangerthings":      "stranger things",
+		"thewitcher":          "the witcher",
+		"mandalorian":         "mandalorian",
+		"houseofcards":        "house of cards",
+		"orangeisthenewblack": "orange is the new black",
+		"13reasonswhy":        "13 reasons why",
+		"blackmirror":         "black mirror",
+		"thecrownnetflix":     "the crown",
+		"moneyheist":          "money heist",
+		"squidgame":           "squid game",
+		"bridgerton":          "bridgerton",
+		"theumbrellaacademy":  "umbrella academy",
+		"lockeandkey":         "locke and key",
+		"thecrown":            "the crown",
+		"peakyblinders":       "peaky blinders",
+		"sherlockbbc":         "sherlock",
+		"doctorwho":           "doctor who time travel",
+		"westworld":           "westworld",
+		"houseofthedragon":    "house of the dragon",
+		"ringsofpower":        "rings of power",
+
+		// Common misspellings
+		"marvell":     "marvel",
+		"dc comics":   "dc",
+		"disneyplus":  "disney",
+		"netflix":     "netflix",
+		"hbo":         "hbo",
+		"amazon":      "amazon prime",
+		"hulu":        "hulu",
+		"appletv":     "apple tv",
+		"paramount":   "paramount",
+		"peacock":     "peacock",
+		"crunchyroll": "crunchyroll",
+		"funimation":  "funimation",
+
+		// Genre expansions
+		"horror":      "horror scary thriller suspense",
+		"comedy":      "comedy funny humor",
+		"action":      "action adventure",
+		"romance":     "romance love",
+		"scifi":       "science fiction",
+		"sci-fi":      "science fiction",
+		"fantasy":     "fantasy magic",
+		"thriller":    "thriller suspense",
+		"drama":       "drama",
+		"documentary": "documentary",
+		"animation":   "animation animated",
+		"superhero":   "superhero marvel dc",
+		"zombie":      "zombie undead",
+		"vampire":     "vampire",
+		"werewolf":    "werewolf",
+		"alien":       "alien space",
+		"robot":       "robot ai artificial intelligence",
+		"war":         "war military",
+		"crime":       "crime detective",
+		"mystery":     "mystery detective",
+		"western":     "western cowboy",
+		"musical":     "musical music",
+		"sports":      "sports",
+		"family":      "family kids children",
+		"kids":        "kids children family",
+		"teen":        "teen teenager young adult",
+		"adult":       "adult mature",
+
+		// Actor/Director name corrections
+		"tom cruise":         "tom cruise",
+		"leonardo dicaprio":  "leonardo dicaprio",
+		"brad pitt":          "brad pitt",
+		"angelina jolie":     "angelina jolie",
+		"will smith":         "will smith",
+		"johnny depp":        "johnny depp",
+		"robert downey":      "robert downey jr",
+		"chris evans":        "chris evans",
+		"chris hemsworth":    "chris hemsworth",
+		"scarlett johansson": "scarlett johansson",
+		"jennifer lawrence":  "jennifer lawrence",
+		"emma stone":         "emma stone",
+		"ryan reynolds":      "ryan reynolds",
+		"dwayne johnson":     "dwayne johnson rock",
+		"kevin hart":         "kevin hart",
+		"samuel jackson":     "samuel l jackson",
+		"morgan freeman":     "morgan freeman",
+		"denzel washington":  "denzel washington",
+		"christopher nolan":  "christopher nolan",
+		"quentin tarantino":  "quentin tarantino",
+		"martin scorsese":    "martin scorsese",
+		"steven spielberg":   "steven spielberg",
+		"james cameron":      "james cameron",
+		"ridley scott":       "ridley scott",
+		"tim burton":         "tim burton",
+		"jj abrams":          "j j abrams",
+		"michael bay":        "michael bay",
+		"zack snyder":        "zack snyder",
+		"russo brothers":     "russo brothers",
+		"kevin feige":        "kevin feige marvel",
+	}
+
+	originalQuery := query
+	query = strings.ToLower(strings.TrimSpace(query))
+
+	// Apply typo corrections
+	for typo, correction := range typoMap {
+		if strings.Contains(query, typo) {
+			query = strings.ReplaceAll(query, typo, correction)
+		}
+	}
+
+	// Handle partial matches and word boundaries
+	queryWords := strings.Fields(query)
+	for i, word := range queryWords {
+		for typo, correction := range typoMap {
+			if strings.Contains(word, typo) {
+				queryWords[i] = strings.ReplaceAll(word, typo, correction)
+			}
+		}
+	}
+	query = strings.Join(queryWords, " ")
+
+	// Smart query expansion based on context
+	query = pc.expandSearchQuery(query, originalQuery)
+
+	// Remove extra spaces and normalize
+	query = strings.Join(strings.Fields(query), " ")
+
+	// Log the query transformation for debugging
+	if query != strings.ToLower(originalQuery) {
+		logrus.WithFields(logrus.Fields{
+			"original":  originalQuery,
+			"processed": query,
+		}).Info("query preprocessing applied")
+	}
+
+	return query
+}
+
+// expandSearchQuery adds contextual terms to improve search quality
+func (pc *PineconeController) expandSearchQuery(query, originalQuery string) string {
+	// Focused contextual expansions for entertainment content
+	contextualExpansions := map[string][]string{
+		"batman":            {"dark knight", "gotham", "bruce wayne"},
+		"superman":          {"man of steel", "clark kent", "krypton"},
+		"spider-man":        {"peter parker", "marvel", "web slinger"},
+		"avengers":          {"marvel", "iron man", "captain america"},
+		"star wars":         {"jedi", "sith", "force"},
+		"lord of the rings": {"tolkien", "gandalf", "frodo"},
+		"harry potter":      {"hogwarts", "wizard", "magic"},
+		"game of thrones":   {"westeros", "jon snow", "daenerys"},
+		"breaking bad":      {"walter white", "jesse pinkman", "heisenberg"},
+		"the office":        {"michael scott", "jim halpert", "dwight schrute"},
+		"friends":           {"rachel", "monica", "phoebe"},
+		"marvel":            {"superhero", "mcu", "comic"},
+		"dc":                {"superhero", "comic", "justice league"},
+		"disney":            {"animation", "family", "pixar"},
+		"anime":             {"japanese", "manga", "animation"},
+		"pokemon":           {"pikachu", "nintendo", "anime"},
+		"final fantasy":     {"square enix", "rpg", "jrpg"},
+		"call of duty":      {"fps", "shooter", "war"},
+		"grand theft auto":  {"gta", "rockstar", "open world"},
+		"the witcher":       {"geralt", "fantasy", "monster hunter"},
+		"horror":            {"scary", "thriller", "suspense"},
+		"comedy":            {"funny", "humor", "laugh"},
+		"romance":           {"love", "relationship", "romantic"},
+		"action":            {"adventure", "fight", "explosive"},
+		"sci-fi":            {"science fiction", "futuristic", "space"},
+		"fantasy":           {"magic", "medieval", "mythical"},
+		"superhero":         {"powers", "cape", "villain"},
+		"pirate":            {"ship", "treasure", "sea"},
+		"zombie":            {"undead", "apocalypse", "survival"},
+		"vampire":           {"blood", "immortal", "gothic"},
+		"alien":             {"extraterrestrial", "space", "ufo"},
+		"robot":             {"artificial intelligence", "ai", "android"},
+	}
+
+	queryLower := strings.ToLower(query)
+
+	// Find matching expansions
+	for term, expansions := range contextualExpansions {
+		if strings.Contains(queryLower, term) {
+			// Add relevant expansions (limit to 2 to avoid query bloat)
+			for i, expansion := range expansions {
+				if i >= 2 { // Limit to 2 expansions per term
+					break
+				}
+				if !strings.Contains(queryLower, expansion) {
+					query += " " + expansion
+				}
+			}
+		}
+	}
+
+	return query
+}
+
+// getQueryEmbedding gets embedding with Redis caching
+func (pc *PineconeController) getQueryEmbedding(query string) ([]float32, error) {
+	// Try to get from cache first
+	if embedding, found := pc.getEmbeddingFromCache(query); found {
+		logrus.WithField("query", query).Debug("embedding cache hit")
+		return embedding, nil
+	}
+
+	logrus.WithField("query", query).Debug("embedding cache miss, calling OpenAI")
+
+	// Get OpenAI API key from environment
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("OPENAI_API_KEY environment variable not set")
+	}
+
+	// Create request body
+	requestBody := fmt.Sprintf(`{
+		"input": "%s",
+		"model": "text-embedding-3-small"
+	}`, strings.ReplaceAll(query, `"`, `\"`))
+
+	// Create HTTP request
+	req, err := http.NewRequest("POST", "https://api.openai.com/v1/embeddings", strings.NewReader(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	// Make the request
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Read response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("OpenAI API returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	// Parse response
+	var response struct {
+		Data []struct {
+			Embedding []float32 `json:"embedding"`
+		} `json:"data"`
+	}
+
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	if len(response.Data) == 0 {
+		return nil, fmt.Errorf("no embedding data returned")
+	}
+
+	embedding := response.Data[0].Embedding
+
+	// Cache the embedding
+	go pc.setEmbeddingCache(query, embedding)
+
+	return embedding, nil
+}
+
+// searchPineconeByVector searches Pinecone using the provided embedding vector
+func (pc *PineconeController) searchPineconeByVector(embedding []float32, contentType string, limit int) ([]map[string]interface{}, error) {
+	ctx := context.Background()
+
+	// Build metadata filter for content type
+	filterMap := map[string]interface{}{"type": contentType}
+	mf, err := structpb.NewStruct(filterMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build metadata filter: %w", err)
+	}
+
+	req := &pinecone.QueryByVectorValuesRequest{
+		Vector:          embedding,
+		TopK:            uint32(limit),
+		MetadataFilter:  mf,
+		IncludeValues:   false,
+		IncludeMetadata: true,
+	}
+
+	res, err := pc.PineconeIndex.QueryByVectorValues(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("pinecone query error: %w", err)
+	}
+
+	// Format the results
+	results := make([]map[string]interface{}, 0, len(res.Matches))
+	for _, m := range res.Matches {
+		var id string
+		if m.Vector != nil {
+			id = m.Vector.Id
+		}
+		result := map[string]interface{}{
+			"id":           id,
+			"vector_score": m.Score,
+			"type":         contentType,
+		}
+
+		// Override type if metadata contains it
+		if m.Vector != nil && m.Vector.Metadata != nil {
+			if val, ok := m.Vector.Metadata.Fields["type"]; ok {
+				result["type"] = val.GetStringValue()
+			}
+		}
+
+		results = append(results, result)
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"contentType": contentType,
+		"returned":    len(results),
+		"requested":   limit,
+	}).Info("Pinecone search completed")
+
+	return results, nil
+}
+
+// enrichWithMongoDBData fetches full content data from MongoDB and applies hybrid scoring
+func (pc *PineconeController) enrichWithMongoDBData(pineconeResults []map[string]interface{}, originalQuery string, contentType string) ([]map[string]interface{}, error) {
+	if len(pineconeResults) == 0 {
+		return []map[string]interface{}{}, nil
+	}
+
+	collection := pc.GetCollectionForContentType(contentType)
+	if collection == nil {
+		return nil, fmt.Errorf("invalid content type: %s", contentType)
+	}
+
+	// Extract all content IDs for batch processing
+	contentIDs := make([]primitive.ObjectID, 0, len(pineconeResults))
+	idToResultMap := make(map[string]map[string]interface{})
+
+	for _, result := range pineconeResults {
+		contentID, ok := result["id"].(string)
+		if !ok || contentID == "" {
+			continue
+		}
+
+		// Try to convert to ObjectID
+		if objectID, err := primitive.ObjectIDFromHex(contentID); err == nil {
+			contentIDs = append(contentIDs, objectID)
+			idToResultMap[contentID] = result
+		}
+	}
+
+	if len(contentIDs) == 0 {
+		return []map[string]interface{}{}, nil
+	}
+
+	// Batch fetch all content data from MongoDB with projection for only needed fields
+	ctx := context.Background()
+	projection := bson.M{
+		"_id":              1,
+		"title_en":         1,
+		"title_original":   1,
+		"title":            1,
+		"title_jp":         1,
+		"image_url":        1,
+		"description":      1,
+		"tmdb_id":          1,
+		"tmdb_vote":        1,
+		"tmdb_vote_count":  1,
+		"mal_id":           1,
+		"mal_score":        1,
+		"mal_scored_by":    1,
+		"rawg_id":          1,
+		"rawg_rating":      1,
+		"metacritic_score": 1,
+		"release_date":     1,
+		"first_air_date":   1,
+		"total_seasons":    1,
+		"episodes":         1,
+	}
+
+	cursor, err := collection.Find(ctx, bson.M{"_id": bson.M{"$in": contentIDs}}, options.Find().SetProjection(projection))
+	if err != nil {
+		return nil, fmt.Errorf("failed to batch fetch content: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var enrichedResults []map[string]interface{}
+
+	// Process results
+	for cursor.Next(ctx) {
+		var contentData bson.M
+		if err := cursor.Decode(&contentData); err != nil {
+			continue
+		}
+
+		// Get content ID
+		var contentID string
+		if id, ok := contentData["_id"].(primitive.ObjectID); ok {
+			contentID = id.Hex()
+		} else {
+			continue
+		}
+
+		// Get corresponding Pinecone result
+		pineconeResult, exists := idToResultMap[contentID]
+		if !exists {
+			continue
+		}
+
+		// Calculate hybrid score
+		vectorScore := pineconeResult["vector_score"].(float32)
+		popularityScore := pc.calculatePopularityScore(contentData, contentType)
+		titleRelevance := pc.calculateTitleRelevance(contentData, originalQuery)
+
+		// Hybrid scoring: 60% vector + 25% popularity + 15% title relevance
+		hybridScore := (float64(vectorScore) * 0.6) + (popularityScore * 0.25) + (titleRelevance * 0.15)
+
+		// Convert bson.M to map[string]interface{} for JSON serialization
+		dataMap := make(map[string]interface{})
+		for k, v := range contentData {
+			dataMap[k] = v
+		}
+
+		// Create enriched result
+		enrichedResult := map[string]interface{}{
+			"id":               contentID,
+			"vector_score":     vectorScore,
+			"popularity_score": popularityScore,
+			"title_relevance":  titleRelevance,
+			"hybrid_score":     hybridScore,
+			"type":             contentType,
+			"data":             dataMap,
+		}
+
+		enrichedResults = append(enrichedResults, enrichedResult)
+	}
+
+	if err := cursor.Err(); err != nil {
+		logrus.WithError(err).Warn("cursor error during batch processing")
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"contentType":     contentType,
+		"pineconeResults": len(pineconeResults),
+		"mongoResults":    len(enrichedResults),
+	}).Info("batch enrichment completed")
+
+	return enrichedResults, nil
+}
+
+// getContentByIDFromMongoDB fetches content data from MongoDB
+func (pc *PineconeController) getContentByIDFromMongoDB(contentID string, collection *mongo.Collection) (bson.M, error) {
+	var query bson.M
+
+	// Try ObjectID first, then string ID
+	if objectID, err := primitive.ObjectIDFromHex(contentID); err == nil {
+		query = bson.M{"_id": objectID}
+	} else {
+		query = bson.M{"_id": contentID}
+	}
+
+	var result bson.M
+	err := collection.FindOne(context.TODO(), query).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find content with ID %s: %w", contentID, err)
+	}
+
+	return result, nil
+}
+
+// calculatePopularityScore calculates popularity score based on content type
+func (pc *PineconeController) calculatePopularityScore(contentData bson.M, contentType string) float64 {
+	switch contentType {
+	case "movie":
+		if vote, ok := contentData["tmdb_vote"].(float64); ok {
+			if voteCount, ok := contentData["tmdb_vote_count"].(int32); ok {
+				// Normalize score (0-1 range)
+				normalizedVote := vote / 10.0
+				popularityBoost := math.Log(float64(voteCount)+1) / 20.0 // Log scale for vote count
+				return math.Min(normalizedVote+popularityBoost, 1.0)
+			}
+		}
+	case "tvseries":
+		if vote, ok := contentData["tmdb_vote"].(float64); ok {
+			if voteCount, ok := contentData["tmdb_vote_count"].(int32); ok {
+				normalizedVote := vote / 10.0
+				popularityBoost := math.Log(float64(voteCount)+1) / 20.0
+				return math.Min(normalizedVote+popularityBoost, 1.0)
+			}
+		}
+	case "anime":
+		if score, ok := contentData["mal_score"].(float64); ok {
+			if scoredBy, ok := contentData["mal_scored_by"].(int32); ok {
+				normalizedScore := score / 10.0
+				popularityBoost := math.Log(float64(scoredBy)+1) / 25.0
+				return math.Min(normalizedScore+popularityBoost, 1.0)
+			}
+		}
+	case "game":
+		if score, ok := contentData["metacritic_score"].(int32); ok {
+			normalizedScore := float64(score) / 100.0
+			return math.Min(normalizedScore, 1.0)
+		}
+	}
+
+	return 0.5 // Default score
+}
+
+// calculateTitleRelevance calculates how relevant the title is to the search query
+func (pc *PineconeController) calculateTitleRelevance(contentData bson.M, query string) float64 {
+	query = strings.ToLower(query)
+
+	// Get title fields based on content type
+	var titles []string
+	if titleEn, ok := contentData["title_en"].(string); ok && titleEn != "" {
+		titles = append(titles, strings.ToLower(titleEn))
+	}
+	if titleOriginal, ok := contentData["title_original"].(string); ok && titleOriginal != "" {
+		titles = append(titles, strings.ToLower(titleOriginal))
+	}
+	if title, ok := contentData["title"].(string); ok && title != "" {
+		titles = append(titles, strings.ToLower(title))
+	}
+	if titleJp, ok := contentData["title_jp"].(string); ok && titleJp != "" {
+		titles = append(titles, strings.ToLower(titleJp))
+	}
+
+	maxRelevance := 0.0
+	queryWords := strings.Fields(query)
+
+	for _, title := range titles {
+		// Exact match gets highest score
+		if title == query {
+			return 1.0
+		}
+
+		// Contains query gets high score
+		if strings.Contains(title, query) {
+			maxRelevance = math.Max(maxRelevance, 0.8)
+			continue
+		}
+
+		// Word overlap scoring
+		titleWords := strings.Fields(title)
+		matchingWords := 0
+
+		for _, queryWord := range queryWords {
+			for _, titleWord := range titleWords {
+				if strings.Contains(titleWord, queryWord) || strings.Contains(queryWord, titleWord) {
+					matchingWords++
+					break
+				}
+			}
+		}
+
+		if len(queryWords) > 0 {
+			wordOverlapScore := float64(matchingWords) / float64(len(queryWords)) * 0.6
+			maxRelevance = math.Max(maxRelevance, wordOverlapScore)
+		}
+	}
+
+	return maxRelevance
+}
+
+// getEmbeddingFromCache retrieves cached embedding from Redis
+func (pc *PineconeController) getEmbeddingFromCache(query string) ([]float32, bool) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	key := pc.generateCacheKey(EmbeddingCachePrefix, query)
+	data, err := pc.RedisClient.Get(ctx, key).Bytes()
+	if err != nil {
+		return nil, false
+	}
+
+	var embedding []float32
+	if err := json.Unmarshal(data, &embedding); err != nil {
+		logrus.WithError(err).Warn("failed to unmarshal cached embedding")
+		return nil, false
+	}
+
+	return embedding, true
+}
+
+// setEmbeddingCache stores embedding in Redis with TTL
+func (pc *PineconeController) setEmbeddingCache(query string, embedding []float32) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	key := pc.generateCacheKey(EmbeddingCachePrefix, query)
+	data, err := json.Marshal(embedding)
+	if err != nil {
+		logrus.WithError(err).Warn("failed to marshal embedding for cache")
+		return
+	}
+
+	if err := pc.RedisClient.Set(ctx, key, data, EmbeddingCacheTTL).Err(); err != nil {
+		logrus.WithError(err).Warn("failed to cache embedding")
+	}
+}
+
+// getSearchFromCache retrieves cached search results from Redis
+func (pc *PineconeController) getSearchFromCache(query, contentType string, page, limit int) ([]map[string]interface{}, int, bool) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	key := pc.generateCacheKey(SearchCachePrefix, query, contentType, fmt.Sprintf("%d", page), fmt.Sprintf("%d", limit))
+	data, err := pc.RedisClient.Get(ctx, key).Bytes()
+	if err != nil {
+		return nil, 0, false
+	}
+
+	var cached struct {
+		Results      []map[string]interface{} `json:"results"`
+		TotalResults int                      `json:"total_results"`
+	}
+	if err := json.Unmarshal(data, &cached); err != nil {
+		logrus.WithError(err).Warn("failed to unmarshal cached search results")
+		return nil, 0, false
+	}
+
+	return cached.Results, cached.TotalResults, true
+}
+
+// setSearchCache stores search results in Redis with TTL
+func (pc *PineconeController) setSearchCache(query, contentType string, page, limit int, results []map[string]interface{}, totalResults int) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	key := pc.generateCacheKey(SearchCachePrefix, query, contentType, fmt.Sprintf("%d", page), fmt.Sprintf("%d", limit))
+	cached := struct {
+		Results      []map[string]interface{} `json:"results"`
+		TotalResults int                      `json:"total_results"`
+	}{
+		Results:      results,
+		TotalResults: totalResults,
+	}
+
+	data, err := json.Marshal(cached)
+	if err != nil {
+		logrus.WithError(err).Warn("failed to marshal search results for cache")
+		return
+	}
+
+	if err := pc.RedisClient.Set(ctx, key, data, SearchCacheTTL).Err(); err != nil {
+		logrus.WithError(err).Warn("failed to cache search results")
+	}
 }

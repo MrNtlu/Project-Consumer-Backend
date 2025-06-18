@@ -64,6 +64,16 @@ func (gameModel *GameModel) GetPreviewUpcomingGames() ([]responses.PreviewGame, 
 		},
 	}}
 
+	// Only project required fields for preview
+	project := bson.M{"$project": bson.M{
+		"_id":              1,
+		"rawg_id":          1,
+		"title":            1,
+		"image_url":        1,
+		"has_release_date": 1,
+		"popularity":       1,
+	}}
+
 	sort := bson.M{"$sort": bson.M{
 		"has_release_date": -1,
 		"popularity":       -1,
@@ -72,7 +82,7 @@ func (gameModel *GameModel) GetPreviewUpcomingGames() ([]responses.PreviewGame, 
 	limit := bson.M{"$limit": gameUpcomingPaginationLimit}
 
 	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, addFields, addPopularityFields, sort, limit,
+		match, addFields, addPopularityFields, project, sort, limit,
 	})
 	if err != nil {
 		logrus.Error("failed to aggregate upcoming preview games: ", err)
@@ -80,7 +90,8 @@ func (gameModel *GameModel) GetPreviewUpcomingGames() ([]responses.PreviewGame, 
 		return nil, fmt.Errorf("Failed to aggregate upcoming preview games.")
 	}
 
-	var results []responses.PreviewGame
+	// Pre-allocate with known capacity
+	results := make([]responses.PreviewGame, 0, gameUpcomingPaginationLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode upcoming games: ", err)
 
@@ -92,7 +103,17 @@ func (gameModel *GameModel) GetPreviewUpcomingGames() ([]responses.PreviewGame, 
 
 func (gameModel *GameModel) GetPreviewTopGames() ([]responses.PreviewGame, error) {
 	filter := bson.D{}
-	opts := options.Find().SetSort(bson.M{"metacritic_score": -1}).SetLimit(gamePaginationLimit)
+
+	// Only fetch required fields for preview
+	opts := options.Find().
+		SetSort(bson.M{"metacritic_score": -1}).
+		SetLimit(gamePaginationLimit).
+		SetProjection(bson.M{
+			"_id":       1,
+			"rawg_id":   1,
+			"title":     1,
+			"image_url": 1,
+		})
 
 	cursor, err := gameModel.Collection.Find(context.TODO(), filter, opts)
 	if err != nil {
@@ -101,7 +122,8 @@ func (gameModel *GameModel) GetPreviewTopGames() ([]responses.PreviewGame, error
 		return nil, fmt.Errorf("Failed to find preview top games.")
 	}
 
-	var results []responses.PreviewGame
+	// Pre-allocate with known capacity
+	results := make([]responses.PreviewGame, 0, gamePaginationLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode top games: ", err)
 
@@ -120,6 +142,15 @@ func (gameModel *GameModel) GetPreviewPopularGames() ([]responses.PreviewGame, e
 		},
 	}}
 
+	// Only project required fields for preview
+	project := bson.M{"$project": bson.M{
+		"_id":        1,
+		"rawg_id":    1,
+		"title":      1,
+		"image_url":  1,
+		"popularity": 1,
+	}}
+
 	sort := bson.M{"$sort": bson.M{
 		"popularity": -1,
 	}}
@@ -127,7 +158,7 @@ func (gameModel *GameModel) GetPreviewPopularGames() ([]responses.PreviewGame, e
 	limit := bson.M{"$limit": gamePaginationLimit}
 
 	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
-		addFields, sort, limit,
+		addFields, project, sort, limit,
 	})
 	if err != nil {
 		logrus.Error("failed to aggregate popular preview games: ", err)
@@ -135,7 +166,8 @@ func (gameModel *GameModel) GetPreviewPopularGames() ([]responses.PreviewGame, e
 		return nil, fmt.Errorf("Failed to aggregate popular preview games.")
 	}
 
-	var results []responses.PreviewGame
+	// Pre-allocate with known capacity
+	results := make([]responses.PreviewGame, 0, gamePaginationLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode popular games: ", err)
 
@@ -473,6 +505,29 @@ func (gameModel *GameModel) GetGameDetails(data requests.ID) (responses.GameDeta
 		},
 	}}
 
+	// Add projection early to reduce data transfer
+	project := bson.M{"$project": bson.M{
+		"_id":               1,
+		"title":             1,
+		"title_original":    1,
+		"description":       1,
+		"image_url":         1,
+		"age_rating":        1,
+		"rawg_id":           1,
+		"rawg_rating":       1,
+		"rawg_rating_count": 1,
+		"metacritic_score":  1,
+		"release_date":      1,
+		"developers":        1,
+		"publishers":        1,
+		"platforms":         1,
+		"genres":            1,
+		"tags":              1,
+		"screenshots":       1,
+		"stores":            1,
+		"related_games":     1,
+	}}
+
 	relatedGamesLookup := bson.M{"$lookup": bson.M{
 		"from": "games",
 		"let": bson.M{
@@ -515,17 +570,18 @@ func (gameModel *GameModel) GetGameDetails(data requests.ID) (responses.GameDeta
 	}}
 
 	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, relatedGamesLookup, sortRelatedGames,
+		match, project, relatedGamesLookup, sortRelatedGames,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"id": data.ID,
 		}).Error("failed to aggregate game details: ", err)
 
-		return responses.GameDetails{}, fmt.Errorf("Failed to aggregate game details with watch list.")
+		return responses.GameDetails{}, fmt.Errorf("Failed to aggregate game details.")
 	}
 
-	var gameDetails []responses.GameDetails
+	// Pre-allocate slice with capacity 1 since we expect only one result
+	gameDetails := make([]responses.GameDetails, 0, 1)
 	if err = cursor.All(context.TODO(), &gameDetails); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"id": data.ID,
@@ -556,6 +612,29 @@ func (gameModel *GameModel) GetGameDetailsWithPlayList(data requests.ID, uuid st
 		},
 	}}
 
+	// Add projection early to reduce data transfer
+	project := bson.M{"$project": bson.M{
+		"_id":               1,
+		"title":             1,
+		"title_original":    1,
+		"description":       1,
+		"image_url":         1,
+		"age_rating":        1,
+		"rawg_id":           1,
+		"rawg_rating":       1,
+		"rawg_rating_count": 1,
+		"metacritic_score":  1,
+		"release_date":      1,
+		"developers":        1,
+		"publishers":        1,
+		"platforms":         1,
+		"genres":            1,
+		"tags":              1,
+		"screenshots":       1,
+		"stores":            1,
+		"related_games":     1,
+	}}
+
 	set := bson.M{"$set": bson.M{
 		"game_id": bson.M{
 			"$toString": "$_id",
@@ -583,6 +662,16 @@ func (gameModel *GameModel) GetGameDetailsWithPlayList(data requests.ID, uuid st
 							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
 						},
 					},
+				},
+			},
+			// Project only needed fields from game list
+			bson.M{
+				"$project": bson.M{
+					"status":         1,
+					"score":          1,
+					"hours_played":   1,
+					"times_finished": 1,
+					"created_at":     1,
 				},
 			},
 		},
@@ -616,6 +705,12 @@ func (gameModel *GameModel) GetGameDetailsWithPlayList(data requests.ID, uuid st
 							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
 						},
 					},
+				},
+			},
+			// Project only needed fields from watch later
+			bson.M{
+				"$project": bson.M{
+					"created_at": 1,
 				},
 			},
 		},
@@ -670,26 +765,26 @@ func (gameModel *GameModel) GetGameDetailsWithPlayList(data requests.ID, uuid st
 	}}
 
 	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, set, lookup, unwindWatchList, lookupWatchLater, unwindWatchLater,
-		relatedGamesLookup, sortRelatedGames,
+		match, project, set, lookup, unwindWatchList, lookupWatchLater, unwindWatchLater, relatedGamesLookup, sortRelatedGames,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid": uuid,
 			"id":  data.ID,
-		}).Error("failed to aggregate authenticated game details: ", err)
+		}).Error("failed to aggregate game details: ", err)
 
 		return responses.GameDetails{}, fmt.Errorf("Failed to aggregate game details with play list.")
 	}
 
-	var gameDetails []responses.GameDetails
+	// Pre-allocate slice with capacity 1 since we expect only one result
+	gameDetails := make([]responses.GameDetails, 0, 1)
 	if err = cursor.All(context.TODO(), &gameDetails); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid": uuid,
 			"id":  data.ID,
-		}).Error("failed to decode authenticated game details: ", err)
+		}).Error("failed to decode game details: ", err)
 
-		return responses.GameDetails{}, fmt.Errorf("Failed to decode game details with play list.")
+		return responses.GameDetails{}, fmt.Errorf("Failed to decode game details.")
 	}
 
 	if len(gameDetails) > 0 {

@@ -90,7 +90,17 @@ func (tvModel *TVModel) GetUpcomingPreviewTVSeries() ([]responses.PreviewTVSerie
 		},
 	}
 
-	opts := options.Find().SetSort(bson.M{"tmdb_popularity": -1}).SetLimit(tvSeriesUpcomingPaginationLimit)
+	// Only fetch required fields for preview
+	opts := options.Find().
+		SetSort(bson.M{"tmdb_popularity": -1}).
+		SetLimit(tvSeriesUpcomingPaginationLimit).
+		SetProjection(bson.M{
+			"_id":            1,
+			"tmdb_id":        1,
+			"title_en":       1,
+			"title_original": 1,
+			"image_url":      1,
+		})
 
 	cursor, err := tvModel.Collection.Find(context.TODO(), match, opts)
 	if err != nil {
@@ -99,7 +109,8 @@ func (tvModel *TVModel) GetUpcomingPreviewTVSeries() ([]responses.PreviewTVSerie
 		return nil, fmt.Errorf("Failed to find preview tv series.")
 	}
 
-	var results []responses.PreviewTVSeries
+	// Pre-allocate with known capacity
+	results := make([]responses.PreviewTVSeries, 0, tvSeriesUpcomingPaginationLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview upcoming: ", err)
 
@@ -125,6 +136,16 @@ func (tvModel *TVModel) GetPopularPreviewTVSeries() ([]responses.PreviewTVSeries
 		},
 	}}
 
+	// Only project required fields for preview
+	project := bson.M{"$project": bson.M{
+		"_id":             1,
+		"tmdb_id":         1,
+		"title_en":        1,
+		"title_original":  1,
+		"image_url":       1,
+		"tmdb_popularity": 1,
+	}}
+
 	sort := bson.M{"$sort": bson.M{
 		"tmdb_popularity": -1,
 	}}
@@ -132,7 +153,7 @@ func (tvModel *TVModel) GetPopularPreviewTVSeries() ([]responses.PreviewTVSeries
 	limit := bson.M{"$limit": tvSeriesPaginationLimit}
 
 	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
-		set, sort, limit,
+		set, project, sort, limit,
 	})
 	if err != nil {
 		logrus.Error("failed to aggregate popular preview tv: ", err)
@@ -140,7 +161,8 @@ func (tvModel *TVModel) GetPopularPreviewTVSeries() ([]responses.PreviewTVSeries
 		return nil, fmt.Errorf("Failed to aggregate preview tv series.")
 	}
 
-	var results []responses.PreviewTVSeries
+	// Pre-allocate with known capacity
+	results := make([]responses.PreviewTVSeries, 0, tvSeriesPaginationLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview upcoming: ", err)
 
@@ -159,6 +181,16 @@ func (tvModel *TVModel) GetTopPreviewTVSeries() ([]responses.PreviewTVSeries, er
 		},
 	}}
 
+	// Only project required fields for preview
+	project := bson.M{"$project": bson.M{
+		"_id":            1,
+		"tmdb_id":        1,
+		"title_en":       1,
+		"title_original": 1,
+		"image_url":      1,
+		"top_rated":      1,
+	}}
+
 	sort := bson.M{"$sort": bson.M{
 		"top_rated": -1,
 	}}
@@ -166,7 +198,7 @@ func (tvModel *TVModel) GetTopPreviewTVSeries() ([]responses.PreviewTVSeries, er
 	limit := bson.M{"$limit": tvSeriesPaginationLimit}
 
 	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
-		addFields, sort, limit,
+		addFields, project, sort, limit,
 	})
 	if err != nil {
 		logrus.Error("failed to aggregate popular preview tv: ", err)
@@ -174,7 +206,8 @@ func (tvModel *TVModel) GetTopPreviewTVSeries() ([]responses.PreviewTVSeries, er
 		return nil, fmt.Errorf("Failed to aggregate preview tv series.")
 	}
 
-	var results []responses.PreviewTVSeries
+	// Pre-allocate with known capacity
+	results := make([]responses.PreviewTVSeries, 0, tvSeriesPaginationLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview upcoming: ", err)
 
@@ -697,6 +730,34 @@ func (tvModel *TVModel) GetTVSeriesBySortAndFilter(data requests.SortFilterTVSer
 func (tvModel *TVModel) GetTVSeriesDetails(data requests.ID) (responses.TVSeries, error) {
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 
+	// Use FindOne with projection to only fetch required fields
+	projection := bson.M{
+		"_id":             1,
+		"title_en":        1,
+		"title_original":  1,
+		"description":     1,
+		"image_url":       1,
+		"status":          1,
+		"tmdb_id":         1,
+		"tmdb_popularity": 1,
+		"tmdb_vote":       1,
+		"tmdb_vote_count": 1,
+		"total_seasons":   1,
+		"total_episodes":  1,
+		"first_air_date":  1,
+		"backdrop":        1,
+		"recommendations": 1,
+		"genres":          1,
+		"images":          1,
+		"videos":          1,
+		"streaming":       1,
+		"seasons":         1,
+		"networks":        1,
+		"actors":          1,
+	}
+
+	options := options.FindOne().SetProjection(projection)
+
 	result := tvModel.Collection.FindOne(context.TODO(), bson.M{
 		"$or": bson.A{
 			bson.M{
@@ -706,12 +767,12 @@ func (tvModel *TVModel) GetTVSeriesDetails(data requests.ID) (responses.TVSeries
 				"tmdb_id": data.ID,
 			},
 		},
-	})
+	}, options)
 
 	var tvSeries responses.TVSeries
 	if err := result.Decode(&tvSeries); err != nil {
 		logrus.WithFields(logrus.Fields{
-			"game_id": data.ID,
+			"tv_id": data.ID,
 		}).Error("failed to find tv series details by id: ", err)
 
 		return responses.TVSeries{}, fmt.Errorf("Failed to find tv series by id.")
@@ -732,6 +793,32 @@ func (tvModel *TVModel) GetTVSeriesDetailsWithWatchListAndWatchLater(data reques
 				"tmdb_id": data.ID,
 			},
 		},
+	}}
+
+	// Add projection early to reduce data transfer
+	project := bson.M{"$project": bson.M{
+		"_id":             1,
+		"title_en":        1,
+		"title_original":  1,
+		"description":     1,
+		"image_url":       1,
+		"status":          1,
+		"tmdb_id":         1,
+		"tmdb_popularity": 1,
+		"tmdb_vote":       1,
+		"tmdb_vote_count": 1,
+		"total_seasons":   1,
+		"total_episodes":  1,
+		"first_air_date":  1,
+		"backdrop":        1,
+		"recommendations": 1,
+		"genres":          1,
+		"images":          1,
+		"videos":          1,
+		"streaming":       1,
+		"seasons":         1,
+		"networks":        1,
+		"actors":          1,
 	}}
 
 	set := bson.M{"$set": bson.M{
@@ -761,6 +848,17 @@ func (tvModel *TVModel) GetTVSeriesDetailsWithWatchListAndWatchLater(data reques
 							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
 						},
 					},
+				},
+			},
+			// Project only needed fields from TV watch list
+			bson.M{
+				"$project": bson.M{
+					"status":          1,
+					"score":           1,
+					"times_finished":  1,
+					"current_season":  1,
+					"current_episode": 1,
+					"created_at":      1,
 				},
 			},
 		},
@@ -796,6 +894,12 @@ func (tvModel *TVModel) GetTVSeriesDetailsWithWatchListAndWatchLater(data reques
 					},
 				},
 			},
+			// Project only needed fields from watch later
+			bson.M{
+				"$project": bson.M{
+					"created_at": 1,
+				},
+			},
 		},
 		"as": "watch_later",
 	}}
@@ -807,7 +911,7 @@ func (tvModel *TVModel) GetTVSeriesDetailsWithWatchListAndWatchLater(data reques
 	}}
 
 	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, set, lookup, unwindWatchList, lookupWatchLater, unwindWatchLater,
+		match, project, set, lookup, unwindWatchList, lookupWatchLater, unwindWatchLater,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -818,7 +922,8 @@ func (tvModel *TVModel) GetTVSeriesDetailsWithWatchListAndWatchLater(data reques
 		return responses.TVSeriesDetails{}, fmt.Errorf("Failed to aggregate tv details with watch list.")
 	}
 
-	var tvDetails []responses.TVSeriesDetails
+	// Pre-allocate slice with capacity 1 since we expect only one result
+	tvDetails := make([]responses.TVSeriesDetails, 0, 1)
 	if err = cursor.All(context.TODO(), &tvDetails); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid": uuid,

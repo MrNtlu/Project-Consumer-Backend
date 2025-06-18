@@ -63,7 +63,17 @@ func (movieModel *MovieModel) GetUpcomingPreviewMovies() ([]responses.PreviewMov
 		},
 	}
 
-	opts := options.Find().SetSort(bson.M{"tmdb_popularity": -1}).SetLimit(movieUpcomingPaginationLimit)
+	// Only fetch required fields for preview
+	opts := options.Find().
+		SetSort(bson.M{"tmdb_popularity": -1}).
+		SetLimit(movieUpcomingPaginationLimit).
+		SetProjection(bson.M{
+			"_id":            1,
+			"tmdb_id":        1,
+			"title_en":       1,
+			"title_original": 1,
+			"image_url":      1,
+		})
 
 	cursor, err := movieModel.Collection.Find(context.TODO(), match, opts)
 	if err != nil {
@@ -72,7 +82,8 @@ func (movieModel *MovieModel) GetUpcomingPreviewMovies() ([]responses.PreviewMov
 		return nil, fmt.Errorf("Failed to find preview upcoming movies.")
 	}
 
-	var results []responses.PreviewMovie
+	// Pre-allocate with known capacity
+	results := make([]responses.PreviewMovie, 0, movieUpcomingPaginationLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview upcoming: ", err)
 
@@ -84,7 +95,18 @@ func (movieModel *MovieModel) GetUpcomingPreviewMovies() ([]responses.PreviewMov
 
 func (movieModel *MovieModel) GetPopularPreviewMovies() ([]responses.PreviewMovie, error) {
 	filter := bson.D{}
-	opts := options.Find().SetSort(bson.M{"tmdb_popularity": -1}).SetLimit(moviePaginationLimit)
+
+	// Only fetch required fields for preview
+	opts := options.Find().
+		SetSort(bson.M{"tmdb_popularity": -1}).
+		SetLimit(moviePaginationLimit).
+		SetProjection(bson.M{
+			"_id":            1,
+			"tmdb_id":        1,
+			"title_en":       1,
+			"title_original": 1,
+			"image_url":      1,
+		})
 
 	cursor, err := movieModel.Collection.Find(context.TODO(), filter, opts)
 	if err != nil {
@@ -93,7 +115,8 @@ func (movieModel *MovieModel) GetPopularPreviewMovies() ([]responses.PreviewMovi
 		return nil, fmt.Errorf("Failed to find popular movies.")
 	}
 
-	var results []responses.PreviewMovie
+	// Pre-allocate with known capacity
+	results := make([]responses.PreviewMovie, 0, moviePaginationLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode popular upcoming: ", err)
 
@@ -112,6 +135,16 @@ func (movieModel *MovieModel) GetTopPreviewMovies() ([]responses.PreviewMovie, e
 		},
 	}}
 
+	// Only project required fields for preview
+	project := bson.M{"$project": bson.M{
+		"_id":            1,
+		"tmdb_id":        1,
+		"title_en":       1,
+		"title_original": 1,
+		"image_url":      1,
+		"top_rated":      1,
+	}}
+
 	sort := bson.M{"$sort": bson.M{
 		"top_rated": -1,
 	}}
@@ -119,7 +152,7 @@ func (movieModel *MovieModel) GetTopPreviewMovies() ([]responses.PreviewMovie, e
 	limit := bson.M{"$limit": moviePaginationLimit}
 
 	cursor, err := movieModel.Collection.Aggregate(context.TODO(), bson.A{
-		addFields, sort, limit,
+		addFields, project, sort, limit,
 	})
 	if err != nil {
 		logrus.Error("failed to aggregate top preview movies: ", err)
@@ -127,7 +160,8 @@ func (movieModel *MovieModel) GetTopPreviewMovies() ([]responses.PreviewMovie, e
 		return nil, fmt.Errorf("Failed to aggregate top preview movies.")
 	}
 
-	var results []responses.PreviewMovie
+	// Pre-allocate with known capacity
+	results := make([]responses.PreviewMovie, 0, moviePaginationLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode top movies: ", err)
 
@@ -146,7 +180,17 @@ func (movieModel *MovieModel) GetInTheaterPreviewMovies() ([]responses.PreviewMo
 		},
 	}
 
-	opts := options.Find().SetSort(bson.M{"tmdb_popularity": -1}).SetLimit(movieUpcomingPaginationLimit)
+	// Only fetch required fields for preview
+	opts := options.Find().
+		SetSort(bson.M{"tmdb_popularity": -1}).
+		SetLimit(movieUpcomingPaginationLimit).
+		SetProjection(bson.M{
+			"_id":            1,
+			"tmdb_id":        1,
+			"title_en":       1,
+			"title_original": 1,
+			"image_url":      1,
+		})
 
 	cursor, err := movieModel.Collection.Find(context.TODO(), match, opts)
 	if err != nil {
@@ -155,7 +199,8 @@ func (movieModel *MovieModel) GetInTheaterPreviewMovies() ([]responses.PreviewMo
 		return nil, fmt.Errorf("Failed to find preview in theater movies.")
 	}
 
-	var results []responses.PreviewMovie
+	// Pre-allocate with known capacity
+	results := make([]responses.PreviewMovie, 0, movieUpcomingPaginationLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview in theater movies: ", err)
 
@@ -516,6 +561,33 @@ func (movieModel *MovieModel) GetMoviesBySortAndFilter(data requests.SortFilterM
 func (movieModel *MovieModel) GetMovieDetails(data requests.ID) (responses.Movie, error) {
 	objectID, _ := primitive.ObjectIDFromHex(data.ID)
 
+	// Use FindOne with projection to only fetch required fields
+	projection := bson.M{
+		"_id":                  1,
+		"title_en":             1,
+		"title_original":       1,
+		"description":          1,
+		"image_url":            1,
+		"status":               1,
+		"length":               1,
+		"imdb_id":              1,
+		"tmdb_id":              1,
+		"tmdb_popularity":      1,
+		"tmdb_vote":            1,
+		"tmdb_vote_count":      1,
+		"release_date":         1,
+		"backdrop":             1,
+		"recommendations":      1,
+		"production_companies": 1,
+		"genres":               1,
+		"images":               1,
+		"videos":               1,
+		"streaming":            1,
+		"actors":               1,
+	}
+
+	options := options.FindOne().SetProjection(projection)
+
 	result := movieModel.Collection.FindOne(context.TODO(), bson.M{
 		"$or": bson.A{
 			bson.M{
@@ -525,12 +597,12 @@ func (movieModel *MovieModel) GetMovieDetails(data requests.ID) (responses.Movie
 				"tmdb_id": data.ID,
 			},
 		},
-	})
+	}, options)
 
 	var movie responses.Movie
 	if err := result.Decode(&movie); err != nil {
 		logrus.WithFields(logrus.Fields{
-			"game_id": data.ID,
+			"movie_id": data.ID,
 		}).Error("failed to find movie details by id: ", err)
 
 		return responses.Movie{}, fmt.Errorf("Failed to find movie by id.")
@@ -551,6 +623,31 @@ func (movieModel *MovieModel) GetMovieDetailsWithWatchListAndWatchLater(data req
 				"tmdb_id": data.ID,
 			},
 		},
+	}}
+
+	// Add projection early to reduce data transfer
+	project := bson.M{"$project": bson.M{
+		"_id":                  1,
+		"title_en":             1,
+		"title_original":       1,
+		"description":          1,
+		"image_url":            1,
+		"status":               1,
+		"length":               1,
+		"imdb_id":              1,
+		"tmdb_id":              1,
+		"tmdb_popularity":      1,
+		"tmdb_vote":            1,
+		"tmdb_vote_count":      1,
+		"release_date":         1,
+		"backdrop":             1,
+		"recommendations":      1,
+		"production_companies": 1,
+		"genres":               1,
+		"images":               1,
+		"videos":               1,
+		"streaming":            1,
+		"actors":               1,
 	}}
 
 	set := bson.M{"$set": bson.M{
@@ -580,6 +677,15 @@ func (movieModel *MovieModel) GetMovieDetailsWithWatchListAndWatchLater(data req
 							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
 						},
 					},
+				},
+			},
+			// Project only needed fields from watch list
+			bson.M{
+				"$project": bson.M{
+					"status":         1,
+					"score":          1,
+					"times_finished": 1,
+					"created_at":     1,
 				},
 			},
 		},
@@ -615,6 +721,12 @@ func (movieModel *MovieModel) GetMovieDetailsWithWatchListAndWatchLater(data req
 					},
 				},
 			},
+			// Project only needed fields from watch later
+			bson.M{
+				"$project": bson.M{
+					"created_at": 1,
+				},
+			},
 		},
 		"as": "watch_later",
 	}}
@@ -626,7 +738,7 @@ func (movieModel *MovieModel) GetMovieDetailsWithWatchListAndWatchLater(data req
 	}}
 
 	cursor, err := movieModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, set, lookup, unwindWatchList, lookupWatchLater, unwindWatchLater,
+		match, project, set, lookup, unwindWatchList, lookupWatchLater, unwindWatchLater,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -637,7 +749,8 @@ func (movieModel *MovieModel) GetMovieDetailsWithWatchListAndWatchLater(data req
 		return responses.MovieDetails{}, fmt.Errorf("Failed to aggregate movie details with watch list.")
 	}
 
-	var movieDetails []responses.MovieDetails
+	// Pre-allocate slice with capacity 1 since we expect only one result
+	movieDetails := make([]responses.MovieDetails, 0, 1)
 	if err = cursor.All(context.TODO(), &movieDetails); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid": uuid,

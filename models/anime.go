@@ -59,6 +59,17 @@ func (animeModel *AnimeModel) GetPreviewUpcomingAnimes() ([]responses.PreviewAni
 		},
 	}}
 
+	// Only project required fields for preview
+	project := bson.M{"$project": bson.M{
+		"_id":            1,
+		"mal_id":         1,
+		"title_en":       1,
+		"title_original": 1,
+		"image_url":      1,
+		"has_year":       1,
+		"popularity":     1,
+	}}
+
 	sort := bson.M{"$sort": bson.M{
 		"has_year":   -1,
 		"popularity": -1,
@@ -67,7 +78,7 @@ func (animeModel *AnimeModel) GetPreviewUpcomingAnimes() ([]responses.PreviewAni
 	limit := bson.M{"$limit": animeUpcomingPaginationLimit}
 
 	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, addFields, addPopularityFields, sort, limit,
+		match, addFields, addPopularityFields, project, sort, limit,
 	})
 	if err != nil {
 		logrus.Error("failed to aggregate preview upcoming anime: ", err)
@@ -75,7 +86,8 @@ func (animeModel *AnimeModel) GetPreviewUpcomingAnimes() ([]responses.PreviewAni
 		return nil, fmt.Errorf("Failed to aggregate preview upcoming animes.")
 	}
 
-	var results []responses.PreviewAnime
+	// Pre-allocate with known capacity
+	results := make([]responses.PreviewAnime, 0, animeUpcomingPaginationLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview upcoming animes: ", err)
 
@@ -104,6 +116,16 @@ func (animeModel *AnimeModel) GetPreviewPopularAnimes() ([]responses.PreviewAnim
 		},
 	}}
 
+	// Only project required fields for preview
+	project := bson.M{"$project": bson.M{
+		"_id":            1,
+		"mal_id":         1,
+		"title_en":       1,
+		"title_original": 1,
+		"image_url":      1,
+		"popularity":     1,
+	}}
+
 	sort := bson.M{"$sort": bson.M{
 		"popularity": -1,
 	}}
@@ -111,7 +133,7 @@ func (animeModel *AnimeModel) GetPreviewPopularAnimes() ([]responses.PreviewAnim
 	limit := bson.M{"$limit": animePaginationLimit}
 
 	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, addFields, sort, limit,
+		match, addFields, project, sort, limit,
 	})
 	if err != nil {
 		logrus.Error("failed to aggregate popular preview anime: ", err)
@@ -119,7 +141,8 @@ func (animeModel *AnimeModel) GetPreviewPopularAnimes() ([]responses.PreviewAnim
 		return nil, fmt.Errorf("Failed to aggregate preview popular animes.")
 	}
 
-	var results []responses.PreviewAnime
+	// Pre-allocate with known capacity
+	results := make([]responses.PreviewAnime, 0, animePaginationLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview popular animes: ", err)
 
@@ -131,7 +154,18 @@ func (animeModel *AnimeModel) GetPreviewPopularAnimes() ([]responses.PreviewAnim
 
 func (animeModel *AnimeModel) GetPreviewTopAnimes() ([]responses.PreviewAnime, error) {
 	filter := bson.D{}
-	opts := options.Find().SetSort(bson.M{"mal_score": -1}).SetLimit(animePaginationLimit)
+
+	// Only fetch required fields for preview
+	opts := options.Find().
+		SetSort(bson.M{"mal_score": -1}).
+		SetLimit(animePaginationLimit).
+		SetProjection(bson.M{
+			"_id":            1,
+			"mal_id":         1,
+			"title_en":       1,
+			"title_original": 1,
+			"image_url":      1,
+		})
 
 	cursor, err := animeModel.Collection.Find(context.TODO(), filter, opts)
 	if err != nil {
@@ -140,7 +174,8 @@ func (animeModel *AnimeModel) GetPreviewTopAnimes() ([]responses.PreviewAnime, e
 		return nil, fmt.Errorf("Failed to find preview top animes.")
 	}
 
-	var results []responses.PreviewAnime
+	// Pre-allocate with known capacity
+	results := make([]responses.PreviewAnime, 0, animePaginationLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview top animes: ", err)
 
@@ -673,6 +708,38 @@ func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime
 		},
 	}}
 
+	// Add projection early to reduce data transfer
+	project := bson.M{"$project": bson.M{
+		"_id":             1,
+		"title_original":  1,
+		"title_en":        1,
+		"title_jp":        1,
+		"description":     1,
+		"image_url":       1,
+		"mal_id":          1,
+		"mal_score":       1,
+		"mal_scored_by":   1,
+		"trailer":         1,
+		"type":            1,
+		"source":          1,
+		"episodes":        1,
+		"season":          1,
+		"year":            1,
+		"status":          1,
+		"is_airing":       1,
+		"age_rating":      1,
+		"aired":           1,
+		"recommendations": 1,
+		"streaming":       1,
+		"producers":       1,
+		"studios":         1,
+		"genres":          1,
+		"themes":          1,
+		"demographics":    1,
+		"relations":       1,
+		"characters":      1,
+	}}
+
 	set := bson.M{"$set": bson.M{
 		"anime_id": bson.M{
 			"$toString": "$_id",
@@ -827,7 +894,7 @@ func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime
 	}}
 
 	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, set, unwindRelations, unwindSource,
+		match, project, set, unwindRelations, unwindSource,
 		setRelation, relationLookup, unwindRelation, group,
 	})
 	if err != nil {
@@ -838,7 +905,8 @@ func (animeModel *AnimeModel) GetAnimeDetails(data requests.ID) (responses.Anime
 		return responses.Anime{}, fmt.Errorf("Failed to aggregate anime details.")
 	}
 
-	var animeDetails []responses.Anime
+	// Pre-allocate slice with capacity 1 since we expect only one result
+	animeDetails := make([]responses.Anime, 0, 1)
 	if err = cursor.All(context.TODO(), &animeDetails); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"id": data.ID,
@@ -869,6 +937,38 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 		},
 	}}
 
+	// Add projection early to reduce data transfer
+	project := bson.M{"$project": bson.M{
+		"_id":             1,
+		"title_original":  1,
+		"title_en":        1,
+		"title_jp":        1,
+		"description":     1,
+		"image_url":       1,
+		"mal_id":          1,
+		"mal_score":       1,
+		"mal_scored_by":   1,
+		"trailer":         1,
+		"type":            1,
+		"source":          1,
+		"episodes":        1,
+		"season":          1,
+		"year":            1,
+		"status":          1,
+		"is_airing":       1,
+		"age_rating":      1,
+		"aired":           1,
+		"recommendations": 1,
+		"streaming":       1,
+		"producers":       1,
+		"studios":         1,
+		"genres":          1,
+		"themes":          1,
+		"demographics":    1,
+		"relations":       1,
+		"characters":      1,
+	}}
+
 	set := bson.M{"$set": bson.M{
 		"anime_id": bson.M{
 			"$toString": "$_id",
@@ -896,6 +996,16 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
 						},
 					},
+				},
+			},
+			// Project only needed fields from anime list
+			bson.M{
+				"$project": bson.M{
+					"status":          1,
+					"score":           1,
+					"times_finished":  1,
+					"current_episode": 1,
+					"created_at":      1,
 				},
 			},
 		},
@@ -930,6 +1040,12 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
 						},
 					},
+				},
+			},
+			// Project only needed fields from watch later
+			bson.M{
+				"$project": bson.M{
+					"created_at": 1,
 				},
 			},
 		},
@@ -1090,7 +1206,7 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 	}}
 
 	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, set, lookup, unwindWatchList, lookupWatchLater, unwindWatchLater,
+		match, project, set, lookup, unwindWatchList, lookupWatchLater, unwindWatchLater,
 		unwindRelations, unwindSource, setRelation, relationLookup, unwindRelation, group,
 	})
 	if err != nil {
@@ -1102,7 +1218,8 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 		return responses.AnimeDetails{}, fmt.Errorf("Failed to aggregate anime details with watch list.")
 	}
 
-	var animeDetails []responses.AnimeDetails
+	// Pre-allocate slice with capacity 1 since we expect only one result
+	animeDetails := make([]responses.AnimeDetails, 0, 1)
 	if err = cursor.All(context.TODO(), &animeDetails); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"uid": uuid,

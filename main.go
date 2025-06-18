@@ -55,6 +55,12 @@ func main() {
 	}
 	defer pinecone.Close()
 
+	redisClient, err := db.InitRedis()
+	if err != nil {
+		log.Fatal("Error initializing Redis: ", err)
+	}
+	defer redisClient.Close()
+
 	utils.InitCipher()
 
 	jwtHandler := helpers.SetupJWTHandler(mongoDB)
@@ -91,7 +97,7 @@ func main() {
 	// config.AllowCredentials = true
 	// router.Use(cors.New(config))
 
-	routes.SetupRoutes(router, jwtHandler, mongoDB, &pineconeClient, &pinecone)
+	routes.SetupRoutes(router, jwtHandler, mongoDB, &pineconeClient, &pinecone, redisClient)
 
 	port := os.Getenv("PORT")
 	if port == "" {

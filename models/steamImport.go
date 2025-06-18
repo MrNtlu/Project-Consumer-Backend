@@ -71,6 +71,7 @@ func (s *SteamImportModel) ImportUserGameLibrary(userID, steamID string) (respon
 
 	var importedCount, skippedCount, errorCount int
 	var entriesToInsert []interface{}
+	var importedTitles, skippedTitles []string
 
 	// Process entries in batches
 	for _, entry := range gameEntries {
@@ -127,6 +128,7 @@ func (s *SteamImportModel) ImportUserGameLibrary(userID, steamID string) (respon
 					"hours_played": playtimeHoursInt,
 				}).Debug("updated existing game entry with new playtime")
 				skippedCount++ // Count as skipped since it wasn't a new import
+				skippedTitles = append(skippedTitles, entry.Name)
 			}
 			continue
 		}
@@ -154,6 +156,7 @@ func (s *SteamImportModel) ImportUserGameLibrary(userID, steamID string) (respon
 
 		entriesToInsert = append(entriesToInsert, gameListEntry)
 		importedCount++
+		importedTitles = append(importedTitles, entry.Name)
 	}
 
 	// Bulk insert all entries at once
@@ -194,10 +197,12 @@ func (s *SteamImportModel) ImportUserGameLibrary(userID, steamID string) (respon
 	}).Info("Steam import completed")
 
 	return responses.SteamImportResponse{
-		ImportedCount: importedCount,
-		SkippedCount:  skippedCount,
-		ErrorCount:    errorCount,
-		Message:       message,
+		ImportedCount:  importedCount,
+		SkippedCount:   skippedCount,
+		ErrorCount:     errorCount,
+		Message:        message,
+		ImportedTitles: importedTitles,
+		SkippedTitles:  skippedTitles,
 	}, nil
 }
 

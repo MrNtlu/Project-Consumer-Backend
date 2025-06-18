@@ -5,8 +5,10 @@ go 1.23.0
 toolchain go1.24.2
 
 require (
+	github.com/PuerkitoBio/goquery v1.10.3
 	github.com/TwiN/go-away v1.6.11
 	github.com/pinecone-io/go-pinecone/v3 v3.1.0
+	github.com/redis/go-redis/v9 v9.10.0
 	github.com/sashabaranov/go-openai v1.14.1
 	github.com/sethvargo/go-password v0.2.0
 	github.com/swaggo/files v1.0.0
@@ -14,11 +16,12 @@ require (
 )
 
 require (
-	github.com/PuerkitoBio/goquery v1.10.3 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chenzhuoyu/iasm v0.9.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/oapi-codegen/runtime v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
