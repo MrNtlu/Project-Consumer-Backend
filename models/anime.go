@@ -1056,12 +1056,6 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 					},
 				},
 			},
-			// Project only needed fields from watch later
-			bson.M{
-				"$project": bson.M{
-					"created_at": 1,
-				},
-			},
 		},
 		"as": "watch_later",
 	}}

@@ -904,12 +904,6 @@ func (tvModel *TVModel) GetTVSeriesDetailsWithWatchListAndWatchLater(data reques
 					},
 				},
 			},
-			// Project only needed fields from watch later
-			bson.M{
-				"$project": bson.M{
-					"created_at": 1,
-				},
-			},
 		},
 		"as": "watch_later",
 	}}

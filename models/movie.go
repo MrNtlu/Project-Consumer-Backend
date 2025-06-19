@@ -722,12 +722,6 @@ func (movieModel *MovieModel) GetMovieDetailsWithWatchListAndWatchLater(data req
 					},
 				},
 			},
-			// Project only needed fields from watch later
-			bson.M{
-				"$project": bson.M{
-					"created_at": 1,
-				},
-			},
 		},
 		"as": "watch_later",
 	}}
