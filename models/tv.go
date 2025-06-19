@@ -93,7 +93,7 @@ func (tvModel *TVModel) GetUpcomingPreviewTVSeries() ([]responses.PreviewTVSerie
 	// Only fetch required fields for preview
 	opts := options.Find().
 		SetSort(bson.M{"tmdb_popularity": -1}).
-		SetLimit(tvSeriesUpcomingPaginationLimit).
+		SetLimit(PreviewLimit).
 		SetProjection(bson.M{
 			"_id":            1,
 			"tmdb_id":        1,
@@ -110,7 +110,7 @@ func (tvModel *TVModel) GetUpcomingPreviewTVSeries() ([]responses.PreviewTVSerie
 	}
 
 	// Pre-allocate with known capacity
-	results := make([]responses.PreviewTVSeries, 0, tvSeriesUpcomingPaginationLimit)
+	results := make([]responses.PreviewTVSeries, 0, PreviewLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview upcoming: ", err)
 
@@ -150,7 +150,7 @@ func (tvModel *TVModel) GetPopularPreviewTVSeries() ([]responses.PreviewTVSeries
 		"tmdb_popularity": -1,
 	}}
 
-	limit := bson.M{"$limit": tvSeriesPaginationLimit}
+	limit := bson.M{"$limit": PreviewLimit}
 
 	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
 		set, project, sort, limit,
@@ -162,7 +162,7 @@ func (tvModel *TVModel) GetPopularPreviewTVSeries() ([]responses.PreviewTVSeries
 	}
 
 	// Pre-allocate with known capacity
-	results := make([]responses.PreviewTVSeries, 0, tvSeriesPaginationLimit)
+	results := make([]responses.PreviewTVSeries, 0, PreviewLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview upcoming: ", err)
 
@@ -195,7 +195,7 @@ func (tvModel *TVModel) GetTopPreviewTVSeries() ([]responses.PreviewTVSeries, er
 		"top_rated": -1,
 	}}
 
-	limit := bson.M{"$limit": tvSeriesPaginationLimit}
+	limit := bson.M{"$limit": PreviewLimit}
 
 	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
 		addFields, project, sort, limit,
@@ -207,7 +207,7 @@ func (tvModel *TVModel) GetTopPreviewTVSeries() ([]responses.PreviewTVSeries, er
 	}
 
 	// Pre-allocate with known capacity
-	results := make([]responses.PreviewTVSeries, 0, tvSeriesPaginationLimit)
+	results := make([]responses.PreviewTVSeries, 0, PreviewLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview upcoming: ", err)
 
@@ -531,6 +531,16 @@ func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek int16) (
 		"dayOfWeek": dayOfWeek,
 	}}
 
+	// OPTIMIZATION: Project only required fields early to reduce data transfer
+	project := bson.M{"$project": bson.M{
+		"_id":             1,
+		"tmdb_id":         1,
+		"title_en":        1,
+		"title_original":  1,
+		"image_url":       1,
+		"tmdb_popularity": 1,
+	}}
+
 	sortByPopularity := bson.M{"$sort": bson.M{
 		"tmdb_popularity": -1,
 	}}
@@ -549,7 +559,7 @@ func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek int16) (
 	// }}
 
 	cursor, err := tvModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, set, airDateNotNull, addFields, matchDayOfWeek, sortByPopularity, limit,
+		match, set, airDateNotNull, addFields, matchDayOfWeek, project, sortByPopularity, limit,
 	})
 	if err != nil {
 		logrus.Error("failed to aggregate currently airing tv series: ", err)
@@ -557,7 +567,7 @@ func (tvModel *TVModel) GetCurrentlyAiringTVSeriesByDayOfWeek(dayOfWeek int16) (
 		return nil, fmt.Errorf("Failed to get currently airing tv series.")
 	}
 
-	var tvSeriesList []responses.PreviewTVSeries
+	tvSeriesList := make([]responses.PreviewTVSeries, 0, 25)
 	if err := cursor.All(context.TODO(), &tvSeriesList); err != nil {
 		logrus.Error("failed to decode tv series by user id: ", err)
 
@@ -853,12 +863,12 @@ func (tvModel *TVModel) GetTVSeriesDetailsWithWatchListAndWatchLater(data reques
 			// Project only needed fields from TV watch list
 			bson.M{
 				"$project": bson.M{
-					"status":          1,
-					"score":           1,
-					"times_finished":  1,
-					"current_season":  1,
-					"current_episode": 1,
-					"created_at":      1,
+					"status":           1,
+					"score":            1,
+					"times_finished":   1,
+					"watched_seasons":  1,
+					"watched_episodes": 1,
+					"created_at":       1,
 				},
 			},
 		},

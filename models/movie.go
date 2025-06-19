@@ -35,6 +35,7 @@ const (
 	moviePaginationLimit         = 40
 	movieActorsLimit             = 50
 	popularPlatformsLimit        = 15
+	PreviewLimit                 = 30
 )
 
 func (movieModel *MovieModel) GetUpcomingPreviewMovies() ([]responses.PreviewMovie, error) {
@@ -66,7 +67,7 @@ func (movieModel *MovieModel) GetUpcomingPreviewMovies() ([]responses.PreviewMov
 	// Only fetch required fields for preview
 	opts := options.Find().
 		SetSort(bson.M{"tmdb_popularity": -1}).
-		SetLimit(movieUpcomingPaginationLimit).
+		SetLimit(PreviewLimit).
 		SetProjection(bson.M{
 			"_id":            1,
 			"tmdb_id":        1,
@@ -83,7 +84,7 @@ func (movieModel *MovieModel) GetUpcomingPreviewMovies() ([]responses.PreviewMov
 	}
 
 	// Pre-allocate with known capacity
-	results := make([]responses.PreviewMovie, 0, movieUpcomingPaginationLimit)
+	results := make([]responses.PreviewMovie, 0, PreviewLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview upcoming: ", err)
 
@@ -99,7 +100,7 @@ func (movieModel *MovieModel) GetPopularPreviewMovies() ([]responses.PreviewMovi
 	// Only fetch required fields for preview
 	opts := options.Find().
 		SetSort(bson.M{"tmdb_popularity": -1}).
-		SetLimit(moviePaginationLimit).
+		SetLimit(PreviewLimit).
 		SetProjection(bson.M{
 			"_id":            1,
 			"tmdb_id":        1,
@@ -116,7 +117,7 @@ func (movieModel *MovieModel) GetPopularPreviewMovies() ([]responses.PreviewMovi
 	}
 
 	// Pre-allocate with known capacity
-	results := make([]responses.PreviewMovie, 0, moviePaginationLimit)
+	results := make([]responses.PreviewMovie, 0, PreviewLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode popular upcoming: ", err)
 
@@ -149,7 +150,7 @@ func (movieModel *MovieModel) GetTopPreviewMovies() ([]responses.PreviewMovie, e
 		"top_rated": -1,
 	}}
 
-	limit := bson.M{"$limit": moviePaginationLimit}
+	limit := bson.M{"$limit": PreviewLimit}
 
 	cursor, err := movieModel.Collection.Aggregate(context.TODO(), bson.A{
 		addFields, project, sort, limit,
@@ -161,7 +162,7 @@ func (movieModel *MovieModel) GetTopPreviewMovies() ([]responses.PreviewMovie, e
 	}
 
 	// Pre-allocate with known capacity
-	results := make([]responses.PreviewMovie, 0, moviePaginationLimit)
+	results := make([]responses.PreviewMovie, 0, PreviewLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode top movies: ", err)
 
@@ -183,7 +184,7 @@ func (movieModel *MovieModel) GetInTheaterPreviewMovies() ([]responses.PreviewMo
 	// Only fetch required fields for preview
 	opts := options.Find().
 		SetSort(bson.M{"tmdb_popularity": -1}).
-		SetLimit(movieUpcomingPaginationLimit).
+		SetLimit(PreviewLimit).
 		SetProjection(bson.M{
 			"_id":            1,
 			"tmdb_id":        1,
@@ -200,7 +201,7 @@ func (movieModel *MovieModel) GetInTheaterPreviewMovies() ([]responses.PreviewMo
 	}
 
 	// Pre-allocate with known capacity
-	results := make([]responses.PreviewMovie, 0, movieUpcomingPaginationLimit)
+	results := make([]responses.PreviewMovie, 0, PreviewLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview in theater movies: ", err)
 
@@ -829,6 +830,133 @@ func (movieModel *MovieModel) GetPopularActors(data requests.Pagination) ([]resp
 	}
 
 	return actorList, nil
+}
+
+// GetCombinedPopularActors - OPTIMIZATION: Combined movie+TV actors in single query
+// This replaces separate GetPopularActors calls for movies and TV to reduce database operations
+func (movieModel *MovieModel) GetCombinedPopularActors(data requests.Pagination) ([]responses.ActorDetails, []responses.ActorDetails, error) {
+	// Use facet to get both movie and TV actors in single aggregation
+	facet := bson.M{"$facet": bson.M{
+		"movieActors": bson.A{
+			bson.M{"$set": bson.M{
+				"actors": bson.M{
+					"$slice": bson.A{"$actors", 15},
+				},
+			}},
+			bson.M{"$unwind": bson.M{
+				"path":                       "$actors",
+				"includeArrayIndex":          "index",
+				"preserveNullAndEmptyArrays": false,
+			}},
+			bson.M{"$group": bson.M{
+				"_id": "$actors.tmdb_id",
+				"name": bson.M{
+					"$first": "$actors.name",
+				},
+				"image_url": bson.M{
+					"$first": "$actors.image",
+				},
+				"count": bson.M{
+					"$sum": 1,
+				},
+				"popularity": bson.M{
+					"$sum": "$tmdb_popularity",
+				},
+			}},
+			bson.M{"$set": bson.M{
+				"popularity": bson.M{
+					"$multiply": bson.A{"$count", "$popularity"},
+				},
+			}},
+			bson.M{"$sort": bson.M{
+				"popularity": -1,
+			}},
+			bson.M{"$limit": movieActorsLimit},
+		},
+		"tvActors": bson.A{
+			bson.M{"$lookup": bson.M{
+				"from": "tv-series",
+				"pipeline": bson.A{
+					bson.M{"$set": bson.M{
+						"actors": bson.M{
+							"$slice": bson.A{"$actors", 15},
+						},
+					}},
+					bson.M{"$unwind": bson.M{
+						"path":                       "$actors",
+						"includeArrayIndex":          "index",
+						"preserveNullAndEmptyArrays": false,
+					}},
+					bson.M{"$group": bson.M{
+						"_id": "$actors.tmdb_id",
+						"name": bson.M{
+							"$first": "$actors.name",
+						},
+						"image_url": bson.M{
+							"$first": "$actors.image",
+						},
+						"count": bson.M{
+							"$sum": 1,
+						},
+						"popularity": bson.M{
+							"$sum": "$tmdb_popularity",
+						},
+					}},
+					bson.M{"$set": bson.M{
+						"popularity": bson.M{
+							"$multiply": bson.A{"$count", "$popularity"},
+						},
+					}},
+					bson.M{"$sort": bson.M{
+						"popularity": -1,
+					}},
+					bson.M{"$limit": movieActorsLimit},
+				},
+				"as": "tvActors",
+			}},
+			bson.M{"$unwind": "$tvActors"},
+			bson.M{"$replaceRoot": bson.M{
+				"newRoot": "$tvActors",
+			}},
+		},
+	}}
+
+	// Limit to single document for facet operation
+	match := bson.M{"$match": bson.M{
+		"_id": bson.M{"$exists": true},
+	}}
+
+	limitOne := bson.M{"$limit": 1}
+
+	cursor, err := movieModel.Collection.Aggregate(context.TODO(), bson.A{
+		match, limitOne, facet,
+	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"data": data,
+		}).Error("failed to aggregate combined actors: ", err)
+
+		return nil, nil, fmt.Errorf("Failed to get combined actors.")
+	}
+
+	var results []struct {
+		MovieActors []responses.ActorDetails `bson:"movieActors"`
+		TVActors    []responses.ActorDetails `bson:"tvActors"`
+	}
+
+	if err := cursor.All(context.TODO(), &results); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"data": data,
+		}).Error("failed to decode combined actors: ", err)
+
+		return nil, nil, fmt.Errorf("Failed to decode combined actors.")
+	}
+
+	if len(results) > 0 {
+		return results[0].MovieActors, results[0].TVActors, nil
+	}
+
+	return []responses.ActorDetails{}, []responses.ActorDetails{}, nil
 }
 
 func (movieModel *MovieModel) GetMoviesByActor(data requests.IDPagination) ([]responses.Movie, p.PaginationData, error) {

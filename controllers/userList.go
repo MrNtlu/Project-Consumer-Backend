@@ -1025,11 +1025,12 @@ func (u *UserListController) UpdateTVSeriesListByID(c *gin.Context) {
 
 // Get User List
 // @Summary Get User List by User ID
-// @Description Returns user list by user id
+// @Description Returns user list by user id with optional status filtering
 // @Tags user_list
 // @Accept application/json
 // @Produce application/json
 // @Param sortlist query requests.SortList true "Sort List"
+// @Param status query string false "Status Filter" Enums(active, finished, dropped)
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
 // @Success 200 {object} responses.UserList
@@ -1063,11 +1064,12 @@ func (u *UserListController) GetUserListByUserID(c *gin.Context) {
 
 // Get Logs
 // @Summary Get Logs by User ID and date range
-// @Description Returns logs by user id and date range
+// @Description Returns logs by user id and date range with optional sorting by created_at
 // @Tags user_list
 // @Accept application/json
 // @Produce application/json
 // @Param logsbydaterange query requests.LogsByDateRange true "Logs by Date Range"
+// @Param sort query string false "Sort order for created_at" Enums(asc, desc)
 // @Security BearerAuth
 // @Param Authorization header string true "Authentication header"
 // @Success 200 {array} responses.LogsByRange

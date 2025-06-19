@@ -1667,695 +1667,557 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 		"user_id": uid,
 	}}
 
-	animeListLookup := bson.M{"$lookup": bson.M{
+	// Build lookups with optional status filtering
+	var lookups []bson.M
+
+	// Anime lookup with optional status filter
+	animeLookup := bson.M{"$lookup": bson.M{
 		"from":         "anime-lists",
 		"localField":   "user_id",
 		"foreignField": "user_id",
 		"as":           "anime_list",
 	}}
+	if data.Status != nil {
+		animeLookup["$lookup"].(bson.M)["pipeline"] = bson.A{
+			bson.M{"$match": bson.M{"status": *data.Status}},
+		}
+	}
+	lookups = append(lookups, animeLookup)
 
-	gameListLookup := bson.M{"$lookup": bson.M{
+	// Game lookup with optional status filter
+	gameLookup := bson.M{"$lookup": bson.M{
 		"from":         "game-lists",
 		"localField":   "user_id",
 		"foreignField": "user_id",
 		"as":           "game_list",
 	}}
+	if data.Status != nil {
+		gameLookup["$lookup"].(bson.M)["pipeline"] = bson.A{
+			bson.M{"$match": bson.M{"status": *data.Status}},
+		}
+	}
+	lookups = append(lookups, gameLookup)
 
-	movieListLookup := bson.M{"$lookup": bson.M{
+	// Movie lookup with optional status filter
+	movieLookup := bson.M{"$lookup": bson.M{
 		"from":         "movie-watch-lists",
 		"localField":   "user_id",
 		"foreignField": "user_id",
 		"as":           "movie_watch_list",
 	}}
+	if data.Status != nil {
+		movieLookup["$lookup"].(bson.M)["pipeline"] = bson.A{
+			bson.M{"$match": bson.M{"status": *data.Status}},
+		}
+	}
+	lookups = append(lookups, movieLookup)
 
-	tvListLookup := bson.M{"$lookup": bson.M{
+	// TV lookup with optional status filter
+	tvLookup := bson.M{"$lookup": bson.M{
 		"from":         "tvseries-watch-lists",
 		"localField":   "user_id",
 		"foreignField": "user_id",
 		"as":           "tv_watch_list",
 	}}
+	if data.Status != nil {
+		tvLookup["$lookup"].(bson.M)["pipeline"] = bson.A{
+			bson.M{"$match": bson.M{"status": *data.Status}},
+		}
+	}
+	lookups = append(lookups, tvLookup)
+
+	// Build facet lookups for content details
+	facetLookups := bson.A{}
+
+	// Movie details lookup
+	facetLookups = append(facetLookups, bson.M{
+		"$lookup": bson.M{
+			"from": "movies",
+			"let": bson.M{
+				"movie_id":       "$movie_watch_list.movie_id",
+				"tmdb_id":        "$movie_watch_list.movie_tmdb_id",
+				"id":             "$movie_watch_list._id",
+				"status":         "$movie_watch_list.status",
+				"score":          "$movie_watch_list.score",
+				"times_finished": "$movie_watch_list.times_finished",
+				"created_at":     "$movie_watch_list.created_at",
+			},
+			"pipeline": bson.A{
+				bson.M{
+					"$addFields": bson.M{
+						"movie_id": bson.M{
+							"$toString": "$_id",
+						},
+					},
+				},
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$or": bson.A{
+								bson.M{
+									"$in": bson.A{"$movie_id", "$$movie_id"},
+								},
+								bson.M{
+									"$in": bson.A{"$tmdb_id", "$$tmdb_id"},
+								},
+							},
+						},
+					},
+				},
+				bson.M{
+					"$project": bson.M{
+						"image_url":      1,
+						"title_original": 1,
+						"title_en":       1,
+						"status":         1,
+						"movie_id":       1,
+						"tmdb_id":        1,
+						"_id": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$id",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$movie_id",
+										"$movie_id",
+									},
+								},
+							},
+						},
+						"status_sort": bson.M{
+							"$switch": bson.M{
+								"branches": bson.A{
+									bson.M{
+										"case": bson.M{
+											"$eq": bson.A{
+												bson.M{
+													"$arrayElemAt": bson.A{
+														"$$status",
+														bson.M{
+															"$indexOfArray": bson.A{
+																"$$movie_id",
+																"$movie_id",
+															},
+														},
+													},
+												},
+												"finished",
+											},
+										},
+										"then": 1,
+									},
+									bson.M{
+										"case": bson.M{
+											"$eq": bson.A{
+												bson.M{
+													"$arrayElemAt": bson.A{
+														"$$status",
+														bson.M{
+															"$indexOfArray": bson.A{
+																"$$movie_id",
+																"$movie_id",
+															},
+														},
+													},
+												},
+												"active",
+											},
+										},
+										"then": 0,
+									},
+								},
+								"default": 2,
+							},
+						},
+						"content_status": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$status",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$movie_id",
+										"$movie_id",
+									},
+								},
+							},
+						},
+						"score": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$score",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$movie_id",
+										"$movie_id",
+									},
+								},
+							},
+						},
+						"times_finished": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$times_finished",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$movie_id",
+										"$movie_id",
+									},
+								},
+							},
+						},
+						"created_at": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$created_at",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$movie_id",
+										"$movie_id",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			"as": "movie_list",
+		},
+	})
+
+	// Anime details lookup
+	facetLookups = append(facetLookups, bson.M{
+		"$lookup": bson.M{
+			"from": "animes",
+			"let": bson.M{
+				"anime_id":         "$anime_list.anime_id",
+				"mal_id":           "$anime_list.anime_mal_id",
+				"id":               "$anime_list._id",
+				"status":           "$anime_list.status",
+				"score":            "$anime_list.score",
+				"times_finished":   "$anime_list.times_finished",
+				"watched_episodes": "$anime_list.watched_episodes",
+				"created_at":       "$anime_list.created_at",
+			},
+			"pipeline": bson.A{
+				bson.M{
+					"$addFields": bson.M{
+						"anime_id": bson.M{
+							"$toString": "$_id",
+						},
+					},
+				},
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$or": bson.A{
+								bson.M{
+									"$in": bson.A{"$anime_id", "$$anime_id"},
+								},
+								bson.M{
+									"$in": bson.A{"$mal_id", "$$mal_id"},
+								},
+							},
+						},
+					},
+				},
+				bson.M{
+					"$project": bson.M{
+						"image_url":      1,
+						"title_original": 1,
+						"title_en":       1,
+						"status":         1,
+						"type":           1,
+						"total_episodes": "$episodes",
+						"anime_id":       1,
+						"mal_id":         1,
+						"_id": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$id",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$anime_id",
+										"$anime_id",
+									},
+								},
+							},
+						},
+						"status_sort": bson.M{
+							"$switch": bson.M{
+								"branches": bson.A{
+									bson.M{
+										"case": bson.M{
+											"$eq": bson.A{
+												bson.M{
+													"$arrayElemAt": bson.A{
+														"$$status",
+														bson.M{
+															"$indexOfArray": bson.A{
+																"$$anime_id",
+																"$anime_id",
+															},
+														},
+													},
+												},
+												"finished",
+											},
+										},
+										"then": 1,
+									},
+									bson.M{
+										"case": bson.M{
+											"$eq": bson.A{
+												bson.M{
+													"$arrayElemAt": bson.A{
+														"$$status",
+														bson.M{
+															"$indexOfArray": bson.A{
+																"$$anime_id",
+																"$anime_id",
+															},
+														},
+													},
+												},
+												"active",
+											},
+										},
+										"then": 0,
+									},
+								},
+								"default": 2,
+							},
+						},
+						"content_status": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$status",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$anime_id",
+										"$anime_id",
+									},
+								},
+							},
+						},
+						"score": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$score",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$anime_id",
+										"$anime_id",
+									},
+								},
+							},
+						},
+						"times_finished": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$times_finished",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$anime_id",
+										"$anime_id",
+									},
+								},
+							},
+						},
+						"watched_episodes": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$watched_episodes",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$anime_id",
+										"$anime_id",
+									},
+								},
+							},
+						},
+						"created_at": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$created_at",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$anime_id",
+										"$anime_id",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			"as": "anime_list",
+		},
+	})
+
+	// Game details lookup
+	facetLookups = append(facetLookups, bson.M{
+		"$lookup": bson.M{
+			"from": "games",
+			"let": bson.M{
+				"game_id":            "$game_list.game_id",
+				"rawg_id":            "$game_list.game_rawg_id",
+				"id":                 "$game_list._id",
+				"status":             "$game_list.status",
+				"score":              "$game_list.score",
+				"times_finished":     "$game_list.times_finished",
+				"hours_played":       "$game_list.hours_played",
+				"achievement_status": "$game_list.achievement_status",
+				"created_at":         "$game_list.created_at",
+			},
+			"pipeline": bson.A{
+				bson.M{
+					"$addFields": bson.M{
+						"game_id": bson.M{
+							"$toString": "$_id",
+						},
+					},
+				},
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{
+							"$or": bson.A{
+								bson.M{
+									"$in": bson.A{"$game_id", "$$game_id"},
+								},
+								bson.M{
+									"$in": bson.A{"$rawg_id", "$$rawg_id"},
+								},
+							},
+						},
+					},
+				},
+				bson.M{
+					"$project": bson.M{
+						"image_url":      1,
+						"title":          1,
+						"title_original": 1,
+						"game_id":        1,
+						"rawg_id":        1,
+						"_id": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$id",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$game_id",
+										"$game_id",
+									},
+								},
+							},
+						},
+						"status_sort": bson.M{
+							"$switch": bson.M{
+								"branches": bson.A{
+									bson.M{
+										"case": bson.M{
+											"$eq": bson.A{
+												bson.M{
+													"$arrayElemAt": bson.A{
+														"$$status",
+														bson.M{
+															"$indexOfArray": bson.A{
+																"$$game_id",
+																"$game_id",
+															},
+														},
+													},
+												},
+												"finished",
+											},
+										},
+										"then": 1,
+									},
+									bson.M{
+										"case": bson.M{
+											"$eq": bson.A{
+												bson.M{
+													"$arrayElemAt": bson.A{
+														"$$status",
+														bson.M{
+															"$indexOfArray": bson.A{
+																"$$game_id",
+																"$game_id",
+															},
+														},
+													},
+												},
+												"active",
+											},
+										},
+										"then": 0,
+									},
+								},
+								"default": 2,
+							},
+						},
+						"content_status": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$status",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$game_id",
+										"$game_id",
+									},
+								},
+							},
+						},
+						"score": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$score",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$game_id",
+										"$game_id",
+									},
+								},
+							},
+						},
+						"times_finished": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$times_finished",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$game_id",
+										"$game_id",
+									},
+								},
+							},
+						},
+						"hours_played": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$hours_played",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$game_id",
+										"$game_id",
+									},
+								},
+							},
+						},
+						"achievement_status": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$achievement_status",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$game_id",
+										"$game_id",
+									},
+								},
+							},
+						},
+						"created_at": bson.M{
+							"$arrayElemAt": bson.A{
+								"$$created_at",
+								bson.M{
+									"$indexOfArray": bson.A{
+										"$$game_id",
+										"$game_id",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			"as": "game_list",
+		},
+	})
 
 	facet := bson.M{"$facet": bson.M{
-		"lookups": bson.A{
-			bson.M{
-				"$lookup": bson.M{
-					"from": "movies",
-					"let": bson.M{
-						"movie_id":       "$movie_watch_list.movie_id",
-						"tmdb_id":        "$movie_watch_list.movie_tmdb_id",
-						"id":             "$movie_watch_list._id",
-						"status":         "$movie_watch_list.status",
-						"score":          "$movie_watch_list.score",
-						"times_finished": "$movie_watch_list.times_finished",
-						"created_at":     "$movie_watch_list.created_at",
-					},
-					"pipeline": bson.A{
-						bson.M{
-							"$addFields": bson.M{
-								"movie_id": bson.M{
-									"$toString": "$_id",
-								},
-							},
-						},
-						bson.M{
-							"$match": bson.M{
-								"$expr": bson.M{
-									"$or": bson.A{
-										bson.M{
-											"$in": bson.A{"$movie_id", "$$movie_id"},
-										},
-										bson.M{
-											"$in": bson.A{"$tmdb_id", "$$tmdb_id"},
-										},
-									},
-								},
-							},
-						},
-						bson.M{
-							"$project": bson.M{
-								"image_url":      1,
-								"title_original": 1,
-								"title_en":       1,
-								"status":         1,
-								"movie_id":       1,
-								"tmdb_id":        1,
-								"_id": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$id",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$movie_id",
-												"$movie_id",
-											},
-										},
-									},
-								},
-								"status_sort": bson.M{
-									"$switch": bson.M{
-										"branches": bson.A{
-											bson.M{
-												"case": bson.M{
-													"$eq": bson.A{
-														bson.M{
-															"$arrayElemAt": bson.A{
-																"$$status",
-																bson.M{
-																	"$indexOfArray": bson.A{
-																		"$$movie_id",
-																		"$movie_id",
-																	},
-																},
-															},
-														},
-														"finished",
-													},
-												},
-												"then": 1,
-											},
-											bson.M{
-												"case": bson.M{
-													"$eq": bson.A{
-														bson.M{
-															"$arrayElemAt": bson.A{
-																"$$status",
-																bson.M{
-																	"$indexOfArray": bson.A{
-																		"$$movie_id",
-																		"$movie_id",
-																	},
-																},
-															},
-														},
-														"active",
-													},
-												},
-												"then": 0,
-											},
-										},
-										"default": 2,
-									},
-								},
-								"content_status": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$status",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$movie_id",
-												"$movie_id",
-											},
-										},
-									},
-								},
-								"score": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$score",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$movie_id",
-												"$movie_id",
-											},
-										},
-									},
-								},
-								"times_finished": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$times_finished",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$movie_id",
-												"$movie_id",
-											},
-										},
-									},
-								},
-								"created_at": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$created_at",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$movie_id",
-												"$movie_id",
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-					"as": "movie_watch_list",
-				},
-			},
-			bson.M{
-				"$lookup": bson.M{
-					"from": "tv-series",
-					"let": bson.M{
-						"tv_id":            "$tv_watch_list.tv_id",
-						"tmdb_id":          "$tv_watch_list.tv_tmdb_id",
-						"id":               "$tv_watch_list._id",
-						"status":           "$tv_watch_list.status",
-						"score":            "$tv_watch_list.score",
-						"times_finished":   "$tv_watch_list.times_finished",
-						"watched_episodes": "$tv_watch_list.watched_episodes",
-						"watched_seasons":  "$tv_watch_list.watched_seasons",
-						"created_at":       "$tv_watch_list.created_at",
-					},
-					"pipeline": bson.A{
-						bson.M{
-							"$addFields": bson.M{
-								"tv_id": bson.M{
-									"$toString": "$_id",
-								},
-							},
-						},
-						bson.M{
-							"$match": bson.M{
-								"$expr": bson.M{
-									"$or": bson.A{
-										bson.M{
-											"$in": bson.A{"$tv_id", "$$tv_id"},
-										},
-										bson.M{
-											"$in": bson.A{"$tmdb_id", "$$tmdb_id"},
-										},
-									},
-								},
-							},
-						},
-						bson.M{
-							"$project": bson.M{
-								"image_url":      1,
-								"title_original": 1,
-								"title_en":       1,
-								"status":         1,
-								"total_episodes": 1,
-								"total_seasons":  1,
-								"tv_id":          1,
-								"tmdb_id":        1,
-								"_id": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$id",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$tv_id",
-												"$tv_id",
-											},
-										},
-									},
-								},
-								"status_sort": bson.M{
-									"$switch": bson.M{
-										"branches": bson.A{
-											bson.M{
-												"case": bson.M{
-													"$eq": bson.A{
-														bson.M{
-															"$arrayElemAt": bson.A{
-																"$$status",
-																bson.M{
-																	"$indexOfArray": bson.A{
-																		"$$tv_id",
-																		"$tv_id",
-																	},
-																},
-															},
-														},
-														"finished",
-													},
-												},
-												"then": 1,
-											},
-											bson.M{
-												"case": bson.M{
-													"$eq": bson.A{
-														bson.M{
-															"$arrayElemAt": bson.A{
-																"$$status",
-																bson.M{
-																	"$indexOfArray": bson.A{
-																		"$$tv_id",
-																		"$tv_id",
-																	},
-																},
-															},
-														},
-														"active",
-													},
-												},
-												"then": 0,
-											},
-										},
-										"default": 2,
-									},
-								},
-								"content_status": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$status",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$tv_id",
-												"$tv_id",
-											},
-										},
-									},
-								},
-								"score": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$score",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$tv_id",
-												"$tv_id",
-											},
-										},
-									},
-								},
-								"times_finished": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$times_finished",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$tv_id",
-												"$tv_id",
-											},
-										},
-									},
-								},
-								"watched_episodes": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$watched_episodes",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$tv_id",
-												"$tv_id",
-											},
-										},
-									},
-								},
-								"watched_seasons": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$watched_seasons",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$tv_id",
-												"$tv_id",
-											},
-										},
-									},
-								},
-								"created_at": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$created_at",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$tv_id",
-												"$tv_id",
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-					"as": "tv_watch_list",
-				},
-			},
-			bson.M{
-				"$lookup": bson.M{
-					"from": "animes",
-					"let": bson.M{
-						"anime_id":         "$anime_list.anime_id",
-						"mal_id":           "$anime_list.anime_mal_id",
-						"id":               "$anime_list._id",
-						"status":           "$anime_list.status",
-						"score":            "$anime_list.score",
-						"times_finished":   "$anime_list.times_finished",
-						"watched_episodes": "$anime_list.watched_episodes",
-						"created_at":       "$anime_list.created_at",
-					},
-					"pipeline": bson.A{
-						bson.M{
-							"$addFields": bson.M{
-								"anime_id": bson.M{
-									"$toString": "$_id",
-								},
-							},
-						},
-						bson.M{
-							"$match": bson.M{
-								"$expr": bson.M{
-									"$or": bson.A{
-										bson.M{
-											"$in": bson.A{"$anime_id", "$$anime_id"},
-										},
-										bson.M{
-											"$in": bson.A{"$mal_id", "$$mal_id"},
-										},
-									},
-								},
-							},
-						},
-						bson.M{
-							"$project": bson.M{
-								"image_url":      1,
-								"title_original": 1,
-								"title_en":       1,
-								"status":         1,
-								"type":           1,
-								"total_episodes": "$episodes",
-								"anime_id":       1,
-								"mal_id":         1,
-								"is_airing":      1,
-								"_id": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$id",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$anime_id",
-												"$anime_id",
-											},
-										},
-									},
-								},
-								"status_sort": bson.M{
-									"$switch": bson.M{
-										"branches": bson.A{
-											bson.M{
-												"case": bson.M{
-													"$eq": bson.A{
-														bson.M{
-															"$arrayElemAt": bson.A{
-																"$$status",
-																bson.M{
-																	"$indexOfArray": bson.A{
-																		"$$anime_id",
-																		"$anime_id",
-																	},
-																},
-															},
-														},
-														"finished",
-													},
-												},
-												"then": 1,
-											},
-											bson.M{
-												"case": bson.M{
-													"$eq": bson.A{
-														bson.M{
-															"$arrayElemAt": bson.A{
-																"$$status",
-																bson.M{
-																	"$indexOfArray": bson.A{
-																		"$$anime_id",
-																		"$anime_id",
-																	},
-																},
-															},
-														},
-														"active",
-													},
-												},
-												"then": 0,
-											},
-										},
-										"default": 2,
-									},
-								},
-								"content_status": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$status",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$anime_id",
-												"$anime_id",
-											},
-										},
-									},
-								},
-								"score": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$score",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$anime_id",
-												"$anime_id",
-											},
-										},
-									},
-								},
-								"times_finished": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$times_finished",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$anime_id",
-												"$anime_id",
-											},
-										},
-									},
-								},
-								"watched_episodes": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$watched_episodes",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$anime_id",
-												"$anime_id",
-											},
-										},
-									},
-								},
-								"created_at": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$created_at",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$anime_id",
-												"$anime_id",
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-					"as": "anime_list",
-				},
-			},
-
-			bson.M{
-				"$lookup": bson.M{
-					"from": "games",
-					"let": bson.M{
-						"game_id":            "$game_list.game_id",
-						"rawg_id":            "$game_list.game_rawg_id",
-						"id":                 "$game_list._id",
-						"status":             "$game_list.status",
-						"score":              "$game_list.score",
-						"times_finished":     "$game_list.times_finished",
-						"achievement_status": "$game_list.achievement_status",
-						"hours_played":       "$game_list.hours_played",
-						"created_at":         "$game_list.created_at",
-					},
-					"pipeline": bson.A{
-						bson.M{
-							"$addFields": bson.M{
-								"game_id": bson.M{
-									"$toString": "$_id",
-								},
-							},
-						},
-						bson.M{
-							"$match": bson.M{
-								"$expr": bson.M{
-									"$or": bson.A{
-										bson.M{
-											"$in": bson.A{"$game_id", "$$game_id"},
-										},
-										bson.M{
-											"$in": bson.A{"$rawg_id", "$$rawg_id"},
-										},
-									},
-								},
-							},
-						},
-						bson.M{
-							"$project": bson.M{
-								"image_url":      1,
-								"title_original": 1,
-								"title":          1,
-								"tba":            1,
-								"game_id":        1,
-								"rawg_id":        1,
-								"_id": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$id",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$game_id",
-												"$game_id",
-											},
-										},
-									},
-								},
-								"status_sort": bson.M{
-									"$switch": bson.M{
-										"branches": bson.A{
-											bson.M{
-												"case": bson.M{
-													"$eq": bson.A{
-														bson.M{
-															"$arrayElemAt": bson.A{
-																"$$status",
-																bson.M{
-																	"$indexOfArray": bson.A{
-																		"$$game_id",
-																		"$game_id",
-																	},
-																},
-															},
-														},
-														"finished",
-													},
-												},
-												"then": 1,
-											},
-											bson.M{
-												"case": bson.M{
-													"$eq": bson.A{
-														bson.M{
-															"$arrayElemAt": bson.A{
-																"$$status",
-																bson.M{
-																	"$indexOfArray": bson.A{
-																		"$$game_id",
-																		"$game_id",
-																	},
-																},
-															},
-														},
-														"active",
-													},
-												},
-												"then": 0,
-											},
-										},
-										"default": 2,
-									},
-								},
-								"content_status": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$status",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$game_id",
-												"$game_id",
-											},
-										},
-									},
-								},
-								"score": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$score",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$game_id",
-												"$game_id",
-											},
-										},
-									},
-								},
-								"times_finished": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$times_finished",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$game_id",
-												"$game_id",
-											},
-										},
-									},
-								},
-								"achievement_status": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$achievement_status",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$game_id",
-												"$game_id",
-											},
-										},
-									},
-								},
-								"hours_played": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$hours_played",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$game_id",
-												"$game_id",
-											},
-										},
-									},
-								},
-								"created_at": bson.M{
-									"$arrayElemAt": bson.A{
-										"$$created_at",
-										bson.M{
-											"$indexOfArray": bson.A{
-												"$$game_id",
-												"$game_id",
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-					"as": "game_list",
-				},
-			},
-		},
+		"lookups": facetLookups,
 	}}
 
 	unwind := bson.M{"$unwind": bson.M{
@@ -2368,28 +2230,37 @@ func (userListModel *UserListModel) GetUserListByUserID(uid string, data request
 		"newRoot": "$lookups",
 	}}
 
-	cursor, err := userListModel.UserListCollection.Aggregate(context.TODO(), bson.A{
-		match, animeListLookup, gameListLookup, movieListLookup,
-		tvListLookup, facet, unwind, replaceRoot,
-	})
+	var aggregationList bson.A
+	aggregationList = append(aggregationList, match)
+	for _, lookup := range lookups {
+		aggregationList = append(aggregationList, lookup)
+	}
+	aggregationList = append(aggregationList, facet, unwind, replaceRoot)
+
+	cursor, err := userListModel.UserListCollection.Aggregate(context.TODO(), aggregationList)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"uid": uid,
-		}).Error("failed to aggregate user list: ", err)
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to find user list by user id: ", err)
 
-		return responses.UserList{}, fmt.Errorf("Failed to aggregate user list.")
+		return responses.UserList{}, fmt.Errorf("Failed to find user list by user id.")
 	}
 
 	var userList []responses.UserList
-	if err = cursor.All(context.TODO(), &userList); err != nil {
+	if err := cursor.All(context.TODO(), &userList); err != nil {
 		logrus.WithFields(logrus.Fields{
-			"uid": uid,
-		}).Error("failed to decode user list: ", err)
+			"uid":  uid,
+			"data": data,
+		}).Error("failed to decode user list by user id: ", err)
 
-		return responses.UserList{}, fmt.Errorf("Failed to decode user list.")
+		return responses.UserList{}, fmt.Errorf("Failed to decode user list by user id.")
 	}
 
 	if len(userList) > 0 {
+		// Status filtering is now handled in the aggregation pipeline
+
+		// Apply sorting logic (keeping existing sorting implementation)
 		if data.Sort == "score" {
 			srt.Slice(userList[0].AnimeList, func(i, j int) bool {
 				var (

@@ -64,13 +64,16 @@ type previewResult struct {
 	GameData  GameResult
 }
 
+const PreviewLimit = 30
+
 // Get Previews
 // @Summary Get Previews
-// @Description Returns previews
+// @Description Returns previews with optional consume later items if user is authenticated
 // @Tags preview
 // @Accept application/json
 // @Produce application/json
 // @Param regionfilters body requests.RegionFilters true "Region Filters"
+// @Param Authorization header string false "Optional Authentication header for consume later items"
 // @Success 200 {object} AnimeResult
 // @Success 200 {object} MovieResult
 // @Success 200 {object} GameResult
@@ -85,157 +88,198 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 		return
 	}
 
+	// Check if user is logged in via optional token
+	uid, userExists := c.Get("uuid")
+	var userID string
+	if userExists {
+		userID = uid.(string)
+	}
+
 	// Initialize models once
 	movieModel := models.NewMovieModel(pr.Database)
 	tvModel := models.NewTVModel(pr.Database)
 	animeModel := models.NewAnimeModel(pr.Database)
 	gameModel := models.NewGameModel(pr.Database)
+	var userInteractionModel *models.UserInteractionModel
+	if userExists {
+		userInteractionModel = models.NewUserInteractionModel(pr.Database)
+	}
 
 	var wg sync.WaitGroup
 
-	// Pre-allocate result structure with expected capacities
+	// Pre-allocate result structure with optimized capacities
 	result := previewResult{
 		MovieData: MovieResult{
-			UpcomingMovies:  make([]responses.PreviewMovie, 0, 40),
-			PopularMovies:   make([]responses.PreviewMovie, 0, 40),
-			TopMovies:       make([]responses.PreviewMovie, 0, 40),
-			PopularActors:   make([]responses.ActorDetails, 0, 50),
-			MoviesInTheater: make([]responses.PreviewMovie, 0, 40),
+			UpcomingMovies:  make([]responses.PreviewMovie, 0, PreviewLimit),
+			PopularMovies:   make([]responses.PreviewMovie, 0, PreviewLimit),
+			TopMovies:       make([]responses.PreviewMovie, 0, PreviewLimit),
+			PopularActors:   make([]responses.ActorDetails, 0, PreviewLimit),
+			MoviesInTheater: make([]responses.PreviewMovie, 0, PreviewLimit),
 			MoviePopularPC:  make([]responses.StreamingPlatform, 0, 15),
 		},
 		TVData: TVResult{
-			UpcomingTVSeries: make([]responses.PreviewTVSeries, 0, 40),
-			PopularTVSeries:  make([]responses.PreviewTVSeries, 0, 40),
-			TopTVSeries:      make([]responses.PreviewTVSeries, 0, 40),
-			PopularActors:    make([]responses.ActorDetails, 0, 50),
-			AiringTVSeries:   make([]responses.PreviewTVSeries, 0, 40),
+			UpcomingTVSeries: make([]responses.PreviewTVSeries, 0, PreviewLimit),
+			PopularTVSeries:  make([]responses.PreviewTVSeries, 0, PreviewLimit),
+			TopTVSeries:      make([]responses.PreviewTVSeries, 0, PreviewLimit),
+			PopularActors:    make([]responses.ActorDetails, 0, PreviewLimit),
+			AiringTVSeries:   make([]responses.PreviewTVSeries, 0, PreviewLimit),
 			TVPopularPC:      make([]responses.StreamingPlatform, 0, 15),
 		},
 		AnimeData: AnimeResult{
-			UpcomingAnimes:      make([]responses.PreviewAnime, 0, 40),
-			TopRatedAnimes:      make([]responses.PreviewAnime, 0, 40),
-			PopularAnimes:       make([]responses.PreviewAnime, 0, 40),
-			AiringAnime:         make([]responses.PreviewAnime, 0, 40),
+			UpcomingAnimes:      make([]responses.PreviewAnime, 0, PreviewLimit),
+			TopRatedAnimes:      make([]responses.PreviewAnime, 0, PreviewLimit),
+			PopularAnimes:       make([]responses.PreviewAnime, 0, PreviewLimit),
+			AiringAnime:         make([]responses.PreviewAnime, 0, PreviewLimit),
 			AnimePopularStudios: make([]responses.AnimeNameURL, 0, 15),
 		},
 		GameData: GameResult{
-			UpcomingGames: make([]responses.PreviewGame, 0, 40),
-			TopRatedGames: make([]responses.PreviewGame, 0, 40),
-			PopularGames:  make([]responses.PreviewGame, 0, 40),
+			UpcomingGames: make([]responses.PreviewGame, 0, PreviewLimit),
+			TopRatedGames: make([]responses.PreviewGame, 0, PreviewLimit),
+			PopularGames:  make([]responses.PreviewGame, 0, PreviewLimit),
 		},
 	}
 
-	// Movie operations
-	wg.Add(6)
+	// Store consume later lists - pre-allocate with expected size
+	var (
+		movieConsumeLaters []responses.ConsumeLaterPreview
+		tvConsumeLaters    []responses.ConsumeLaterPreview
+		animeConsumeLaters []responses.ConsumeLaterPreview
+		gameConsumeLaters  []responses.ConsumeLaterPreview
+	)
+
+	// OPTIMIZATION 1: Batch core content operations (reduce goroutine overhead)
+	// Movie operations batch
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		result.MovieData.UpcomingMovies, _ = movieModel.GetUpcomingPreviewMovies()
+		var movieWg sync.WaitGroup
+		movieWg.Add(5)
+
+		go func() {
+			defer movieWg.Done()
+			result.MovieData.UpcomingMovies, _ = movieModel.GetUpcomingPreviewMovies()
+		}()
+		go func() {
+			defer movieWg.Done()
+			result.MovieData.PopularMovies, _ = movieModel.GetPopularPreviewMovies()
+		}()
+		go func() {
+			defer movieWg.Done()
+			result.MovieData.TopMovies, _ = movieModel.GetTopPreviewMovies()
+		}()
+		go func() {
+			defer movieWg.Done()
+			result.MovieData.MoviesInTheater, _ = movieModel.GetInTheaterPreviewMovies()
+		}()
+		go func() {
+			defer movieWg.Done()
+			result.MovieData.MoviePopularPC, _ = movieModel.GetPopularProductionCompanies()
+		}()
+		movieWg.Wait()
 	}()
 
+	// OPTIMIZATION 2: Combined actor query (replaces separate movie + TV actor queries)
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		result.MovieData.PopularMovies, _ = movieModel.GetPopularPreviewMovies()
+		result.MovieData.PopularActors, result.TVData.PopularActors, _ = movieModel.GetCombinedPopularActors(requests.Pagination{Page: 1})
 	}()
 
+	// TV operations batch (without actors - handled above)
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		result.MovieData.TopMovies, _ = movieModel.GetTopPreviewMovies()
+		var tvWg sync.WaitGroup
+		tvWg.Add(5)
+
+		go func() {
+			defer tvWg.Done()
+			result.TVData.UpcomingTVSeries, _ = tvModel.GetUpcomingPreviewTVSeries()
+		}()
+		go func() {
+			defer tvWg.Done()
+			result.TVData.PopularTVSeries, _ = tvModel.GetPopularPreviewTVSeries()
+		}()
+		go func() {
+			defer tvWg.Done()
+			result.TVData.TopTVSeries, _ = tvModel.GetTopPreviewTVSeries()
+		}()
+		go func() {
+			defer tvWg.Done()
+			result.TVData.AiringTVSeries, _ = tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek(int16(time.Now().UTC().Weekday()) + 1)
+		}()
+		go func() {
+			defer tvWg.Done()
+			result.TVData.TVPopularPC, _ = tvModel.GetPopularProductionCompanies()
+		}()
+		tvWg.Wait()
 	}()
 
+	// Anime operations batch
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		result.MovieData.PopularActors, _ = movieModel.GetPopularActors(requests.Pagination{Page: 1})
+		var animeWg sync.WaitGroup
+		animeWg.Add(5)
+
+		go func() {
+			defer animeWg.Done()
+			result.AnimeData.UpcomingAnimes, _ = animeModel.GetPreviewUpcomingAnimes()
+		}()
+		go func() {
+			defer animeWg.Done()
+			result.AnimeData.TopRatedAnimes, _ = animeModel.GetPreviewTopAnimes()
+		}()
+		go func() {
+			defer animeWg.Done()
+			result.AnimeData.PopularAnimes, _ = animeModel.GetPreviewPopularAnimes()
+		}()
+		go func() {
+			defer animeWg.Done()
+			result.AnimeData.AiringAnime, _ = animeModel.GetCurrentlyAiringAnimesByDayOfWeek(int16(time.Now().UTC().Weekday()) + 1)
+		}()
+		go func() {
+			defer animeWg.Done()
+			result.AnimeData.AnimePopularStudios, _ = animeModel.GetPopularStudios()
+		}()
+		animeWg.Wait()
 	}()
 
+	// Game operations batch
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		result.MovieData.MoviesInTheater, _ = movieModel.GetInTheaterPreviewMovies()
+		var gameWg sync.WaitGroup
+		gameWg.Add(3)
+
+		go func() {
+			defer gameWg.Done()
+			result.GameData.UpcomingGames, _ = gameModel.GetPreviewUpcomingGames()
+		}()
+		go func() {
+			defer gameWg.Done()
+			result.GameData.TopRatedGames, _ = gameModel.GetPreviewTopGames()
+		}()
+		go func() {
+			defer gameWg.Done()
+			result.GameData.PopularGames, _ = gameModel.GetPreviewPopularGames()
+		}()
+		gameWg.Wait()
 	}()
 
-	go func() {
-		defer wg.Done()
-		result.MovieData.MoviePopularPC, _ = movieModel.GetPopularProductionCompanies()
-	}()
-
-	// TV operations
-	wg.Add(6)
-	go func() {
-		defer wg.Done()
-		result.TVData.UpcomingTVSeries, _ = tvModel.GetUpcomingPreviewTVSeries()
-	}()
-
-	go func() {
-		defer wg.Done()
-		result.TVData.PopularTVSeries, _ = tvModel.GetPopularPreviewTVSeries()
-	}()
-
-	go func() {
-		defer wg.Done()
-		result.TVData.TopTVSeries, _ = tvModel.GetTopPreviewTVSeries()
-	}()
-
-	go func() {
-		defer wg.Done()
-		result.TVData.PopularActors, _ = tvModel.GetPopularActors(requests.Pagination{Page: 1})
-	}()
-
-	go func() {
-		defer wg.Done()
-		result.TVData.AiringTVSeries, _ = tvModel.GetCurrentlyAiringTVSeriesByDayOfWeek(int16(time.Now().UTC().Weekday()) + 1)
-	}()
-
-	go func() {
-		defer wg.Done()
-		result.TVData.TVPopularPC, _ = tvModel.GetPopularProductionCompanies()
-	}()
-
-	// Anime operations
-	wg.Add(5)
-	go func() {
-		defer wg.Done()
-		result.AnimeData.UpcomingAnimes, _ = animeModel.GetPreviewUpcomingAnimes()
-	}()
-
-	go func() {
-		defer wg.Done()
-		result.AnimeData.TopRatedAnimes, _ = animeModel.GetPreviewTopAnimes()
-	}()
-
-	go func() {
-		defer wg.Done()
-		result.AnimeData.PopularAnimes, _ = animeModel.GetPreviewPopularAnimes()
-	}()
-
-	go func() {
-		defer wg.Done()
-		result.AnimeData.AiringAnime, _ = animeModel.GetCurrentlyAiringAnimesByDayOfWeek(int16(time.Now().UTC().Weekday()) + 1)
-	}()
-
-	go func() {
-		defer wg.Done()
-		result.AnimeData.AnimePopularStudios, _ = animeModel.GetPopularStudios()
-	}()
-
-	// Game operations
-	wg.Add(3)
-	go func() {
-		defer wg.Done()
-		result.GameData.UpcomingGames, _ = gameModel.GetPreviewUpcomingGames()
-	}()
-
-	go func() {
-		defer wg.Done()
-		result.GameData.TopRatedGames, _ = gameModel.GetPreviewTopGames()
-	}()
-
-	go func() {
-		defer wg.Done()
-		result.GameData.PopularGames, _ = gameModel.GetPreviewPopularGames()
-	}()
+	// OPTIMIZATION 3: Consume later operations only if user exists (single combined query)
+	if userExists && userInteractionModel != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			movieConsumeLaters, tvConsumeLaters, animeConsumeLaters, gameConsumeLaters, _ = userInteractionModel.GetAllConsumeLaterForPreview(userID, 10)
+		}()
+	}
 
 	wg.Wait()
 
-	c.JSON(http.StatusOK, gin.H{
+	// OPTIMIZATION 3: Streamlined response building with pre-allocated map
+	responseData := gin.H{
 		"movie": gin.H{
 			"upcoming":             result.MovieData.UpcomingMovies,
 			"popular":              result.MovieData.PopularMovies,
@@ -265,7 +309,17 @@ func (pr *PreviewController) GetHomePreview(c *gin.Context) {
 			"popular":  result.GameData.PopularGames,
 			"extra":    nil,
 		},
-	})
+	}
+
+	// OPTIMIZATION 4: Only add consume later data if user exists (avoid map modifications)
+	if userExists {
+		responseData["movie"].(gin.H)["consume_laters"] = movieConsumeLaters
+		responseData["tv"].(gin.H)["consume_laters"] = tvConsumeLaters
+		responseData["anime"].(gin.H)["consume_laters"] = animeConsumeLaters
+		responseData["game"].(gin.H)["consume_laters"] = gameConsumeLaters
+	}
+
+	c.JSON(http.StatusOK, responseData)
 }
 
 // Get Previews Older Version
@@ -322,11 +376,6 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 
 	go func() {
 		defer wg.Done()
-		result.MovieData.PopularActors, _ = movieModel.GetPopularActors(requests.Pagination{Page: 1})
-	}()
-
-	go func() {
-		defer wg.Done()
 		result.MovieData.MoviesInTheater, _ = movieModel.GetInTheaterPreviewMovies()
 	}()
 
@@ -355,11 +404,6 @@ func (pr *PreviewController) GetHomePreviewV2(c *gin.Context) {
 	go func() {
 		defer wg.Done()
 		result.TVData.TopTVSeries, _ = tvModel.GetTopPreviewTVSeries()
-	}()
-
-	go func() {
-		defer wg.Done()
-		result.TVData.PopularActors, _ = tvModel.GetPopularActors(requests.Pagination{Page: 1})
 	}()
 
 	go func() {

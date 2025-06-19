@@ -48,7 +48,8 @@ type CreateMangaList struct {
 }
 
 type SortList struct {
-	Sort string `form:"sort" binding:"required,oneof=score timeswatched alphabetical unalphabetical"`
+	Sort   string  `form:"sort" binding:"required,oneof=score timeswatched alphabetical unalphabetical"`
+	Status *string `form:"status" binding:"omitempty,oneof=active finished dropped"`
 }
 
 type UpdateUserList struct {

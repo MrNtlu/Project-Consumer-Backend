@@ -477,3 +477,655 @@ func (userInteractionModel *UserInteractionModel) DeleteAllConsumeLaterByUserID(
 
 	return nil
 }
+
+func (userInteractionModel *UserInteractionModel) GetConsumeLaterByContentType(uid, contentType string, limit int) ([]responses.ConsumeLater, error) {
+	matchFields := bson.M{
+		"user_id":      uid,
+		"content_type": contentType,
+	}
+
+	match := bson.M{"$match": matchFields}
+
+	set := bson.M{"$set": bson.M{
+		"content_id": bson.M{
+			"$toObjectId": "$content_id",
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"created_at": -1,
+	}}
+
+	limitStage := bson.M{"$limit": limit}
+
+	var lookupPipeline bson.M
+	switch contentType {
+	case "movie":
+		lookupPipeline = bson.M{
+			"$lookup": bson.M{
+				"from": "movies",
+				"let": bson.M{
+					"content_id":  "$content_id",
+					"external_id": "$content_external_id",
+				},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{
+							"$expr": bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+									bson.M{"$eq": bson.A{"$tmdb_id", "$$external_id"}},
+								},
+							},
+						},
+					},
+					bson.M{
+						"$project": bson.M{
+							"title_en":       1,
+							"title_original": 1,
+							"image_url":      1,
+							"description":    1,
+							"genres":         1,
+							"score":          "$tmdb_vote",
+							"streaming":      "$streaming.streaming_platforms.name",
+							"release_date": bson.M{
+								"$toDate": "$release_date",
+							},
+						},
+					},
+				},
+				"as": "content",
+			},
+		}
+	case "tv":
+		lookupPipeline = bson.M{
+			"$lookup": bson.M{
+				"from": "tv-series",
+				"let": bson.M{
+					"content_id":  "$content_id",
+					"external_id": "$content_external_id",
+				},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{
+							"$expr": bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+									bson.M{"$eq": bson.A{"$tmdb_id", "$$external_id"}},
+								},
+							},
+						},
+					},
+					bson.M{
+						"$project": bson.M{
+							"title_en":       1,
+							"title_original": 1,
+							"image_url":      1,
+							"description":    1,
+							"genres":         1,
+							"score":          "$tmdb_vote",
+							"streaming":      "$streaming.streaming_platforms.name",
+							"release_date": bson.M{
+								"$toDate": "$first_air_date",
+							},
+						},
+					},
+				},
+				"as": "content",
+			},
+		}
+	case "anime":
+		lookupPipeline = bson.M{
+			"$lookup": bson.M{
+				"from": "animes",
+				"let": bson.M{
+					"content_id":  "$content_id",
+					"external_id": "$content_external_int_id",
+				},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{
+							"$expr": bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+									bson.M{"$eq": bson.A{"$mal_id", "$$external_id"}},
+								},
+							},
+						},
+					},
+					bson.M{
+						"$project": bson.M{
+							"title_en":       1,
+							"title_original": 1,
+							"image_url":      1,
+							"description":    1,
+							"genres":         "$genres.name",
+							"score":          "$mal_score",
+							"streaming":      "$streaming.name",
+							"release_date": bson.M{
+								"$toDate": "$aired.from",
+							},
+						},
+					},
+				},
+				"as": "content",
+			},
+		}
+	case "game":
+		lookupPipeline = bson.M{
+			"$lookup": bson.M{
+				"from": "games",
+				"let": bson.M{
+					"content_id":  "$content_id",
+					"external_id": "$content_external_int_id",
+				},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{
+							"$expr": bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+									bson.M{"$eq": bson.A{"$rawg_id", "$$external_id"}},
+								},
+							},
+						},
+					},
+					bson.M{
+						"$project": bson.M{
+							"title_en":       "$title",
+							"title_original": 1,
+							"image_url":      1,
+							"description":    1,
+							"genres":         1,
+							"score":          "$rawg_rating",
+							"release_date": bson.M{
+								"$toDate": "$release_date",
+							},
+						},
+					},
+				},
+				"as": "content",
+			},
+		}
+	default:
+		return nil, fmt.Errorf("Unsupported content type: %s", contentType)
+	}
+
+	unwindContent := bson.M{"$unwind": bson.M{
+		"path":                       "$content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	aggregationList := bson.A{
+		match, set, sort, limitStage, lookupPipeline, unwindContent,
+	}
+
+	cursor, err := userInteractionModel.ConsumeLaterCollection.Aggregate(context.TODO(), aggregationList)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":          uid,
+			"content_type": contentType,
+			"limit":        limit,
+		}).Error("failed to find consume later by content type: ", err)
+
+		return nil, fmt.Errorf("Failed to find consume later by content type.")
+	}
+
+	var consumeLaterList []responses.ConsumeLater
+	if err := cursor.All(context.TODO(), &consumeLaterList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":          uid,
+			"content_type": contentType,
+			"limit":        limit,
+		}).Error("failed to decode consume later by content type: ", err)
+
+		return nil, fmt.Errorf("Failed to decode consume later by content type.")
+	}
+
+	return consumeLaterList, nil
+}
+
+// GetConsumeLaterForPreview - Lightweight version for preview endpoint
+// Excludes unnecessary fields like self_note, description, and score for better performance
+func (userInteractionModel *UserInteractionModel) GetConsumeLaterForPreview(uid, contentType string, limit int) ([]responses.ConsumeLaterPreview, error) {
+	matchFields := bson.M{
+		"user_id":      uid,
+		"content_type": contentType,
+	}
+
+	match := bson.M{"$match": matchFields}
+
+	set := bson.M{"$set": bson.M{
+		"content_id": bson.M{
+			"$toObjectId": "$content_id",
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"created_at": -1,
+	}}
+
+	limitStage := bson.M{"$limit": limit}
+
+	var lookupPipeline bson.M
+	switch contentType {
+	case "movie":
+		lookupPipeline = bson.M{
+			"$lookup": bson.M{
+				"from": "movies",
+				"let": bson.M{
+					"content_id":  "$content_id",
+					"external_id": "$content_external_id",
+				},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{
+							"$expr": bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+									bson.M{"$eq": bson.A{"$tmdb_id", "$$external_id"}},
+								},
+							},
+						},
+					},
+					bson.M{
+						"$project": bson.M{
+							"title_en":       1,
+							"title_original": 1,
+							"image_url":      1,
+						},
+					},
+				},
+				"as": "content",
+			},
+		}
+	case "tv":
+		lookupPipeline = bson.M{
+			"$lookup": bson.M{
+				"from": "tv-series",
+				"let": bson.M{
+					"content_id":  "$content_id",
+					"external_id": "$content_external_id",
+				},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{
+							"$expr": bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+									bson.M{"$eq": bson.A{"$tmdb_id", "$$external_id"}},
+								},
+							},
+						},
+					},
+					bson.M{
+						"$project": bson.M{
+							"title_en":       1,
+							"title_original": 1,
+							"image_url":      1,
+						},
+					},
+				},
+				"as": "content",
+			},
+		}
+	case "anime":
+		lookupPipeline = bson.M{
+			"$lookup": bson.M{
+				"from": "animes",
+				"let": bson.M{
+					"content_id":  "$content_id",
+					"external_id": "$content_external_int_id",
+				},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{
+							"$expr": bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+									bson.M{"$eq": bson.A{"$mal_id", "$$external_id"}},
+								},
+							},
+						},
+					},
+					bson.M{
+						"$project": bson.M{
+							"title_en":       1,
+							"title_original": 1,
+							"image_url":      1,
+						},
+					},
+				},
+				"as": "content",
+			},
+		}
+	case "game":
+		lookupPipeline = bson.M{
+			"$lookup": bson.M{
+				"from": "games",
+				"let": bson.M{
+					"content_id":  "$content_id",
+					"external_id": "$content_external_int_id",
+				},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{
+							"$expr": bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+									bson.M{"$eq": bson.A{"$rawg_id", "$$external_id"}},
+								},
+							},
+						},
+					},
+					bson.M{
+						"$project": bson.M{
+							"title_en":       "$title",
+							"title_original": 1,
+							"image_url":      1,
+						},
+					},
+				},
+				"as": "content",
+			},
+		}
+	default:
+		return nil, fmt.Errorf("Unsupported content type: %s", contentType)
+	}
+
+	unwindContent := bson.M{"$unwind": bson.M{
+		"path":                       "$content",
+		"includeArrayIndex":          "index",
+		"preserveNullAndEmptyArrays": false,
+	}}
+
+	// Project only necessary fields to match ConsumeLaterPreview response structure
+	projectStage := bson.M{"$project": bson.M{
+		"_id":                     1,
+		"content_id":              1,
+		"content_external_id":     1,
+		"content_external_int_id": 1,
+		"content_type":            1,
+		"created_at":              1,
+		"content.title_en":        1,
+		"content.title_original":  1,
+		"content.image_url":       1,
+	}}
+
+	aggregationList := bson.A{
+		match, set, sort, limitStage, lookupPipeline, unwindContent, projectStage,
+	}
+
+	cursor, err := userInteractionModel.ConsumeLaterCollection.Aggregate(context.TODO(), aggregationList)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":          uid,
+			"content_type": contentType,
+			"limit":        limit,
+		}).Error("failed to find consume later for preview: ", err)
+
+		return nil, fmt.Errorf("Failed to find consume later for preview.")
+	}
+
+	var consumeLaterList []responses.ConsumeLaterPreview
+	if err := cursor.All(context.TODO(), &consumeLaterList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":          uid,
+			"content_type": contentType,
+			"limit":        limit,
+		}).Error("failed to decode consume later for preview: ", err)
+
+		return nil, fmt.Errorf("Failed to decode consume later for preview.")
+	}
+
+	return consumeLaterList, nil
+}
+
+// GetAllConsumeLaterForPreview - OPTIMIZATION: Get all content types in single query
+// This replaces 4 separate GetConsumeLaterForPreview calls to reduce database operations
+func (userInteractionModel *UserInteractionModel) GetAllConsumeLaterForPreview(uid string, limit int) ([]responses.ConsumeLaterPreview, []responses.ConsumeLaterPreview, []responses.ConsumeLaterPreview, []responses.ConsumeLaterPreview, error) {
+	matchFields := bson.M{
+		"user_id": uid,
+	}
+
+	match := bson.M{"$match": matchFields}
+
+	set := bson.M{"$set": bson.M{
+		"content_id": bson.M{
+			"$toObjectId": "$content_id",
+		},
+	}}
+
+	sort := bson.M{"$sort": bson.M{
+		"created_at": -1,
+	}}
+
+	// Use facet to get all content types in single aggregation
+	facet := bson.M{"$facet": bson.M{
+		"movies": bson.A{
+			bson.M{"$match": bson.M{"content_type": "movie"}},
+			bson.M{"$limit": limit},
+			bson.M{"$lookup": bson.M{
+				"from": "movies",
+				"let": bson.M{
+					"content_id":  "$content_id",
+					"external_id": "$content_external_id",
+				},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{
+							"$expr": bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+									bson.M{"$eq": bson.A{"$tmdb_id", "$$external_id"}},
+								},
+							},
+						},
+					},
+					bson.M{
+						"$project": bson.M{
+							"title_en":       1,
+							"title_original": 1,
+							"image_url":      1,
+						},
+					},
+				},
+				"as": "content",
+			}},
+			bson.M{"$unwind": bson.M{
+				"path":                       "$content",
+				"includeArrayIndex":          "index",
+				"preserveNullAndEmptyArrays": false,
+			}},
+			bson.M{"$project": bson.M{
+				"_id":                     1,
+				"content_id":              1,
+				"content_external_id":     1,
+				"content_external_int_id": 1,
+				"content_type":            1,
+				"created_at":              1,
+				"content.title_en":        1,
+				"content.title_original":  1,
+				"content.image_url":       1,
+			}},
+		},
+		"tv": bson.A{
+			bson.M{"$match": bson.M{"content_type": "tv"}},
+			bson.M{"$limit": limit},
+			bson.M{"$lookup": bson.M{
+				"from": "tv-series",
+				"let": bson.M{
+					"content_id":  "$content_id",
+					"external_id": "$content_external_id",
+				},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{
+							"$expr": bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+									bson.M{"$eq": bson.A{"$tmdb_id", "$$external_id"}},
+								},
+							},
+						},
+					},
+					bson.M{
+						"$project": bson.M{
+							"title_en":       1,
+							"title_original": 1,
+							"image_url":      1,
+						},
+					},
+				},
+				"as": "content",
+			}},
+			bson.M{"$unwind": bson.M{
+				"path":                       "$content",
+				"includeArrayIndex":          "index",
+				"preserveNullAndEmptyArrays": false,
+			}},
+			bson.M{"$project": bson.M{
+				"_id":                     1,
+				"content_id":              1,
+				"content_external_id":     1,
+				"content_external_int_id": 1,
+				"content_type":            1,
+				"created_at":              1,
+				"content.title_en":        1,
+				"content.title_original":  1,
+				"content.image_url":       1,
+			}},
+		},
+		"anime": bson.A{
+			bson.M{"$match": bson.M{"content_type": "anime"}},
+			bson.M{"$limit": limit},
+			bson.M{"$lookup": bson.M{
+				"from": "animes",
+				"let": bson.M{
+					"content_id":  "$content_id",
+					"external_id": "$content_external_int_id",
+				},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{
+							"$expr": bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+									bson.M{"$eq": bson.A{"$mal_id", "$$external_id"}},
+								},
+							},
+						},
+					},
+					bson.M{
+						"$project": bson.M{
+							"title_en":       1,
+							"title_original": 1,
+							"image_url":      1,
+						},
+					},
+				},
+				"as": "content",
+			}},
+			bson.M{"$unwind": bson.M{
+				"path":                       "$content",
+				"includeArrayIndex":          "index",
+				"preserveNullAndEmptyArrays": false,
+			}},
+			bson.M{"$project": bson.M{
+				"_id":                     1,
+				"content_id":              1,
+				"content_external_id":     1,
+				"content_external_int_id": 1,
+				"content_type":            1,
+				"created_at":              1,
+				"content.title_en":        1,
+				"content.title_original":  1,
+				"content.image_url":       1,
+			}},
+		},
+		"games": bson.A{
+			bson.M{"$match": bson.M{"content_type": "game"}},
+			bson.M{"$limit": limit},
+			bson.M{"$lookup": bson.M{
+				"from": "games",
+				"let": bson.M{
+					"content_id":  "$content_id",
+					"external_id": "$content_external_int_id",
+				},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{
+							"$expr": bson.M{
+								"$or": bson.A{
+									bson.M{"$eq": bson.A{"$_id", "$$content_id"}},
+									bson.M{"$eq": bson.A{"$rawg_id", "$$external_id"}},
+								},
+							},
+						},
+					},
+					bson.M{
+						"$project": bson.M{
+							"title_en":       "$title",
+							"title_original": 1,
+							"image_url":      1,
+						},
+					},
+				},
+				"as": "content",
+			}},
+			bson.M{"$unwind": bson.M{
+				"path":                       "$content",
+				"includeArrayIndex":          "index",
+				"preserveNullAndEmptyArrays": false,
+			}},
+			bson.M{"$project": bson.M{
+				"_id":                     1,
+				"content_id":              1,
+				"content_external_id":     1,
+				"content_external_int_id": 1,
+				"content_type":            1,
+				"created_at":              1,
+				"content.title_en":        1,
+				"content.title_original":  1,
+				"content.image_url":       1,
+			}},
+		},
+	}}
+
+	aggregationList := bson.A{
+		match, set, sort, facet,
+	}
+
+	cursor, err := userInteractionModel.ConsumeLaterCollection.Aggregate(context.TODO(), aggregationList)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":   uid,
+			"limit": limit,
+		}).Error("failed to find all consume later for preview: ", err)
+
+		return nil, nil, nil, nil, fmt.Errorf("Failed to find all consume later for preview.")
+	}
+
+	var results []struct {
+		Movies []responses.ConsumeLaterPreview `bson:"movies"`
+		TV     []responses.ConsumeLaterPreview `bson:"tv"`
+		Anime  []responses.ConsumeLaterPreview `bson:"anime"`
+		Games  []responses.ConsumeLaterPreview `bson:"games"`
+	}
+
+	if err := cursor.All(context.TODO(), &results); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"uid":   uid,
+			"limit": limit,
+		}).Error("failed to decode all consume later for preview: ", err)
+
+		return nil, nil, nil, nil, fmt.Errorf("Failed to decode all consume later for preview.")
+	}
+
+	if len(results) > 0 {
+		return results[0].Movies, results[0].TV, results[0].Anime, results[0].Games, nil
+	}
+
+	return []responses.ConsumeLaterPreview{}, []responses.ConsumeLaterPreview{}, []responses.ConsumeLaterPreview{}, []responses.ConsumeLaterPreview{}, nil
+}

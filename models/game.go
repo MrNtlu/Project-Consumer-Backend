@@ -79,7 +79,7 @@ func (gameModel *GameModel) GetPreviewUpcomingGames() ([]responses.PreviewGame, 
 		"popularity":       -1,
 	}}
 
-	limit := bson.M{"$limit": gameUpcomingPaginationLimit}
+	limit := bson.M{"$limit": PreviewLimit}
 
 	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
 		match, addFields, addPopularityFields, project, sort, limit,
@@ -91,7 +91,7 @@ func (gameModel *GameModel) GetPreviewUpcomingGames() ([]responses.PreviewGame, 
 	}
 
 	// Pre-allocate with known capacity
-	results := make([]responses.PreviewGame, 0, gameUpcomingPaginationLimit)
+	results := make([]responses.PreviewGame, 0, PreviewLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode upcoming games: ", err)
 
@@ -107,7 +107,7 @@ func (gameModel *GameModel) GetPreviewTopGames() ([]responses.PreviewGame, error
 	// Only fetch required fields for preview
 	opts := options.Find().
 		SetSort(bson.M{"metacritic_score": -1}).
-		SetLimit(gamePaginationLimit).
+		SetLimit(PreviewLimit).
 		SetProjection(bson.M{
 			"_id":       1,
 			"rawg_id":   1,
@@ -123,7 +123,7 @@ func (gameModel *GameModel) GetPreviewTopGames() ([]responses.PreviewGame, error
 	}
 
 	// Pre-allocate with known capacity
-	results := make([]responses.PreviewGame, 0, gamePaginationLimit)
+	results := make([]responses.PreviewGame, 0, PreviewLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode top games: ", err)
 
@@ -155,7 +155,7 @@ func (gameModel *GameModel) GetPreviewPopularGames() ([]responses.PreviewGame, e
 		"popularity": -1,
 	}}
 
-	limit := bson.M{"$limit": gamePaginationLimit}
+	limit := bson.M{"$limit": PreviewLimit}
 
 	cursor, err := gameModel.Collection.Aggregate(context.TODO(), bson.A{
 		addFields, project, sort, limit,
@@ -167,7 +167,7 @@ func (gameModel *GameModel) GetPreviewPopularGames() ([]responses.PreviewGame, e
 	}
 
 	// Pre-allocate with known capacity
-	results := make([]responses.PreviewGame, 0, gamePaginationLimit)
+	results := make([]responses.PreviewGame, 0, PreviewLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode popular games: ", err)
 

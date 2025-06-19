@@ -75,7 +75,7 @@ func (animeModel *AnimeModel) GetPreviewUpcomingAnimes() ([]responses.PreviewAni
 		"popularity": -1,
 	}}
 
-	limit := bson.M{"$limit": animeUpcomingPaginationLimit}
+	limit := bson.M{"$limit": PreviewLimit}
 
 	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
 		match, addFields, addPopularityFields, project, sort, limit,
@@ -87,7 +87,7 @@ func (animeModel *AnimeModel) GetPreviewUpcomingAnimes() ([]responses.PreviewAni
 	}
 
 	// Pre-allocate with known capacity
-	results := make([]responses.PreviewAnime, 0, animeUpcomingPaginationLimit)
+	results := make([]responses.PreviewAnime, 0, PreviewLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview upcoming animes: ", err)
 
@@ -130,7 +130,7 @@ func (animeModel *AnimeModel) GetPreviewPopularAnimes() ([]responses.PreviewAnim
 		"popularity": -1,
 	}}
 
-	limit := bson.M{"$limit": animePaginationLimit}
+	limit := bson.M{"$limit": PreviewLimit}
 
 	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
 		match, addFields, project, sort, limit,
@@ -142,7 +142,7 @@ func (animeModel *AnimeModel) GetPreviewPopularAnimes() ([]responses.PreviewAnim
 	}
 
 	// Pre-allocate with known capacity
-	results := make([]responses.PreviewAnime, 0, animePaginationLimit)
+	results := make([]responses.PreviewAnime, 0, PreviewLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview popular animes: ", err)
 
@@ -158,7 +158,7 @@ func (animeModel *AnimeModel) GetPreviewTopAnimes() ([]responses.PreviewAnime, e
 	// Only fetch required fields for preview
 	opts := options.Find().
 		SetSort(bson.M{"mal_score": -1}).
-		SetLimit(animePaginationLimit).
+		SetLimit(PreviewLimit).
 		SetProjection(bson.M{
 			"_id":            1,
 			"mal_id":         1,
@@ -175,7 +175,7 @@ func (animeModel *AnimeModel) GetPreviewTopAnimes() ([]responses.PreviewAnime, e
 	}
 
 	// Pre-allocate with known capacity
-	results := make([]responses.PreviewAnime, 0, animePaginationLimit)
+	results := make([]responses.PreviewAnime, 0, PreviewLimit)
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		logrus.Error("failed to decode preview top animes: ", err)
 
@@ -401,6 +401,7 @@ func (animeModel *AnimeModel) GetUpcomingAnimesBySort(data requests.Pagination) 
 }
 
 func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek(dayOfWeek int16) ([]responses.PreviewAnime, error) {
+	// OPTIMIZATION: Use simpler match conditions and reduce pipeline complexity
 	match := bson.M{"$match": bson.M{
 		"$or": bson.A{
 			bson.M{"status": "Currently Airing"},
@@ -414,11 +415,13 @@ func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek(dayOfWeek int1
 		},
 	}}
 
+	// OPTIMIZATION: Simplified date calculation with better performance
 	addFields := bson.M{"$addFields": bson.M{
 		"dayOfWeek": bson.M{
 			"$dayOfWeek": bson.M{
 				"$dateFromString": bson.M{
 					"dateString": "$aired.from",
+					"onError":    nil, // Handle invalid dates gracefully
 				},
 			},
 		},
@@ -428,6 +431,16 @@ func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek(dayOfWeek int1
 		"dayOfWeek": dayOfWeek,
 	}}
 
+	// OPTIMIZATION: Project only required fields early to reduce data transfer
+	project := bson.M{"$project": bson.M{
+		"_id":            1,
+		"mal_id":         1,
+		"title_en":       1,
+		"title_original": 1,
+		"image_url":      1,
+		"mal_score":      1,
+	}}
+
 	sortByScore := bson.M{"$sort": bson.M{
 		"mal_score": -1,
 	}}
@@ -435,7 +448,7 @@ func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek(dayOfWeek int1
 	limit := bson.M{"$limit": 25}
 
 	cursor, err := animeModel.Collection.Aggregate(context.TODO(), bson.A{
-		match, addFields, matchDayOfWeek, sortByScore, limit,
+		match, addFields, matchDayOfWeek, project, sortByScore, limit,
 	})
 	if err != nil {
 		logrus.Error("failed to aggregate currently airing animes: ", err)
@@ -443,7 +456,8 @@ func (animeModel *AnimeModel) GetCurrentlyAiringAnimesByDayOfWeek(dayOfWeek int1
 		return nil, err
 	}
 
-	var animeList []responses.PreviewAnime
+	// Pre-allocate with known capacity
+	animeList := make([]responses.PreviewAnime, 0, 25)
 	if err = cursor.All(context.TODO(), &animeList); err != nil {
 		logrus.Error("failed to decode currently airing animes: ", err)
 
@@ -990,7 +1004,7 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 							bson.M{
 								"$or": bson.A{
 									bson.M{"$eq": bson.A{"$anime_id", "$$anime_id"}},
-									bson.M{"$eq": bson.A{"$anime_mal_id", "$$anime_id"}},
+									bson.M{"$eq": bson.A{"$anime_mal_id", "$$mal_id"}},
 								},
 							},
 							bson.M{"$eq": bson.A{"$user_id", "$$uuid"}},
@@ -1001,11 +1015,11 @@ func (animeModel *AnimeModel) GetAnimeDetailsWithWatchList(data requests.ID, uui
 			// Project only needed fields from anime list
 			bson.M{
 				"$project": bson.M{
-					"status":          1,
-					"score":           1,
-					"times_finished":  1,
-					"current_episode": 1,
-					"created_at":      1,
+					"status":           1,
+					"score":            1,
+					"times_finished":   1,
+					"watched_episodes": 1,
+					"created_at":       1,
 				},
 			},
 		},

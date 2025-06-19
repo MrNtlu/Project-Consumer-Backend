@@ -1354,13 +1354,19 @@ func (logsModel *LogsModel) GetLogsByDateRange(uid string, data requests.LogsByD
 		},
 	}}
 
+	// Determine sort order: default to descending (-1) if not specified
+	sortOrder := -1
+	if data.Sort != nil && *data.Sort == "asc" {
+		sortOrder = 1
+	}
+
 	sortArray := bson.M{"$set": bson.M{
 		"date": "$_id",
 		"data": bson.M{
 			"$sortArray": bson.M{
 				"input": "$data",
 				"sortBy": bson.M{
-					"created_at": -1,
+					"created_at": sortOrder,
 				},
 			},
 		},

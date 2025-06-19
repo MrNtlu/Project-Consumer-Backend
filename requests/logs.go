@@ -11,8 +11,9 @@ type CreateLog struct {
 }
 
 type LogsByDateRange struct {
-	From string `form:"from" binding:"required" time_format:"2006-01-02"`
-	To   string `form:"to" binding:"required" time_format:"2006-01-02"`
+	From string  `form:"from" binding:"required" time_format:"2006-01-02"`
+	To   string  `form:"to" binding:"required" time_format:"2006-01-02"`
+	Sort *string `form:"sort" binding:"omitempty,oneof=asc desc"`
 }
 
 type LogStatInterval struct {
